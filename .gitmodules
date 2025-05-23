@@ -1,0 +1,3 @@
+[submodule "extern/RESPONDSimulationv2"]
+	path = extern/RESPONDSimulationv2
+	url = git@github.com:SyndemicsLab/RESPONDSimulationv2.git
