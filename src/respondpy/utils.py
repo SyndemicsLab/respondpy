@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._core.utils import (
+from _core.utils import (
     CreationStatus,
     create_file_logger
 )

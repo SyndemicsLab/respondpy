@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._core.data_ops import (
+from _core.data_ops import (
     Dimension,
     UtilityType,
     WriterType,

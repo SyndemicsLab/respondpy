@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._core.model import (
+from _core.model import (
     Respond,
     calculate_discount,
     calculate_costs,
