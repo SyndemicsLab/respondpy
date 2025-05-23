@@ -1,34 +1,35 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: register_data_ops.cpp                                                //
+// File: data_ops_ext.cpp                                                     //
 // Project: respondpy                                                         //
-// Created Date: 2025-05-23                                                   //
+// Created Date: 2025-01-14                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2025-05-23                                                  //
+// Last Modified: 2025-05-20                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2025 Syndemics Lab at Boston Medical Center                  //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <pybind11/pybind11.h>
+#include <respond/respond.hpp>
+
+#include <memory>
+#include <string>
 
 #include <pybind11/eigen.h>
 #include <pybind11/eigen/tensor.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include <respond/data_ops/cost_loader.hpp>
-#include <respond/data_ops/data_formatter.hpp>
-#include <respond/data_ops/data_loader.hpp>
-#include <respond/data_ops/data_types.hpp>
-#include <respond/data_ops/matrices.hpp>
-#include <respond/data_ops/utility_loader.hpp>
-#include <respond/data_ops/writer.hpp>
 
 namespace py = pybind11;
 using namespace respond::data_ops;
+using namespace respond::model;
+using namespace respond::utils;
 
-void register_data_ops(py::module &data_ops) {
+PYBIND11_MODULE(respondpy, m) {
+    auto data_ops = m.def_submodule(
+        "data_ops",
+        "A submodule containing the data operations necessary for RESPOND.");
 
     // cost_loader.hpp
     py::class_<CostLoader>(data_ops, "CostLoader")
@@ -192,4 +193,39 @@ void register_data_ops(py::module &data_ops) {
         .def("write_cost_data", &Writer::WriteCostData)
         .def("write_utility_data", &Writer::WriteUtilityData)
         .def("write_totals_data", &Writer::WriteTotalsData);
+
+    auto model = m.def_submodule(
+        "model", "A submodule containing the model components for RESPOND.");
+
+    // post_sim.hpp
+    model.def("calculate_discount", &CalculateDiscount,
+              "Calculates the Discount for the provided Matrix3d.");
+    model.def("calculate_costs", &CalculateCosts,
+              "Calculates the Costs of the provided History.");
+    model.def("calculate_utilities", &CalculateUtilities,
+              "Calculate the Utilities of the provided History.");
+    model.def("calculate_life_years", &CalculateLifeYears,
+              "Calculate the Life Years of the provided History.");
+    model.def("calculate_total_costs", &CalculateTotalCosts,
+              "Calculate the Total Costs of the provided History.");
+
+    // simulation.hpp
+    py::class_<Respond>(model, "Respond")
+        .def(py::init(&Respond::Create), pybind11::arg("log_name") = "console")
+        .def("run", &Respond::Run)
+        .def("get_history", &Respond::GetHistory);
+
+    auto utils = m.def_submodule(
+        "utils", "A submodule containing the utility functions for RESPOND.");
+
+    // logging.hpp
+    py::enum_<CreationStatus>(utils, "CreationStatus")
+        .value("kError", CreationStatus::kError)
+        .value("kSuccess", CreationStatus::kSuccess)
+        .value("kExists", CreationStatus::kExists)
+        .value("kNotCreated", CreationStatus::kNotCreated)
+        .export_values();
+
+    utils.def("create_file_logger", &CreateFileLogger,
+              "Creates a File Logger for use with RESPOND.");
 }

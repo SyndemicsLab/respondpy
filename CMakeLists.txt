@@ -9,12 +9,12 @@ add_subdirectory(extern/RESPONDSimulationv2)
 # file(GLOB_RECURSE RESPOND_FILES "extern/RESPONDSimulationv2/include/*.hpp")
 file(GLOB RESPONDPY_SRC CONFIGURE_DEPENDS "src/*.cpp")
 
-pybind11_add_module(_core MODULE ${RESPONDPY_SRC})
+pybind11_add_module(${SKBUILD_PROJECT_NAME} MODULE ${RESPONDPY_SRC})
 
 # Set up the libraries and header search paths for this target
-target_link_libraries(_core
+target_link_libraries(${SKBUILD_PROJECT_NAME}
 PRIVATE
     respond
 )
 
-install(TARGETS _core LIBRARY DESTINATION .)
+install(TARGETS ${SKBUILD_PROJECT_NAME} LIBRARY DESTINATION .)
