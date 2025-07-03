@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: data_ops_ext.cpp                                                     //
+// File: respondpy.cpp                                                        //
 // Project: respondpy                                                         //
-// Created Date: 2025-01-14                                                   //
+// Created Date: 2025-05-21                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2025-05-20                                                  //
+// Last Modified: 2025-07-03                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2025 Syndemics Lab at Boston Medical Center                  //
@@ -31,9 +31,16 @@ PYBIND11_MODULE(respondpy, m) {
         "data_ops",
         "A submodule containing the data operations necessary for RESPOND.");
 
+    // base_loader.hpp
+    py::class_<BaseLoader>(data_ops, "BaseLoader")
+        .def("load_data_table", &BaseLoader::LoadDataTable,
+             pybind11::arg("path"), pybind11::arg("headers") = true)
+        .def("set_config", &BaseLoader::SetConfig, pybind11::arg("config_file"))
+        .def("get_config", &BaseLoader::GetConfig);
+
     // cost_loader.hpp
-    py::class_<CostLoader>(data_ops, "CostLoader")
-        .def(py::init(&CostLoader::Create), pybind11::arg("directory") = "",
+    py::class_<CostLoader, BaseLoader>(data_ops, "CostLoader")
+        .def(py::init(&CostLoader::Create),
              pybind11::arg("log_name") = "console")
         .def("load_healthcare_utilization_cost",
              &CostLoader::LoadHealthcareUtilizationCost)
@@ -56,8 +63,8 @@ PYBIND11_MODULE(respondpy, m) {
         .def("extract_timesteps", &DataFormatter::ExtractTimesteps);
 
     // data_loader.hpp
-    py::class_<DataLoader>(data_ops, "DataLoader")
-        .def(py::init(&DataLoader::Create), pybind11::arg("directory") = "",
+    py::class_<DataLoader, BaseLoader>(data_ops, "DataLoader")
+        .def(py::init(&DataLoader::Create),
              pybind11::arg("log_name") = "console")
         .def("get_initial_sample", &DataLoader::GetInitialSample)
         .def("get_entering_samples", &DataLoader::GetEnteringSamples)
@@ -160,8 +167,8 @@ PYBIND11_MODULE(respondpy, m) {
                  "Multiply a TimedMatrix3d by another Matrix3d.");
 
     // utility_loader.hpp
-    py::class_<UtilityLoader>(data_ops, "UtilityLoader")
-        .def(py::init(&UtilityLoader::Create), pybind11::arg("directory") = "",
+    py::class_<UtilityLoader, BaseLoader>(data_ops, "UtilityLoader")
+        .def(py::init(&UtilityLoader::Create),
              pybind11::arg("log_name") = "console")
         .def("load_background_utility", &UtilityLoader::LoadBackgroundUtility)
         .def("load_oud_utility", &UtilityLoader::LoadOUDUtility)
