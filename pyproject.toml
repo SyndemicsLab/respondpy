@@ -15,12 +15,12 @@ authors = [
 maintainers = [{ name = "Syndemics Lab", email = "Benjamin.Linas@bmc.org" }]
 keywords = ["simulation", "Opioid Use Disorder", "Syndemics"]
 license = "AGPL-3.0-or-later"
-license-files = ["LICENSE", "extern/*/LICENSE"]
+license-files = ["LICENSE.txt", "extern/*/LICENSE.txt"]
 dependencies = ["numpy"]
 
 [project.urls]
-Homepage = "https://github.com/SyndemicsLab/RESPONDSimulationv2"
-Issues = "https://github.com/SyndemicsLab/RESPONDSimulationv2/issues"
+Homepage = "https://github.com/SyndemicsLab/respond"
+Issues = "https://github.com/SyndemicsLab/respond/issues"
 
 [tool.scikit-build]
 cmake.version = ">=3.27"
