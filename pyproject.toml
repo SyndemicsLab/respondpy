@@ -25,3 +25,4 @@ Issues = "https://github.com/SyndemicsLab/respond/issues"
 [tool.scikit-build]
 cmake.version = ">=3.27"
 sdist.exclude = [".github/**/*.yml"]
+sdist.include = ["src/respondpy/**/*.pyi"]

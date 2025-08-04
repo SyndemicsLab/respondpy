@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: respondpy.cpp                                                        //
+// File: register_respond.cpp                                                 //
 // Project: respondpy                                                         //
 // Created Date: 2025-08-01                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2025-08-01                                                  //
+// Last Modified: 2025-08-04                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2025 Syndemics Lab at Boston Medical Center                  //
@@ -76,7 +76,7 @@ PYBIND11_MODULE(respondpy, m) {
     m.def("calculate_total_costs", &CalculateTotalCosts,
           "Calculate the total costs.");
 
-    // simulation.hpp
+    // markov.hpp
     py::class_<Markov>(m, "Markov")
         .def(py::init(&Markov::Create), pybind11::arg("log_name") = "console")
         .def("set_state", &Markov::SetState)
@@ -84,8 +84,8 @@ PYBIND11_MODULE(respondpy, m) {
         .def("set_transitions", &Markov::SetTransitions)
         .def("get_transitions", &Markov::GetTransitions)
         .def("add_transition", &Markov::AddTransition)
-        .def("run", &Respond::Run)
-        .def("get_run_results", &Respond::GetRunResults);
+        .def("run", &Markov::Run)
+        .def("get_run_results", &Markov::GetRunResults);
 
     // respond.hpp
     m.def("migration", &Migration, "Applies the Migrating Cohort.");
@@ -109,6 +109,11 @@ PYBIND11_MODULE(respondpy, m) {
         .value("kNotCreated", CreationStatus::kNotCreated)
         .export_values();
 
-    utils.def("create_file_logger", &CreateFileLogger,
-              "Creates a File Logger for use with RESPOND.");
+    m.def("create_file_logger", &CreateFileLogger,
+          "Creates a File Logger for use with RESPOND.");
+
+    m.def("log_info", &LogInfo, "Logs an info message to the log.");
+    m.def("log_warning", &LogWarning, "Logs a warning message to the log.");
+    m.def("log_error", &LogError, "Logs an error message to the log.");
+    m.def("log_debug", &LogDebug, "Logs a debug message to the log.");
 }
