@@ -4,6 +4,7 @@
 
 ```bash
 git clone git@github.com:SyndemicsLab/respondpy.git
+git submodule init && git submodule update
 uv sync
 uv build
 ```
