@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2025-11-20                                                    #
+# Last Modified: 2025-11-24                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025 Syndemics Lab at Boston Medical Center                    #
@@ -18,7 +18,7 @@ from ._core import (  # pylint: disable=import-error,no-name-in-module
     kDebug, kError, kExists, kInfo, kMin, kMult, kNotCreated, kSuccess, kWarn, log_debug, log_error, log_info, log_warning, migration, mortality, overdose, stamp_costs, stamp_costs_over_time, stamp_utilities, stamp_utilities_over_time
 )
 
-from .sqlite_eigen import (
+from .type_conversions.sqlite_eigen import (
     get_init_cohort_from_db, get_population_change_from_db, get_intervention_transitions_from_db, get_behavior_transitions_from_db, get_overdose_from_db, get_fatal_overdose_from_db, get_background_mortality_from_db, get_smr_from_db
 )
 

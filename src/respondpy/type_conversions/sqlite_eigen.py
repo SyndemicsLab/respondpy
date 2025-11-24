@@ -4,7 +4,7 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2025-11-20                                                    #
+# Last Modified: 2025-11-24                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025 Syndemics Lab at Boston Medical Center                    #
@@ -14,13 +14,13 @@ import numpy as np
 
 
 def _get_states_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         state: str = "intervention"
 ) -> list[str]:
     """Getter for the state tables from the SQLite database.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         state (str, optional): Either "intervention" or "behavior". The specific state to look for in the database. Defaults to "intervention".
 
     Raises:
@@ -31,7 +31,7 @@ def _get_states_from_db(
     """
     if state not in ["intervention", "behavior"]:
         raise ValueError("State must be either 'intervention' or 'behavior'!")
-    con = sqlite3.connect(db_path)
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute("SELECT name FROM ? ORDER BY id", (state))
     result = [row[0] for row in cur.fetchall()]
@@ -60,20 +60,20 @@ def _get_column_order(
 
 
 def get_init_cohort_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1
 ) -> np.ndarray:
     """Get the initial cohort from the database as a numpy array.
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
     Returns:
         np.ndarray: Initial cohort as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -90,22 +90,22 @@ def get_init_cohort_from_db(
 
 
 def get_population_change_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the change in population from the database as a numpy array.
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
     Returns:
         np.ndarray: Initial cohort as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -122,25 +122,25 @@ def get_population_change_from_db(
 
 
 def get_intervention_transitions_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the intervention transitions from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: Intervention transitions as a numpy array.
     """
-    ii_order = _get_column_order("ii.name", _get_states_from_db(db_path))
-    ni_order = _get_column_order("ni.name", _get_states_from_db(db_path))
+    ii_order = _get_column_order("ii.name", _get_states_from_db(db))
+    ni_order = _get_column_order("ni.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -158,26 +158,26 @@ def get_intervention_transitions_from_db(
 
 
 def get_behavior_transitions_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the behavior transitions from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: behavior transitions as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     ib_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
+        "b.name", _get_states_from_db(db, state="behavior"))
     nb_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -195,24 +195,24 @@ def get_behavior_transitions_from_db(
 
 
 def get_overdose_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the overdose probabilities from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: behavior transitions as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -229,24 +229,24 @@ def get_overdose_from_db(
 
 
 def get_fatal_overdose_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the fatal overdose probabilities from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: behavior transitions as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -263,24 +263,24 @@ def get_fatal_overdose_from_db(
 
 
 def get_background_mortality_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the background mortality probabilities from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: behavior transitions as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
@@ -295,24 +295,24 @@ def get_background_mortality_from_db(
 
 
 def get_smr_from_db(
-        db_path: str,
+        db: str | sqlite3.Connection,
         cohort_id: int = 1,
         time: int = 52
 ) -> np.ndarray:
     """Get the SMRs from the database as a numpy array.
 
     Args:
-        db_path (str): Path to the SQLite database.
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
         cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
         np.ndarray: behavior transitions as a numpy array.
     """
-    i_order = _get_column_order("i.name", _get_states_from_db(db_path))
+    i_order = _get_column_order("i.name", _get_states_from_db(db))
     b_order = _get_column_order(
-        "b.name", _get_states_from_db(db_path, state="behavior"))
-    con = sqlite3.connect(db_path)
+        "b.name", _get_states_from_db(db, state="behavior"))
+    con = sqlite3.connect(db) if isinstance(db, str) else db
     cur = con.cursor()
     cur.execute(
         f"""
