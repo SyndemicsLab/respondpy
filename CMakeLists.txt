@@ -1,20 +1,63 @@
 cmake_minimum_required(VERSION 3.27)
+
+#-------------------------------------------------------------------------------
+# Handle building from CMake instead of scikitbuild-core
+#-------------------------------------------------------------------------------
+if(NOT DEFINED SKBUILD_PROJECT_NAME)
+    set(SKBUILD_PROJECT_NAME "respondpy")
+    set(SKBUILD_PROJECT_VERSION "0.0.1")
+endif()
+
 project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} LANGUAGES CXX)
 
+message(STATUS "Building ${SKBUILD_PROJECT_NAME} version ${SKBUILD_PROJECT_VERSION}")
+
+#-------------------------------------------------------------------------------
+# Set Compile Flags
+#-------------------------------------------------------------------------------
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+#-------------------------------------------------------------------------------
+# Python Binding Details
+#-------------------------------------------------------------------------------
 set(PYBIND11_FINDPYTHON ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 find_package(pybind11 CONFIG REQUIRED)
-add_subdirectory(extern/respond)
 
-# file(GLOB_RECURSE RESPOND_FILES "extern/respond/include/*.hpp")
-file(GLOB RESPONDPY_SRC CONFIGURE_DEPENDS "src/*.cpp")
+#-------------------------------------------------------------------------------
+# Target Control
+#-------------------------------------------------------------------------------
+pybind11_add_module(${SKBUILD_PROJECT_NAME} MODULE)
 
-pybind11_add_module(${SKBUILD_PROJECT_NAME} MODULE ${RESPONDPY_SRC})
+target_sources(${SKBUILD_PROJECT_NAME}
+    PRIVATE
+        src/register_respond.cpp
+)
+
+#-------------------------------------------------------------------------------
+# Include RESPOND Library Repository
+#-------------------------------------------------------------------------------
+include(FetchContent)
+FetchContent_Declare(
+    respond
+    GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
+    GIT_TAG 5d4dde64b2e1f4ca4cea26851b82000379dbf7cb
+    OVERRIDE_FIND_PACKAGE
+)
+set(RESPOND_INSTALL ON)
+find_package(respond REQUIRED)
 
 # Set up the libraries and header search paths for this target
 target_link_libraries(${SKBUILD_PROJECT_NAME}
-PRIVATE
-    respond
+    PRIVATE
+        respond::respond_model
 )
 
-install(TARGETS ${SKBUILD_PROJECT_NAME} LIBRARY DESTINATION .)
+pybind11_extension(${SKBUILD_PROJECT_NAME})
+if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+    # Strip unnecessary sections of the binary on Linux/macOS
+    pybind11_strip(${SKBUILD_PROJECT_NAME})
+endif()
+
+# install(TARGETS ${SKBUILD_PROJECT_NAME} LIBRARY DESTINATION .)
