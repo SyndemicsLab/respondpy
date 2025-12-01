@@ -1,8 +1,8 @@
-# :warning: NOTICE :warning:
+# RESPONDPY
+
+## :warning: NOTICE :warning:
 
 This repository is under active development and not currently in a state for public use.
-
-# RESPONDPY
 
 :snake: Welcome to RESPOND for Python! :snake: This repository acts as a set of python bindings for the Syndemics Lab's RESPOND model. As such, it is simply a set of wrappers for ease of use in various lab projects. Our wheel building procedure consists of simply running the commands:
 

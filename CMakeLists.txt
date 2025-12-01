@@ -42,10 +42,11 @@ include(FetchContent)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 5d4dde64b2e1f4ca4cea26851b82000379dbf7cb
+    GIT_TAG 6095dd1f5fd446d6973340f9fe2a8246b1d0871d
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_INSTALL ON)
+set(RESPOND_BUILD_TESTS OFF)
 find_package(respond REQUIRED)
 
 # Set up the libraries and header search paths for this target
@@ -59,5 +60,3 @@ if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
     # Strip unnecessary sections of the binary on Linux/macOS
     pybind11_strip(${SKBUILD_PROJECT_NAME})
 endif()
-
-# install(TARGETS ${SKBUILD_PROJECT_NAME} LIBRARY DESTINATION .)
