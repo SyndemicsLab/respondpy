@@ -42,11 +42,10 @@ include(FetchContent)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 6095dd1f5fd446d6973340f9fe2a8246b1d0871d
+    GIT_TAG 725d0e8ead591a8b03f68c2efda34f0b1c90bbde
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_INSTALL ON)
-set(RESPOND_BUILD_TESTS OFF)
 find_package(respond REQUIRED)
 
 # Set up the libraries and header search paths for this target
