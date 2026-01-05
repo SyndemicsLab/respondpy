@@ -4,8 +4,8 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2025-11-24                                                    #
-# Modified By: Matthew Carroll                                                 #
+# Last Modified: 2025-12-10                                                    #
+# Modified By: Dimitri Baptiste                                                #
 # -----                                                                        #
 # Copyright (c) 2025 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
@@ -20,14 +20,18 @@ def _get_states_from_db(
     """Getter for the state tables from the SQLite database.
 
     Args:
-        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3 connection.
-        state (str, optional): Either "intervention" or "behavior". The specific state to look for in the database. Defaults to "intervention".
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3
+            connection.
+        state (str, optional): Either "intervention" or "behavior". The specific
+            state to look for in the database. Defaults to "intervention".
 
     Raises:
-        ValueError: If the state is not "intervention" or "behavior" raise an error. This prevents SQL injections.
+        ValueError: If the state is not "intervention" or "behavior" raise an
+            error. This prevents SQL injections.
 
     Returns:
-        list[str]: List of possible state names from the table in the SQLite database.
+        list[str]: List of possible state names from the table in the SQLite
+            database.
     """
     if state not in ["intervention", "behavior"]:
         raise ValueError("State must be either 'intervention' or 'behavior'!")
@@ -80,8 +84,8 @@ def get_init_cohort_from_db(
         SELECT count
         FROM initial_population AS ip
         INNER JOIN intervention AS i ON ip.intervention = i.id
-        INNER JOIN behavior AS b ON ip.behavior = b.id 
-        WHERE cohort = ? 
+        INNER JOIN behavior AS b ON ip.behavior = b.id
+        WHERE cohort = ?
         {i_order}, {b_order}
         """, (str(cohort_id)))
     result = np.array(cur.fetchall())
@@ -112,7 +116,7 @@ def get_population_change_from_db(
         SELECT count
         FROM population_change AS pc
         INNER JOIN intervention AS i ON pc.intervention = i.id
-        INNER JOIN behavior AS b ON pc.behavior = b.id 
+        INNER JOIN behavior AS b ON pc.behavior = b.id
         WHERE cohort = ? AND time = ?
         {i_order}, {b_order}
         """, (str(cohort_id), str(time)))
@@ -148,7 +152,7 @@ def get_intervention_transitions_from_db(
         FROM intervention_transition AS it
         INNER JOIN intervention AS ii ON it.initial_intervention = ii.id
         INNER JOIN intervention AS ni ON it.new_intervention = ni.id
-        INNER JOIN behavior AS b ON it.behavior = b.id 
+        INNER JOIN behavior AS b ON it.behavior = b.id
         WHERE cohort = ? AND time = ?
         {ii_order}, {ni_order}, {b_order}
         """, (str(cohort_id), str(time)))
@@ -183,7 +187,7 @@ def get_behavior_transitions_from_db(
         f"""
         SELECT probability
         FROM behavior_transition AS it
-        INNER JOIN intervention AS i ON it.intervention = i.id 
+        INNER JOIN intervention AS i ON it.intervention = i.id
         INNER JOIN behavior AS ib ON it.initial_behavior = ib.id
         INNER JOIN behavior AS nb ON it.new_behavior = nb.id
         WHERE cohort = ? AND time = ?
@@ -218,7 +222,7 @@ def get_overdose_from_db(
         f"""
         SELECT probability
         FROM overdose AS od
-        INNER JOIN intervention AS i ON od.intervention = i.id 
+        INNER JOIN intervention AS i ON od.intervention = i.id
         INNER JOIN behavior AS b ON od.behavior = b.id
         WHERE cohort = ? AND time = ?
         {i_order}, {b_order}
@@ -252,7 +256,7 @@ def get_fatal_overdose_from_db(
         f"""
         SELECT probability
         FROM overdose_fatality AS fod
-        INNER JOIN intervention AS i ON fod.intervention = i.id 
+        INNER JOIN intervention AS i ON fod.intervention = i.id
         INNER JOIN behavior AS b ON fod.behavior = b.id
         WHERE cohort = ? AND time = ?
         {i_order}, {b_order}
@@ -318,7 +322,7 @@ def get_smr_from_db(
         f"""
         SELECT ratio
         FROM smr
-        INNER JOIN intervention AS i ON smr.intervention = i.id 
+        INNER JOIN intervention AS i ON smr.intervention = i.id
         INNER JOIN behavior AS b ON smr.behavior = b.id
         WHERE cohort = ? AND time = ?
         {i_order}, {b_order}

@@ -42,7 +42,7 @@ include(FetchContent)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 725d0e8ead591a8b03f68c2efda34f0b1c90bbde
+    GIT_TAG 2b52a7b07c568f58c52f96206510085e054036e2
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_INSTALL ON)
