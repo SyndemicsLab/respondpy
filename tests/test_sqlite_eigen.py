@@ -4,10 +4,10 @@
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2025-11-24                                                    #
+# Last Modified: 2026-01-06                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2025 Syndemics Lab at Boston Medical Center                    #
+# Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
 ################################################################################
 import sqlite3
 import numpy as np

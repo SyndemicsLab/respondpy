@@ -1,10 +1,10 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11", "eigen", "spdlog"]
+requires = ["scikit-build-core", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.1.0"
+version = "0.2.0"
 description = "The RESPOND Simulation Python Interface"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -20,6 +20,7 @@ dependencies = [
     "build>=1.3.0",
     "cibuildwheel>=2.23.3",
     "numpy",
+    "pytest>=8.4.2",
 ]
 
 [project.urls]
@@ -30,3 +31,4 @@ Issues = "https://github.com/SyndemicsLab/respond/issues"
 cmake.version = ">=3.27"
 sdist.exclude = [".github/**/*.yml"]
 sdist.include = ["src/respondpy/**/*.pyi"]
+

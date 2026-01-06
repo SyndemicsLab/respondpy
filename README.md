@@ -25,3 +25,11 @@ This tool makes use of the popular tool [Pybind11](https://pybind11.readthedocs.
 ## Building
 
 We make use of [Scikit-build-core](https://scikit-build-core.readthedocs.io/en/latest/index.html) along with CMake to build the library.
+
+## ManyLinux Build
+
+We are currently working on supporting a ManyLinux build of the project. This can be tested via the `cibuildwheel` tool.
+
+```bash
+uvx cibuildwheel
+```
