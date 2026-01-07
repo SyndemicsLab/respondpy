@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: register_respond.cpp                                                 //
+// File: module.cpp                                                           //
 // Project: respondpy                                                         //
 // Created Date: 2025-08-01                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2025-08-04                                                  //
+// Last Modified: 2026-01-07                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
-// Copyright (c) 2025 Syndemics Lab at Boston Medical Center                  //
+// Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center             //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <respond/respond.hpp>

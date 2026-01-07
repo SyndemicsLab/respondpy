@@ -1,15 +1,25 @@
 ################################################################################
-# File: data.py                                                                #
+# File: data_definitions.py                                                    #
 # Project: respondpy                                                           #
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2025-11-24                                                    #
+# Last Modified: 2026-01-07                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2025 Syndemics Lab at Boston Medical Center                    #
+# Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
 ################################################################################
-SCHEMA = """
+import pytest
+
+
+@pytest.fixture(scope="module")
+def db_schema():
+    """Fixture to provide the database schema for testing
+
+    Returns:
+        str: The database schema SQL string
+    """
+    return """
 DROP TABLE IF EXISTS "background_mortality";
 CREATE TABLE "background_mortality" (
 	"cohort"	INTEGER NOT NULL,
@@ -137,14 +147,31 @@ CREATE TABLE "smr" (
 );
 """
 
-COHORT_INSERTS = """
+
+@pytest.fixture(scope="module")
+def db_cohort_insert():
+    """FIxture to insert a cohort into the database for testing
+
+    Returns:
+        str: The cohort insertion SQL string
+    """
+    return """
 INSERT INTO cohort (id, description) VALUES (1, "Test Cohort 1");"""
 
-INTERVENTION_INSERTS = """
+
+@pytest.fixture(scope="module")
+def db_intervention_insert():
+    return """
 INSERT INTO intervention (id, name) VALUES (1, "No_Treatment), (2, Buprenorphine);"""
 
-BEHAVIOR_INSERTS = """
+
+@pytest.fixture(scope="module")
+def db_behavior_insert():
+    return """
 INSERT INTO behavior (id, name) VALUES (1, "Active_Injection"), (2, "Nonactive_Injection");"""
 
-INITIAL_POPULATION_INSERTS = """
+
+@pytest.fixture(scope="module")
+def db_population_insert():
+    return """
 INSERT INTO initial_population (cohort, intervention, behavior, count) VALUES (1, 1, 1, 100), (1, 1, 2, 150), (1, 2, 1, 200), (1, 2, 2, 250);"""
