@@ -55,6 +55,8 @@ FetchContent_Declare(
     GIT_PROGRESS    TRUE
     FIND_PACKAGE_ARGS NAMES spdlog
 )
+set(SPDLOG_BUILD_SHARED OFF)
+set(SPDLOG_BUILD_PIC ON)
 set(SPDLOG_INSTALL ON)
 
 FetchContent_Declare(
