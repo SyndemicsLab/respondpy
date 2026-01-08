@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(respondpy LANGUAGES CXX)
+project(RESPONDPY LANGUAGES CXX)
 
 include(FetchContent)
 
@@ -21,13 +21,12 @@ endif()
 # This is a standard recipe for setting a default build type
 set(_default_build_type "Debug")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to '${_default_build_type}' as none was specified.")
-  set(CMAKE_BUILD_TYPE
-      "${_default_build_type}"
-      CACHE STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel"
-                                               "RelWithDebInfo")
+    message(STATUS "Setting build type to '${_default_build_type}' as none was specified.")
+    set(CMAKE_BUILD_TYPE
+        "${_default_build_type}"
+        CACHE STRING "Choose the type of build." FORCE)
+    # Set the possible values of build type for cmake-gui
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
 # If no Python venv set, and .venv exists, use it.
@@ -50,11 +49,11 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS NAMES pybind11)
 
 FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY  https://github.com/gabime/spdlog.git
-        GIT_TAG         v1.x
-        GIT_PROGRESS    TRUE
-        FIND_PACKAGE_ARGS NAMES spdlog
+    spdlog
+    GIT_REPOSITORY  https://github.com/gabime/spdlog.git
+    GIT_TAG         v1.x
+    GIT_PROGRESS    TRUE
+    FIND_PACKAGE_ARGS NAMES spdlog
 )
 set(SPDLOG_INSTALL ON)
 
@@ -74,16 +73,21 @@ FetchContent_MakeAvailable(pybind11 spdlog respond)
 message(STATUS "CMake ${CMAKE_VERSION}")
 message(STATUS "Python ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
 if(DEFINED pybind11_VERSION)
-  message(STATUS "pybind11 ${pybind11_VERSION}")
+    message(STATUS "pybind11 ${pybind11_VERSION}")
 endif()
 
 #-------------------------------------------------------------------------------
 # Target Control
 #-------------------------------------------------------------------------------
-pybind11_add_module(_core MODULE src/module.cpp)
+file(GLOB_RECURSE RESPONDPY_HEADERS "include/respondpy/*.hpp")
+file(GLOB RESPONDPY_SRC CONFIGURE_DEPENDS src/*.cpp)
+
+pybind11_add_module(_core MODULE ${RESPONDPY_HEADERS} ${RESPONDPY_SRC})
+target_include_directories(_core PRIVATE include)
+
 set_target_properties(_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-
+ 
 # Set up the libraries and header search paths for this target
 target_link_libraries(_core
     PUBLIC
@@ -95,6 +99,17 @@ target_link_libraries(_core
 # Better error messages
 target_compile_definitions(_core PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
 
+source_group(
+    TREE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PREFIX "Header Files"
+    FILES ${RESPONDPY_HEADERS}
+)
+source_group(
+    TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PREFIX "Source Files"
+    FILES ${RESPONDPY_SRC}
+)
+
 # Make the output library be in respondpy/_core...
 # This is a generator expression to avoid Debug/Release subdirectories in IDEs,
 # which confuses Python.
@@ -102,18 +117,20 @@ set_property(TARGET _core PROPERTY LIBRARY_OUTPUT_DIRECTORY "$<1:respondpy>")
 
 # Collect all the python files and symlink them into the build directory
 # Protects from in-source builds (don't do this, please)
-if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}" AND NOT DEFINED
-                                                                                SKBUILD)
-  file(
-    GLOB_RECURSE RESPONDPY_FILES
-    LIST_DIRECTORIES false
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    CONFIGURE_DEPENDS "src/respondpy/*.py")
-  foreach(F IN LISTS RESPONDPY_FILES)
-    file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/${F}")
-    file(CREATE_LINK "${CMAKE_CURRENT_SOURCE_DIR}/src/${F}" "${CMAKE_CURRENT_BINARY_DIR}/${F}"
-         COPY_ON_ERROR SYMBOLIC)
-  endforeach()
+if(
+    NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}" 
+    AND NOT DEFINED SKBUILD
+)
+    file(
+        GLOB_RECURSE RESPONDPY_FILES
+        LIST_DIRECTORIES false
+        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        CONFIGURE_DEPENDS "src/respondpy/*.py")
+    foreach(F IN LISTS RESPONDPY_FILES)
+        file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/${F}")
+        file(CREATE_LINK "${CMAKE_CURRENT_SOURCE_DIR}/src/${F}" "${CMAKE_CURRENT_BINARY_DIR}/${F}"
+            COPY_ON_ERROR SYMBOLIC)
+    endforeach()
 endif()
 
 # Support installing
@@ -131,38 +148,35 @@ endif()
 if(DEFINED SKBUILD)
   # Don't worry about the version
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/respondpy/version.py")
-  set(VERSION_REGEX [=[version[ \t]*=[ \t]*["']([0-9]+\.[0-9]+\.[0-9]+)]=])
+    set(VERSION_REGEX [=[version[ \t]*=[ \t]*["']([0-9]+\.[0-9]+\.[0-9]+)]=])
 
-  # Read in the line containing the version
-  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/respondpy/version.py" VERSION_STRING
-       REGEX [=[version[ \t]*=]=])
+    # Read in the line containing the version
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/respondpy/version.py" VERSION_STRING
+        REGEX [=[version[ \t]*=]=])
 
-  # Pick out just the version
-  string(REGEX MATCH [=[[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_STRING}")
+    # Pick out just the version
+    string(REGEX MATCH [=[[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_STRING}")
 else()
-  pybind11_find_import(setuptools_scm REQUIRED)
+    pybind11_find_import(setuptools_scm REQUIRED)
 
-  execute_process(
-    COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version())"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    OUTPUT_VARIABLE VERSION_FULL_STRING
-    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version())"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE VERSION_FULL_STRING
+        OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
 
-  string(REGEX MATCH [=[^[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_FULL_STRING}")
-  string(REPLACE "-" "." VERSION_STRING "${VERSION_STRING}")
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/respondpy/version.py"
-       "version = '${VERSION_FULL_STRING}'")
-  message(STATUS "Full version output: ${VERSION_FULL_STRING}")
+    string(REGEX MATCH [=[^[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_FULL_STRING}")
+    string(REPLACE "-" "." VERSION_STRING "${VERSION_STRING}")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/respondpy/version.py"
+        "version = '${VERSION_FULL_STRING}'")
+    message(STATUS "Full version output: ${VERSION_FULL_STRING}")
 endif()
 
 if(NOT DEFINED SKBUILD)
-  project(
-    respondpy
-    LANGUAGES CXX
-    VERSION ${VERSION_STRING})
-  message(STATUS "respondpy ${RESPOND_VERSION}")
+    project(RESPONDPY LANGUAGES CXX VERSION ${VERSION_STRING})
+    message(STATUS "respondpy ${RESPOND_VERSION}")
 
-  if(BUILD_TESTING)
-    add_subdirectory(tests)
-  endif()
+    if(BUILD_TESTING)
+        add_subdirectory(tests)
+    endif()
 endif()

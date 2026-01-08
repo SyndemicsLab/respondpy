@@ -94,7 +94,7 @@ required_plugins = ["pytest-benchmark"]
 log_level = "DEBUG"
 
 [tool.mypy]
-python_version = 3.10
+python_version = 3.12
 files = ["src"]
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -157,7 +157,7 @@ environment.UV_INDEX_STRATEGY = "unsafe-best-match"
 test-command = "pytest --benchmark-disable tests"
 
 [tool.pylint]
-py-version = "3.10"
+py-version = "3.12"
 ignore-patterns = ['.*\.pyi']
 ignore = "version.py"
 extension-pkg-allow-list = ["respondpy._core"]
@@ -219,13 +219,13 @@ ignore = [
   "PT011",          # pytest.raises too broad
   "PYI034",         # We are returning Self, just generic
 ]
-typing-modules = ["boost_histogram._compat.typing"]
+typing-modules = ["respondpy._compat.typing"]
 isort.required-imports = ["from __future__ import annotations"]
 exclude = ["extern/*"]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"typing.Self".msg = "Use boost_histogram._compat.typing.Self instead."
-"typing_extensions.Self".msg = "Use boost_histogram._compat.typing.Self instead."
+"typing.Self".msg = "Use respondpy._compat.typing.Self instead."
+"typing_extensions.Self".msg = "Use respondpy._compat.typing.Self instead."
 
 [tool.ruff.lint.mccabe]
 max-complexity = 13
@@ -238,6 +238,6 @@ max-complexity = 13
 "notebooks/*" = ["T20"]
 "*.pyi" = ["F401", "TID251"]
 "docs/conf.py" = ["ARG001"]
-"src/boost_histogram/test.py" = ["PT"]
+"src/respondpy/test.py" = ["PT"]
 "**.ipynb" = ["I002", "E731"]
-"src/boost_histogram/_compat/**.py" = ["TID251"]
+"src/respondpy/_compat/**.py" = ["TID251"]
