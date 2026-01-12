@@ -44,11 +44,10 @@
             "inherits": "configuration-common-linux",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "RESPOND_BUILD_EXECUTABLE": "ON",
                 "RESPOND_BUILD_TESTS": "OFF",
                 "RESPOND_CALCULATE_COVERAGE": "OFF",
                 "RESPOND_BUILD_BENCH": "OFF",
-                "RESPOND_BUILD_SHARED_LIBS": "OFF",
+                "RESPOND_BUILD_SHARED_LIBS": "ON",
                 "RESPOND_BUILD_WARNINGS": "OFF",
                 "RESPOND_SYSTEM_INCLUDES": "OFF",
                 "RESPOND_INSTALL": "ON",

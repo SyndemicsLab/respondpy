@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: register_respond.cpp                                                 //
+// File: pybind11.hpp                                                         //
 // Project: respondpy                                                         //
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
@@ -9,20 +9,25 @@
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef RESPONDPY_PYBIND_HPP_
+#define RESPONDPY_PYBIND_HPP_
 
-#include <respondpy/pybind11.hpp>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-#include <respond/respond.hpp>
+#include <sstream>
+#include <string>
 
 namespace py = pybind11;
 
-// NOLINTNEXTLINE(misc-use-internal-linkage)
-void register_respond(py::module &m) {
-    m.def("migration", &respond::Migration, "Applies the Migrating Cohort.");
-    m.def("behavior", &respond::Behavior, "Applies the Behavior Transition.");
-    m.def("intervention", &respond::Intervention,
-          "Applies the Intervention Transition.");
-    m.def("overdose", &respond::Overdose, "Applies the Overdose Transition.");
-    m.def("mortality", &respond::Mortality,
-          "Applies the Mortality Transition.");
+namespace respond {}
+
+template <class T> std::string to_string(const T &x) {
+    std::ostringstream oss;
+    oss << x;
+    return oss.str();
 }
+
+#endif // RESPONDPY_PYBIND_HPP_

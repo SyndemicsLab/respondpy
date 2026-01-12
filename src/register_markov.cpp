@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: register_respond.cpp                                                 //
+// File: register_markov.cpp                                                  //
 // Project: respondpy                                                         //
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
@@ -12,17 +12,21 @@
 
 #include <respondpy/pybind11.hpp>
 
-#include <respond/respond.hpp>
+#include <respond/markov.hpp>
 
 namespace py = pybind11;
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
-void register_respond(py::module &m) {
-    m.def("migration", &respond::Migration, "Applies the Migrating Cohort.");
-    m.def("behavior", &respond::Behavior, "Applies the Behavior Transition.");
-    m.def("intervention", &respond::Intervention,
-          "Applies the Intervention Transition.");
-    m.def("overdose", &respond::Overdose, "Applies the Overdose Transition.");
-    m.def("mortality", &respond::Mortality,
-          "Applies the Mortality Transition.");
+void register_markov(py::module &m) {
+    py::class_<respond::Markov> markov(m, "Markov");
+    markov
+        .def(py::init(&respond::Markov::Create),
+             pybind11::arg("log_name") = "console")
+        .def("set_state", &respond::Markov::SetState)
+        .def("get_state", &respond::Markov::GetState)
+        .def("set_transitions", &respond::Markov::SetTransitions)
+        .def("get_transitions", &respond::Markov::GetTransitions)
+        .def("add_transition", &respond::Markov::AddTransition)
+        .def("run", &respond::Markov::Run)
+        .def("get_run_results", &respond::Markov::GetRunResults);
 }
