@@ -16,7 +16,7 @@ import collections.abc
 import numpy
 import numpy.typing
 
-from .types import HistoryStamp
+from .types import HistoryStamp, vector_1d, vector_of_matrices, transition_function, transition
 
 
 class Markov:
@@ -27,7 +27,7 @@ class Markov:
     def __init__(self, log_name: str = 'console') -> None:
         ...
 
-    def add_transition(self, transition: tuple[..., -1, 1, 0, -1, ..., collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]]) -> None:
+    def add_transition(self, transition: transition) -> None:
         """
         Append a transition to the sequence of transitions.
 
@@ -41,7 +41,7 @@ class Markov:
     def get_state(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
         "Getter for the state vector."
 
-    def get_transitions(self) -> list[tuple[..., -1, 1, 0, -1, ..., list[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, n]"]]]]:
+    def get_transitions(self) -> list[transition]:
         "Getter for the transition operations."
 
     def run(self, num_steps: typing.SupportsInt) -> None:
@@ -52,7 +52,7 @@ class Markov:
           num_steps: The number of steps to run through the model.
         """
 
-    def set_state(self, state_vector: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def set_state(self, state_vector: vector_1d) -> None:
         """
         Setter for the state vector.
 
@@ -60,7 +60,7 @@ class Markov:
           state_vector: The matrix describing the model state.
         """
 
-    def set_transitions(self, transitions: collections.abc.Sequence[tuple[..., -1, 1, 0, -1, ..., collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]]]) -> None:
+    def set_transitions(self, transitions: collections.abc.Sequence[transition]) -> None:
         """
         Setter for vector of transitions.
 

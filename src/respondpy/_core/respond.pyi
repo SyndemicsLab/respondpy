@@ -10,20 +10,18 @@
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-import typing
-import collections.abc
-
-import numpy
-import numpy.typing
+from .types import vector_1d, vector_of_matrices
 
 
-def migration(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def migration(
+        state: vector_1d,
+        transition: vector_of_matrices) -> vector_1d:
     """
     Applies the Migrating Cohort.
     """
 
 
-def behavior(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def behavior(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
     """
     Applies the Behavior Transition.
 
@@ -33,7 +31,7 @@ def behavior(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m,
     """
 
 
-def intervention(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def intervention(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
     """
     Applies the Intervention Transition.
 
@@ -42,13 +40,13 @@ def intervention(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, 
     """
 
 
-def overdose(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def overdose(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
     """
     Applies the Overdose Transition.
     """
 
 
-def mortality(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def mortality(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
     """
     Applies the Mortality Transition.
     """
