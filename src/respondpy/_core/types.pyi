@@ -16,6 +16,17 @@ import collections.abc
 import numpy
 import numpy.typing
 
+vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
+                                               numpy.float64, "[m, 1]"]
+
+vector_of_matrices: typing.TypeAlias = collections.abc.Sequence[
+    typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]
+
+transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
+                                                         vector_of_matrices], vector_1d]
+
+transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
+
 
 class HistoryStamp:
     """
@@ -31,24 +42,24 @@ class HistoryStamp:
         ...
 
     @property
-    def intervention_admissions(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def intervention_admissions(self) -> vector_1d:
         "The matrix containing intervention admission history."
     @intervention_admissions.setter
-    def intervention_admissions(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def intervention_admissions(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def overdoses(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def overdoses(self) -> vector_1d:
         "The matrix containing overdose history."
     @overdoses.setter
-    def overdoses(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def overdoses(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def state(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def state(self) -> vector_1d:
         "The matrix containing state history"
     @state.setter
-    def state(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def state(self, arg0: vector_1d) -> None:
         ...
 
 
@@ -68,38 +79,38 @@ class CostStamp:
         ...
 
     @property
-    def fatal_overdoses(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def fatal_overdoses(self) -> vector_1d:
         "The matrix containing fatal overdose cost information."
     @fatal_overdoses.setter
-    def fatal_overdoses(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def fatal_overdoses(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def healthcare(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def healthcare(self) -> vector_1d:
         "The matrix containing healthcare cost information."
     @healthcare.setter
-    def healthcare(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def healthcare(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def non_fatal_overdoses(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def non_fatal_overdoses(self) -> vector_1d:
         "The matrix containing non-fatal overdose cost information."
     @non_fatal_overdoses.setter
-    def non_fatal_overdoses(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def non_fatal_overdoses(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def pharmaceuticals(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def pharmaceuticals(self) -> vector_1d:
         "The matrix containing pharmaceutical cost information."
     @pharmaceuticals.setter
-    def pharmaceuticals(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def pharmaceuticals(self, arg0: vector_1d) -> None:
         ...
 
     @property
-    def treatments(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def treatments(self) -> vector_1d:
         "The matrix containing treatment cost information."
     @treatments.setter
-    def treatments(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def treatments(self, arg0: vector_1d) -> None:
         ...
 
 

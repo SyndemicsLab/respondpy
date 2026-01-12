@@ -13,12 +13,10 @@
 import typing
 import collections.abc
 
-import numpy.typing
-
-from .types import CostStamp, HistoryStamp, UtilityType
+from .types import CostStamp, HistoryStamp, UtilityType, vector_1d
 
 
-def discount(data: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], discount_rate: typing.SupportsFloat, week: typing.SupportsInt, is_discrete: bool) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def discount(data: vector_1d, discount_rate: typing.SupportsFloat, week: typing.SupportsInt, is_discrete: bool) -> vector_1d:
     """
     Calculates the Discount for the provided Vector given the discount rate, week, and flag to indicate if it is discrete or not.
     """
@@ -30,31 +28,31 @@ def discount_cost_stamp(cost_stamp: CostStamp, discount_rate: typing.SupportsFlo
     """
 
 
-def stamp_costs(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], healthcare_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], aod_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], fod_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], pharma_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], treatment_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> CostStamp:
+def stamp_costs(state: vector_1d, healthcare_costs: vector_1d, aod_costs: vector_1d, fod_costs: vector_1d, pharma_costs: vector_1d, treatment_costs: vector_1d) -> CostStamp:
     """
     Build a Cost Stamp.
     """
 
 
-def stamp_utilities(state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], utility: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def stamp_utilities(state: vector_1d, utility: vector_1d) -> vector_1d:
     """
     Build a Utility Stamp.
     """
 
 
-def stamp_costs_over_time(history_over_time: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], healthcare_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], aod_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], fod_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], pharma_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], treatment_costs: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], discount: bool, discount_rate: typing.SupportsFloat) -> dict[int, CostStamp]:
+def stamp_costs_over_time(history_over_time: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], healthcare_costs: vector_1d, aod_costs: vector_1d, fod_costs: vector_1d, pharma_costs: vector_1d, treatment_costs: vector_1d, discount: bool, discount_rate: typing.SupportsFloat) -> dict[int, CostStamp]:
     """
     Stamp costs over a history time period.
     """
 
 
-def stamp_utilities_over_time(history: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], utility: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], util_type: UtilityType, discount: bool, discount_rate: typing.SupportsFloat) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+def stamp_utilities_over_time(history: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], utility: vector_1d, util_type: UtilityType, discount: bool, discount_rate: typing.SupportsFloat) -> vector_1d:
     """
     Stamp utilities over a history time period.
     """
 
 
-def calculate_perspectives(history_over_time: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], perspectives: collections.abc.Sequence[str], healthcare_costs: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]], aod_costs: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]], fod_costs: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]], pharma_costs: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]], treatment_costs: collections.abc.Sequence[typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]], discount: bool, discount_rate: typing.SupportsFloat) -> dict[str, dict[int, CostStamp]]:
+def calculate_perspectives(history_over_time: collections.abc.Mapping[typing.SupportsInt, HistoryStamp], perspectives: collections.abc.Sequence[str], healthcare_costs: collections.abc.Sequence[vector_1d], aod_costs: collections.abc.Sequence[vector_1d], fod_costs: collections.abc.Sequence[vector_1d], pharma_costs: collections.abc.Sequence[vector_1d], treatment_costs: collections.abc.Sequence[vector_1d], discount: bool, discount_rate: typing.SupportsFloat) -> dict[str, dict[int, CostStamp]]:
     """
     Calculate the Cost Stamps for the given perspectives.
     """
