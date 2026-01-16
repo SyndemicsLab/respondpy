@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-12                                                    #
+# Last Modified: 2026-01-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -18,9 +18,10 @@ import collections.abc
 import numpy
 import numpy.typing
 
-from respondpy.sqlite_eigen import (
-    get_init_cohort_from_db, get_population_change_from_db, get_intervention_transitions_from_db, get_behavior_transitions_from_db, get_overdose_from_db, get_fatal_overdose_from_db, get_background_mortality_from_db, get_smr_from_db
-)
+from .data.parameters import Parameter
+
+from .io.reading import get_parameter_by_id_and_time, get_state_names
+from .io.writing import insert_parameter
 
 from ._core.cost_effectiveness import (  # pylint: disable=import-error,no-name-in-module
     discount, discount_cost_stamp, stamp_costs, stamp_utilities, stamp_costs_over_time, stamp_utilities_over_time, calculate_perspectives, calculate_life_years, calculate_total_costs
@@ -57,6 +58,7 @@ transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
 transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
 
 __all__ = [
+    "Parameter",
     "CostStamp",
     "CreationStatus",
     "HistoryStamp",
@@ -93,14 +95,9 @@ __all__ = [
     "stamp_costs_over_time",
     "stamp_utilities",
     "stamp_utilities_over_time",
-    "get_init_cohort_from_db",
-    "get_population_change_from_db",
-    "get_intervention_transitions_from_db",
-    "get_behavior_transitions_from_db",
-    "get_overdose_from_db",
-    "get_fatal_overdose_from_db",
-    "get_background_mortality_from_db",
-    "get_smr_from_db"
+    "get_parameter_by_id_and_time",
+    "get_state_names",
+    "insert_parameter"
 ]
 
 
