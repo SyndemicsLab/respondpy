@@ -4,7 +4,7 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-16                                                    #
+# Last Modified: 2026-01-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -61,7 +61,7 @@ def _get_column_order(
     Returns:
         str: String representing the SQL ORDER BY clause.
     """
-    order_clause = f"CASE\n"
+    order_clause = "CASE\n"
     for idx, v in enumerate(values):
         order_clause += f"WHEN {col_name} = \'{v}\' THEN {idx}\n"
     order_clause += f"ELSE {len(values)}\n END"
@@ -70,12 +70,12 @@ def _get_column_order(
 
 def _get_initial_cohort_by_id(
         db: str | Path,
-        cohort_id: int = 1
+        sample_id: int = 1
 ) -> tuple[list, list]:
     """Get the initial cohort from the database as a numpy array.
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
     Returns:
         tuple[list, list]: Initial cohort as a numpy array.
     """
@@ -90,11 +90,11 @@ def _get_initial_cohort_by_id(
         FROM initial_population AS ip
         INNER JOIN intervention AS i ON ip.intervention = i.id
         INNER JOIN behavior AS b ON ip.behavior = b.id
-        WHERE cohort = ?
+        WHERE sample = ?
         ORDER BY
         {i_order}, {b_order}
         """
-    cur.execute(stmt, str(cohort_id))
+    cur.execute(stmt, str(sample_id))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -103,13 +103,13 @@ def _get_initial_cohort_by_id(
 
 def _get_migration_by_id_and_timestep(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the change in population from the database as a numpy array.
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
     Returns:
         tuple[list, list]: Initial cohort as a numpy array.
@@ -125,11 +125,11 @@ def _get_migration_by_id_and_timestep(
         FROM population_change AS pc
         INNER JOIN intervention AS i ON pc.intervention = i.id
         INNER JOIN behavior AS b ON pc.behavior = b.id
-        WHERE cohort = ? AND time = ? 
+        WHERE sample = ? AND time = ? 
         ORDER BY
         {i_order}, {b_order}
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -138,14 +138,14 @@ def _get_migration_by_id_and_timestep(
 
 def _get_intervention_trans_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the intervention transitions from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -165,11 +165,11 @@ def _get_intervention_trans_by_id_and_time(
         INNER JOIN intervention AS ii ON it.initial_intervention = ii.id
         INNER JOIN intervention AS ni ON it.new_intervention = ni.id
         INNER JOIN behavior AS b ON it.behavior = b.id
-        WHERE cohort = ? AND time = ?
+        WHERE sample = ? AND time = ?
         ORDER BY
         {ii_order}, {ni_order}, {b_order}
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -178,14 +178,14 @@ def _get_intervention_trans_by_id_and_time(
 
 def _get_behavior_trans_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the behavior transitions from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -205,11 +205,11 @@ def _get_behavior_trans_by_id_and_time(
         INNER JOIN intervention AS i ON it.intervention = i.id
         INNER JOIN behavior AS ib ON it.initial_behavior = ib.id
         INNER JOIN behavior AS nb ON it.new_behavior = nb.id
-        WHERE cohort = ? AND time = ? 
+        WHERE sample = ? AND time = ? 
         ORDER BY
         {i_order}, {ib_order}, {nb_order}
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -218,14 +218,14 @@ def _get_behavior_trans_by_id_and_time(
 
 def _get_od_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the overdose probabilities from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -242,11 +242,11 @@ def _get_od_by_id_and_time(
         FROM overdose AS od
         INNER JOIN intervention AS i ON od.intervention = i.id
         INNER JOIN behavior AS b ON od.behavior = b.id
-        WHERE cohort = ? AND time = ?
+        WHERE sample = ? AND time = ?
         ORDER BY
         {i_order}, {b_order}
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -255,14 +255,14 @@ def _get_od_by_id_and_time(
 
 def _get_fod_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the fatal overdose probabilities from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -280,10 +280,10 @@ def _get_fod_by_id_and_time(
         FROM overdose_fatality AS fod
         INNER JOIN intervention AS i ON fod.intervention = i.id
         INNER JOIN behavior AS b ON fod.behavior = b.id
-        WHERE cohort = ? AND time = ?
+        WHERE sample = ? AND time = ?
         ORDER BY
         {i_order}, {b_order}
-        """, (str(cohort_id), str(time)))
+        """, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -292,14 +292,14 @@ def _get_fod_by_id_and_time(
 
 def _get_bg_death_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the background mortality probabilities from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -310,9 +310,9 @@ def _get_bg_death_by_id_and_time(
     stmt = """
         SELECT probability
         FROM background_mortality
-        WHERE cohort = ? AND time = ?
+        WHERE sample = ? AND time = ?
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -321,14 +321,14 @@ def _get_bg_death_by_id_and_time(
 
 def _get_smr_by_id_and_time(
         db: str | Path,
-        cohort_id: int = 1,
+        sample_id: int = 1,
         time: int = 52
 ) -> tuple[list, list]:
     """Get the SMRs from the database as a numpy array.
 
     Args:
         db (str, Path): Path to the SQLite database.
-        cohort_id (int, optional): Cohort ID to retrieve. Defaults to 1.
+        sample_id (int, optional): Sample ID to retrieve. Defaults to 1.
         time (int, optiona): Time point to retrieve. Defaults to 52.
 
     Returns:
@@ -345,11 +345,11 @@ def _get_smr_by_id_and_time(
         FROM smr
         INNER JOIN intervention AS i ON smr.intervention = i.id
         INNER JOIN behavior AS b ON smr.behavior = b.id
-        WHERE cohort = ? AND time = ?
+        WHERE sample = ? AND time = ?
         ORDER BY
         {i_order}, {b_order}
         """
-    cur.execute(stmt, (str(cohort_id), str(time)))
+    cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
     con.close()
@@ -361,7 +361,7 @@ def _get_smr_by_id_and_time(
 def get_parameter_by_id_and_time(
         param: Parameter,
         db: str | Path,
-        cohort_id: int,
+        sample_id: int,
         time: int
 ) -> tuple[list, list]:
     if not Path(db).is_file():
@@ -369,21 +369,21 @@ def get_parameter_by_id_and_time(
             f"The database file was not found when attempting to retrieve parameters by id and time! File specified: {db}.")
 
     if param == Parameter.INITIAL_COHORT:
-        return _get_initial_cohort_by_id(db, cohort_id)
+        return _get_initial_cohort_by_id(db, sample_id)
     if param == Parameter.MIGRATION_COHORT:
-        return _get_migration_by_id_and_timestep(db, cohort_id, time)
+        return _get_migration_by_id_and_timestep(db, sample_id, time)
     if param == Parameter.INTERVENTION_TRANSITION_PROBABILITY:
-        return _get_intervention_trans_by_id_and_time(db, cohort_id, time)
+        return _get_intervention_trans_by_id_and_time(db, sample_id, time)
     if param == Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
-        return _get_behavior_trans_by_id_and_time(db, cohort_id, time)
+        return _get_behavior_trans_by_id_and_time(db, sample_id, time)
     if param == Parameter.STANDARD_MORTALITY_RATIO:
-        return _get_smr_by_id_and_time(db, cohort_id, time)
+        return _get_smr_by_id_and_time(db, sample_id, time)
     if param == Parameter.BACKGROUND_DEATH_PROBABILITY:
-        return _get_bg_death_by_id_and_time(db, cohort_id, time)
+        return _get_bg_death_by_id_and_time(db, sample_id, time)
     if param == Parameter.OVERDOSE_PROBABILITY:
-        return _get_od_by_id_and_time(db, cohort_id, time)
+        return _get_od_by_id_and_time(db, sample_id, time)
     if param == Parameter.OVERDOSE_FATALITY_PROBABILITY:
-        return _get_fod_by_id_and_time(db, cohort_id, time)
+        return _get_fod_by_id_and_time(db, sample_id, time)
     raise ValueError(
         f"Attempting to extract invalid parameter of value {param}!")
 
