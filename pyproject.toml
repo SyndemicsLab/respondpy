@@ -40,6 +40,8 @@ dev = [
     { include-group = "test" },
     "ipykernel",
     "nbconvert",
+    "polars>=1.37.1",
+    "pytest>=9.0.2",
     "setuptools_scm",
     "typer",
     "uhi",
