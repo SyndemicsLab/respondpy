@@ -97,7 +97,9 @@ __all__ = [
     "stamp_utilities_over_time",
     "get_parameter_by_id_and_time",
     "get_state_names",
-    "insert_parameter"
+    "insert_parameter",
+    "get_behaviors",
+    "get_interventions"
 ]
 
 
