@@ -4,7 +4,7 @@
 # Created Date: 2026-01-16                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-16                                                    #
+# Last Modified: 2026-01-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -55,7 +55,7 @@ class TestWriting:
     def test_insert_initial_cohort(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1],
+            "sample": [1, 1, 1, 1],
             "intervention": [1, 1, 2, 2],
             "behavior": [1, 2, 1, 2],
             "count": [100, 200, 300, 400]
@@ -68,7 +68,7 @@ class TestWriting:
     def test_insert_migrating_cohort(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1],
+            "sample": [1, 1, 1, 1],
             "intervention": [1, 1, 2, 2],
             "behavior": [1, 2, 1, 2],
             "time": [1, 1, 1, 1],
@@ -82,12 +82,12 @@ class TestWriting:
     def test_insert_intervention_transition(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1, 1, 1, 1, 1],
+            "sample": [1, 1, 1, 1, 1, 1, 1, 1],
             "behavior": [1, 2, 1, 2, 1, 2, 1, 2],
             "time": [1, 1, 1, 1, 1, 1, 1, 1],
             "initial_intervention": [1, 1, 2, 2, 1, 1, 2, 2],
             "new_intervention": [1, 1, 1, 1, 2, 2, 2, 2],
-            "count": [100, 200, 300, 400, 100, 200, 300, 400]
+            "probability": [.25, .25, .25, .25, .25, .25, .25, .25]
         })
         insert_parameter(df.rows(),
                          db_file, Parameter.INTERVENTION_TRANSITION_PROBABILITY)
@@ -98,12 +98,12 @@ class TestWriting:
     def test_insert_behavior_transition(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1, 1, 1, 1, 1],
+            "sample": [1, 1, 1, 1, 1, 1, 1, 1],
             "intervention": [1, 2, 1, 2, 1, 2, 1, 2],
             "time": [1, 1, 1, 1, 1, 1, 1, 1],
             "initial_behavior": [1, 1, 2, 2, 1, 1, 2, 2],
             "new_behavior": [1, 1, 1, 1, 2, 2, 2, 2],
-            "count": [100, 200, 300, 400, 100, 200, 300, 400]
+            "probability": [.25, .25, .25, .25, .25, .25, .25, .25]
         })
         insert_parameter(df.rows(),
                          db_file, Parameter.BEHAVIOR_TRANSITION_PROBABILITY)
@@ -114,7 +114,7 @@ class TestWriting:
     def test_insert_smr(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1],
+            "sample": [1, 1, 1, 1],
             "intervention": [1, 1, 2, 2],
             "behavior": [1, 2, 1, 2],
             "time": [1, 1, 1, 1],
@@ -128,7 +128,7 @@ class TestWriting:
     def test_insert_background_mortality(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1],
+            "sample": [1],
             "time": [1],
             "ratio": [100]
         })
@@ -141,7 +141,7 @@ class TestWriting:
         db_file = setup
         df = pl.DataFrame({
             "intervention": [1, 1, 2, 2],
-            "cohort": [1, 1, 1, 1],
+            "sample": [1, 1, 1, 1],
             "behavior": [1, 2, 1, 2],
             "time": [1, 1, 1, 1],
             "probability": [100, 200, 300, 400]
@@ -154,7 +154,7 @@ class TestWriting:
     def test_insert_fatal_overdose(self, setup):
         db_file = setup
         df = pl.DataFrame({
-            "cohort": [1, 1, 1, 1],
+            "sample": [1, 1, 1, 1],
             "intervention": [1, 1, 2, 2],
             "behavior": [1, 2, 1, 2],
             "time": [1, 1, 1, 1],
