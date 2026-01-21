@@ -4,7 +4,7 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-20                                                    #
+# Last Modified: 2026-01-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -386,6 +386,30 @@ def get_parameter_by_id_and_time(
         return _get_fod_by_id_and_time(db, sample_id, time)
     raise ValueError(
         f"Attempting to extract invalid parameter of value {param}!")
+
+
+def get_interventions(db: str | Path) -> list[str]:
+    """Get the list of interventions the describe the model.
+
+    Args:
+        db (str | Path): Path to the SQLite database.
+
+    Returns:
+        list[str]: A list of intervention names.
+    """
+    return _get_states(db, state="intervention")
+
+
+def get_behaviors(db: str | Path) -> list[str]:
+    """Get the list of behaviors the describe the model.
+
+    Args:
+        db (str | Path): Path to the SQLite database.
+
+    Returns:
+        list[str]: A list of behavior names.
+    """
+    return _get_states(db, state="behavior")
 
 
 def get_state_names(
