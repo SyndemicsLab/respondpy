@@ -4,7 +4,7 @@
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-16                                                    #
+# Last Modified: 2026-01-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -15,7 +15,7 @@ from numpy.testing import assert_array_equal
 
 import pytest
 
-from respondpy import get_parameter_by_id_and_time, get_state_names
+from respondpy import get_parameter_by_id_and_time, get_state_names, get_cohorts
 from respondpy import Parameter
 
 
@@ -200,3 +200,13 @@ class TestReading:
         with pytest.raises(FileNotFoundError, match="The database file was not found when attempting to retrieve parameters by id and time! File specified:"):
             get_parameter_by_id_and_time(
                 Parameter.OVERDOSE_FATALITY_PROBABILITY, "", 1, 1)
+
+    def test_get_cohorts(self, setup):
+        """Test the ability to get cohorts from the database
+        """
+        db_file = setup
+        expected_cols = ["id", "description", "background_mortality_sample", "behavior_transition_sample", "initial_population_sample",
+                         "intervention_transition_sample", "overdose_sample", "overdose_fatality_sample", "population_change_sample", "smr_sample"]
+        expected_vals = [(1, "Test Cohort 1", 1, 1, 1, 1, 1, 1, 1, 1)]
+        r_cols, r_vals = get_cohorts(db_file)
+        assert (expected_cols, expected_vals) == (r_cols, r_vals)

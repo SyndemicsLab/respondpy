@@ -438,3 +438,28 @@ def get_state_names(
     result = cur.fetchall()
     con.close()
     return result
+
+
+def get_cohorts(db: str | Path) -> tuple[list[str], list]:
+    """Get all the cohorts from the database.
+
+    Args:
+        db (str | Path): Path to the database.
+
+    Returns:
+        tuple[list[str], list]: a tuple of the column names and then a list of the cohort details.
+    """
+    if not Path(db).is_file():
+        raise FileNotFoundError(
+            f"The database file was not found when attempting to retrieve state names! File specified: {db}.")
+    con = sqlite3.connect(db)
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT * FROM cohort;
+        """
+    )
+    column_names = [description[0] for description in cur.description]
+    result = cur.fetchall()
+    con.close()
+    return column_names, result
