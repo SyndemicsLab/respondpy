@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-21                                                    #
+# Last Modified: 2026-01-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -20,7 +20,7 @@ import numpy.typing
 
 from .data.parameters import Parameter
 
-from .io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts
+from .io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table
 from .io.writing import insert_parameter
 
 from ._core.cost_effectiveness import (  # pylint: disable=import-error,no-name-in-module
@@ -100,6 +100,8 @@ __all__ = [
     "insert_parameter",
     "get_behaviors",
     "get_interventions",
+    "get_behavior_table",
+    "get_intervention_table",
     "get_cohorts"
 ]
 
