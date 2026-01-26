@@ -4,7 +4,7 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-21                                                    #
+# Last Modified: 2026-01-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -44,6 +44,35 @@ def _get_states(
     cur = con.cursor()
     cur.execute(stmt)
     result = [row[0] for row in cur.fetchall()]
+    con.close()
+    return result
+
+
+def _get_state_table(
+        db: str | Path,
+        state: Literal["intervention", "behavior"]
+) -> list[tuple[int, str]]:
+    """Getter for the state tables from the SQLite database.
+
+    Args:
+        db (str, sqlite3.Connection): Path to the SQLite database OR the sqlite3
+            connection.
+        state (str, optional): Either "intervention" or "behavior". The specific
+            state to look for in the database. Defaults to "intervention".
+
+    Raises:
+        ValueError: If the state is not "intervention" or "behavior" raise an
+            error. This prevents SQL injections.
+
+    Returns:
+        list[str]: List of possible state names from the table in the SQLite
+            database.
+    """
+    stmt = f"SELECT id, name FROM {state} ORDER BY id"
+    con = sqlite3.connect(db)
+    cur = con.cursor()
+    cur.execute(stmt)
+    result = [(row[0], row[1]) for row in cur.fetchall()]
     con.close()
     return result
 
@@ -410,6 +439,30 @@ def get_behaviors(db: str | Path) -> list[str]:
         list[str]: A list of behavior names.
     """
     return _get_states(db, state="behavior")
+
+
+def get_intervention_table(db: str | Path) -> list[tuple[int, str]]:
+    """Return the intervention table as a list of id, name tuples
+
+    Args:
+        db (str | Path): Path to the SQLite database.
+
+    Returns:
+        list[tuple[int, str]]: A list of tuples containing id, name interventions.
+    """
+    return _get_state_table(db, state="intervention")
+
+
+def get_behavior_table(db: str | Path) -> list[tuple[int, str]]:
+    """Return the intervention table as a list of id, name tuples
+
+    Args:
+        db (str | Path): Path to the SQLite database.
+
+    Returns:
+        list[tuple[int, str]]: A list of tuples containing id, name behaviors.
+    """
+    return _get_state_table(db, state="behavior")
 
 
 def get_state_names(

@@ -18,6 +18,7 @@ license = "AGPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 dependencies = [
     "numpy",
+    "pytest-cov>=7.0.0",
 ]
 
 [project.urls]
@@ -161,6 +162,12 @@ inherit.environment = "append"
 environment.UV_INDEX = "https://www.graalvm.org/python/wheels/"
 environment.UV_INDEX_STRATEGY = "unsafe-best-match"
 test-command = "pytest --benchmark-disable tests"
+
+[tool.coverage.run]
+omit = [
+    "src/respondpy/test.py",
+    "tests/*"
+]
 
 [tool.pylint]
 py-version = "3.12"
