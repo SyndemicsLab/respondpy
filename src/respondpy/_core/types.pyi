@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-08                                                    #
+# Last Modified: 2026-01-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -23,7 +23,7 @@ vector_of_matrices: typing.TypeAlias = collections.abc.Sequence[
     typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]
 
 transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
-                                                         vector_of_matrices], vector_1d]
+                                                         vector_of_matrices, HistoryStamp], vector_1d]
 
 transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
 
@@ -34,7 +34,9 @@ class HistoryStamp:
 
     Members:
       state
-      overdoses
+      total_overdoses
+      fatal_overdoses
+      background_mortality
       intervention_admissions
     """
 
@@ -49,10 +51,24 @@ class HistoryStamp:
         ...
 
     @property
-    def overdoses(self) -> vector_1d:
+    def total_overdoses(self) -> vector_1d:
         "The matrix containing overdose history."
-    @overdoses.setter
-    def overdoses(self, arg0: vector_1d) -> None:
+    @total_overdoses.setter
+    def total_overdoses(self, arg0: vector_1d) -> None:
+        ...
+
+    @property
+    def fatal_overdoses(self) -> vector_1d:
+        "The matrix containing fatal overdose history."
+    @fatal_overdoses.setter
+    def fatal_overdoses(self, arg0: vector_1d) -> None:
+        ...
+
+    @property
+    def background_mortality(self) -> vector_1d:
+        "The matrix containing background_mortality history."
+    @background_mortality.setter
+    def background_mortality(self, arg0: vector_1d) -> None:
         ...
 
     @property

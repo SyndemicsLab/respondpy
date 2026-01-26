@@ -4,7 +4,7 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-01-08                                                  //
+// Last Modified: 2026-01-26                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -23,7 +23,10 @@ void register_types(py::module &m) {
     py::class_<HistoryStamp>(m, "HistoryStamp")
         .def(py::init())
         .def_readwrite("state", &HistoryStamp::state)
-        .def_readwrite("overdoses", &HistoryStamp::overdoses)
+        .def_readwrite("total_overdoses", &HistoryStamp::total_overdoses)
+        .def_readwrite("fatal_overdoses", &HistoryStamp::fatal_overdoses)
+        .def_readwrite("background_mortality",
+                       &HistoryStamp::background_mortality)
         .def_readwrite("intervention_admissions",
                        &HistoryStamp::intervention_admissions);
 
