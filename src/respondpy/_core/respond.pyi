@@ -4,49 +4,51 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-08                                                    #
+# Last Modified: 2026-01-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-from .types import vector_1d, vector_of_matrices
+from .types import vector_1d, vector_of_matrices, HistoryStamp
 
 
 def migration(
         state: vector_1d,
-        transition: vector_of_matrices) -> vector_1d:
+        transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
     """
     Applies the Migrating Cohort.
     """
 
 
-def behavior(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
+def behavior(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
     """
     Applies the Behavior Transition.
 
     Args:
       state: The state vector
       transition: A sequence of length 1 containing the transition matrix for behavior changes.
+      history: A HistoryStamp variable to record any changes.
     """
 
 
-def intervention(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
+def intervention(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
     """
     Applies the Intervention Transition.
 
     Args:
       transition: Sequence of length 2. Contains transition matrix for intervention changes and then the behavior changes once going through an intervention change.
+      history: A HistoryStamp variable to record any changes.
     """
 
 
-def overdose(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
+def overdose(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
     """
     Applies the Overdose Transition.
     """
 
 
-def mortality(state: vector_1d, transition: vector_of_matrices) -> vector_1d:
+def mortality(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
     """
     Applies the Mortality Transition.
     """
