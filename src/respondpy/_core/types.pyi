@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-26                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -15,6 +15,10 @@ import collections.abc
 
 import numpy
 import numpy.typing
+
+# ensure these match the types defined in respondpy/__init__.py
+# They are included there because we expose the types for usage in the library
+# (this only works for type hinting, not usage)
 
 vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
                                                numpy.float64, "[m, 1]"]

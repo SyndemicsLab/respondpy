@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-23                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -46,6 +46,9 @@ from ._core.types import (  # pylint: disable=import-error,no-name-in-module
 # pylint: disable-next=import-error
 from .version import version as __version__
 
+# ensure these match the types defined in _core/types.pyi
+# They are included there because we use the types in type hinting
+
 vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
                                                numpy.float64, "[m, 1]"]
 
@@ -53,7 +56,7 @@ vector_of_matrices: typing.TypeAlias = collections.abc.Sequence[
     typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]
 
 transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
-                                                         vector_of_matrices], vector_1d]
+                                                         vector_of_matrices, HistoryStamp], vector_1d]
 
 transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
 
