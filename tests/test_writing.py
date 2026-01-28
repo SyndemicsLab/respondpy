@@ -4,7 +4,7 @@
 # Created Date: 2026-01-16                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-26                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 import polars as pl
 
-from respondpy import insert_parameter, Parameter
+from respondpy import insert_parameter, Parameter, insert_cohort
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -179,6 +179,23 @@ class TestWriting:
         with pytest.raises(FileNotFoundError, match="The specified database could not be found:"):
             insert_parameter([], "",
                              Parameter.OVERDOSE_FATALITY_PROBABILITY)
+
+    def test_insert_cohort(self, setup):
+        df = pl.DataFrame({
+            "description": ["sample 1", "sample 2"],
+            "background_mortality_sample": [1, 1],
+            "behavior_transition_sample": [1, 1],
+            "initial_population_sample": [1, 1],
+            "intervention_transition_sample": [1, 1],
+            "overdose_sample": [1, 1],
+            "overdose_fatality_sample": [1, 1],
+            "population_change_sample": [1, 1],
+            "smr_sample": [1, 1]
+        })
+
+        insert_cohort(df.rows(), setup)
+        # since a cohort is already present we +1 the height
+        assert self._count_rows(setup, "cohort") == df.height+1
 
 
 class TestInvalidWriting:
