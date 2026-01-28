@@ -11,6 +11,7 @@
 ################################################################################
 
 from __future__ import annotations
+from .version import version as __version__
 
 import typing
 import collections.abc
@@ -20,8 +21,8 @@ import numpy.typing
 
 from .data.parameters import Parameter
 
-from .io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table
-from .io.writing import insert_parameter
+from .io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table, get_sample_ids_by_table
+from .io.writing import insert_parameter, insert_cohort
 
 from ._core.cost_effectiveness import (  # pylint: disable=import-error,no-name-in-module
     discount, discount_cost_stamp, stamp_costs, stamp_utilities, stamp_costs_over_time, stamp_utilities_over_time, calculate_perspectives, calculate_life_years, calculate_total_costs
@@ -43,12 +44,7 @@ from ._core.types import (  # pylint: disable=import-error,no-name-in-module
     HistoryStamp, CostStamp, UtilityType, ResultSets, Totals, kMin, kMult
 )
 
-# pylint: disable-next=import-error
-from .version import version as __version__
-
-# ensure these match the types defined in _core/types.pyi
-# They are included there because we use the types in type hinting
-
+# Duplicate of _core/types.pyi because import fails
 vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
                                                numpy.float64, "[m, 1]"]
 
@@ -59,6 +55,9 @@ transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
                                                          vector_of_matrices, HistoryStamp], vector_1d]
 
 transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
+
+# pylint: disable-next=import-error
+
 
 __all__ = [
     "Parameter",
@@ -105,7 +104,8 @@ __all__ = [
     "get_interventions",
     "get_behavior_table",
     "get_intervention_table",
-    "get_cohorts"
+    "get_cohorts",
+    "get_sample_ids_by_table"
 ]
 
 

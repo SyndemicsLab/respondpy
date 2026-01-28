@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-16                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -91,6 +91,15 @@ def _insert_migration_count(data: list[tuple], db: str | Path) -> None:
     _connect_and_execute(data, db, sql_stmt)
 
 # External Functions
+
+
+def insert_cohort(data: list, db: str | Path) -> None:
+    if not _check_valid_list(data, 9):
+        return
+    sql_stmt = """
+    INSERT INTO cohort (description, background_mortality_sample, behavior_transition_sample, initial_population_sample,intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES (?,?,?,?,?,?,?,?,?)
+    """
+    _connect_and_execute(data, db, sql_stmt)
 
 
 def insert_parameter(
