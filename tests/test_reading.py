@@ -4,7 +4,7 @@
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-26                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -15,7 +15,7 @@ from numpy.testing import assert_array_equal
 
 import pytest
 
-from respondpy import get_parameter_by_id_and_time, get_state_names, get_cohorts, get_interventions, get_intervention_table, get_behaviors, get_behavior_table
+from respondpy import get_parameter_by_id_and_time, get_state_names, get_cohorts, get_interventions, get_intervention_table, get_behaviors, get_behavior_table, get_sample_ids_by_table
 from respondpy import Parameter
 
 
@@ -234,3 +234,16 @@ class TestReading:
         expected = [(1, "active_injection"), (2, "nonactive_injection")]
         result = get_behavior_table(db_file)
         assert result == expected
+
+    def test_get_sample_ids_by_table(self, setup):
+        samples = get_sample_ids_by_table(setup, "behavior_transition")
+        assert samples == [1]
+
+    def test_get_sample_ids_no_table(self, setup):
+        with pytest.raises(ValueError, match="The specified table does not exist:"):
+            get_sample_ids_by_table(setup, "falalalala")
+
+    def test_get_sample_ids_sql_injection(self, setup):
+        with pytest.raises(ValueError, match="The specified table does not exist:"):
+            get_sample_ids_by_table(
+                setup, "behavior_transition; SELECT * FROM behavior_transition;")

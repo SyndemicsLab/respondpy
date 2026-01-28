@@ -4,7 +4,7 @@
 # Created Date: 2025-11-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-23                                                    #
+# Last Modified: 2026-01-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -385,6 +385,36 @@ def _get_smr_by_id_and_time(
     return col_names, result
 
 # External Functions
+
+
+def get_sample_ids_by_table(
+        db: str | Path,
+        table_name: str
+) -> list[int]:
+    if not Path(db).is_file():
+        raise FileNotFoundError(
+            f"The database file was not found when attempting to retrieve sample ids by table! File specified: {db}.")
+
+    con = sqlite3.connect(db)
+    cur = con.cursor()
+
+    # Check 2 things:
+    #   1. Does the table exist
+    #   2. Is the table_name a valid SQL string (i.e. prevent SQL injection
+    #       later)
+    cur.execute("""
+        SELECT count(name) FROM sqlite_master WHERE type='table' AND name=?
+    """, (table_name,))
+    if cur.fetchone()[0] != 1:
+        con.close()
+        raise ValueError(f"The specified table does not exist: {table_name}")
+
+    # Be very careful here, this works and isn't gonna get SQL Injection attacked because we verify the table_name in the check above.
+    stmt = f"SELECT DISTINCT sample FROM {table_name}"
+    cur.execute(stmt)
+    result = [row[0] for row in cur.fetchall()]
+    con.close()
+    return result
 
 
 def get_parameter_by_id_and_time(
