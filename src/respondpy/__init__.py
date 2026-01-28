@@ -100,6 +100,7 @@ __all__ = [
     "get_parameter_by_id_and_time",
     "get_state_names",
     "insert_parameter",
+    "insert_cohort",
     "get_behaviors",
     "get_interventions",
     "get_behavior_table",
