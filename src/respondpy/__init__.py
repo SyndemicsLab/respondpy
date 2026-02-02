@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-28                                                    #
+# Last Modified: 2026-02-02                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -13,15 +13,11 @@
 from __future__ import annotations
 from .version import version as __version__
 
-import typing
-import collections.abc
-
-import numpy
-import numpy.typing
-
 from .data.parameters import Parameter
 
-from .io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table, get_sample_ids_by_table
+from .io.reading import (
+    get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table, get_sample_ids_by_table
+)
 from .io.writing import insert_parameter, insert_cohort
 
 from ._core.cost_effectiveness import (  # pylint: disable=import-error,no-name-in-module
@@ -32,8 +28,9 @@ from ._core.logging import (  # pylint: disable=import-error,no-name-in-module
     LogType, CreationStatus, create_file_logger, log_info, log_warning, log_error, log_debug, kDebug, kError, kExists, kInfo, kNotCreated, kSuccess, kWarn
 )
 
-from ._core.markov import Markov  # pylint: disable=import-error,no-name-in-module
+# from ._core.transition import Transition  # pylint: disable=import-error,no-name-in-module
 
+from ._core.markov import Markov  # pylint: disable=import-error,no-name-in-module
 
 from ._core.respond import (  # pylint: disable=import-error,no-name-in-module
     migration, behavior, intervention, overdose, mortality
@@ -43,18 +40,6 @@ from ._core.respond import (  # pylint: disable=import-error,no-name-in-module
 from ._core.types import (  # pylint: disable=import-error,no-name-in-module
     HistoryStamp, CostStamp, UtilityType, ResultSets, Totals, kMin, kMult
 )
-
-# Duplicate of _core/types.pyi because import fails
-vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
-                                               numpy.float64, "[m, 1]"]
-
-vector_of_matrices: typing.TypeAlias = collections.abc.Sequence[
-    typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]
-
-transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
-                                                         vector_of_matrices, HistoryStamp], vector_1d]
-
-transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
 
 # pylint: disable-next=import-error
 

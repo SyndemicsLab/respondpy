@@ -4,7 +4,7 @@
 // Created Date: 2025-08-01                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-01-08                                                  //
+// Last Modified: 2026-02-02                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center             //
@@ -15,6 +15,7 @@
 namespace py = pybind11;
 
 void register_markov(py::module &m);
+void register_transition(py::module &m);
 void register_cost_effectiveness(py::module &m);
 void register_logging(py::module &m);
 void register_types(py::module &m);
@@ -23,6 +24,9 @@ void register_respond(py::module &m);
 PYBIND11_MODULE(_core, m, py::mod_gil_not_used()) {
     py::module markov = m.def_submodule("markov");
     register_markov(markov);
+
+    py::module transition = m.def_submodule("transition");
+    register_transition(transition);
 
     py::module cost_effectiveness = m.def_submodule("cost_effectiveness");
     register_cost_effectiveness(cost_effectiveness);

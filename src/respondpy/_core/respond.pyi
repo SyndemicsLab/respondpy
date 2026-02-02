@@ -4,24 +4,36 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-26                                                    #
+# Last Modified: 2026-02-02                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-from .types import vector_1d, vector_of_matrices, HistoryStamp
+import typing
+import collections.abc
+
+import numpy as np
+
+from .types import HistoryStamp
 
 
 def migration(
-        state: vector_1d,
-        transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
+        state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"],
+        transitions: collections.abc.Sequence[typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, n]"]],
+        stamp: HistoryStamp
+) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
     """
     Applies the Migrating Cohort.
     """
 
 
-def behavior(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
+def behavior(
+        state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, n]"]],
+        history: HistoryStamp
+) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
     """
     Applies the Behavior Transition.
 
@@ -32,7 +44,11 @@ def behavior(state: vector_1d, transition: vector_of_matrices, history: HistoryS
     """
 
 
-def intervention(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
+def intervention(
+        state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, n]"]],
+        history: HistoryStamp
+) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
     """
     Applies the Intervention Transition.
 
@@ -42,13 +58,21 @@ def intervention(state: vector_1d, transition: vector_of_matrices, history: Hist
     """
 
 
-def overdose(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
+def overdose(
+        state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, n]"]],
+        history: HistoryStamp
+) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
     """
     Applies the Overdose Transition.
     """
 
 
-def mortality(state: vector_1d, transition: vector_of_matrices, history: HistoryStamp) -> vector_1d:
+def mortality(
+        state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], transition: collections.abc.Sequence[typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, n]"]],
+        history: HistoryStamp
+) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
     """
     Applies the Mortality Transition.
     """

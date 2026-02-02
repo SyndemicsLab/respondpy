@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-08                                                    #
+# Last Modified: 2026-02-02                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,10 +13,10 @@
 import typing
 import collections.abc
 
-import numpy
-import numpy.typing
+import numpy as np
 
-from .types import HistoryStamp, vector_1d, vector_of_matrices, transition_function, transition
+from .types import HistoryStamp
+from .transition import Transition
 
 
 class Markov:
@@ -27,7 +27,7 @@ class Markov:
     def __init__(self, log_name: str = 'console') -> None:
         ...
 
-    def add_transition(self, transition: transition) -> None:
+    def add_transition(self, tr: Transition) -> None:
         """
         Append a transition to the sequence of transitions.
 
@@ -38,10 +38,10 @@ class Markov:
     def get_run_results(self) -> dict[int, HistoryStamp]:
         "Get the History from the simulation."
 
-    def get_state(self) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+    def get_state(self) -> typing.Annotated[np.typing.NDArray[np.float64], "[m, 1]"]:
         "Getter for the state vector."
 
-    def get_transitions(self) -> list[transition]:
+    def get_transitions(self) -> collections.abc.Sequence[Transition]:
         "Getter for the transition operations."
 
     def run(self, num_steps: typing.SupportsInt) -> None:
@@ -52,7 +52,7 @@ class Markov:
           num_steps: The number of steps to run through the model.
         """
 
-    def set_state(self, state_vector: vector_1d) -> None:
+    def set_state(self, state_vector: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         """
         Setter for the state vector.
 
@@ -60,7 +60,7 @@ class Markov:
           state_vector: The matrix describing the model state.
         """
 
-    def set_transitions(self, transitions: collections.abc.Sequence[transition]) -> None:
+    def set_transitions(self, transitions: collections.abc.Sequence[Transition]) -> None:
         """
         Setter for vector of transitions.
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
-// File: register_markov.cpp                                                  //
+// File: register_transition.cpp                                              //
 // Project: respondpy                                                         //
-// Created Date: 2026-01-08                                                   //
+// Created Date: 2026-02-02                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
 // Last Modified: 2026-02-02                                                  //
@@ -12,21 +12,16 @@
 
 #include <respondpy/pybind11.hpp>
 
-#include <respond/markov.hpp>
+#include <respond/transition.hpp>
 
 namespace py = pybind11;
+using namespace respond;
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
-void register_markov(py::module &m) {
-    py::class_<respond::Markov> markov(m, "Markov");
-    markov
-        .def(py::init(&respond::Markov::Create),
-             pybind11::arg("log_name") = "console")
-        .def("set_state", &respond::Markov::SetState)
-        .def("get_state", &respond::Markov::GetState)
-        .def("set_transitions", &respond::Markov::SetTransitions)
-        .def("get_transitions", &respond::Markov::GetTransitions)
-        .def("add_transition", &respond::Markov::AddTransition)
-        .def("run", &respond::Markov::Run)
-        .def("get_run_results", &respond::Markov::GetRunResults);
+void register_transition(py::module &m) {
+    py::class_<Transition> t(m, "Transition");
+    t.def(py::init())
+        .def_readwrite("transition_matrices", &Transition::transition_matrices)
+        .def("set_callback", &Transition::SetCallback)
+        .def("execute", &Transition::Execute);
 }

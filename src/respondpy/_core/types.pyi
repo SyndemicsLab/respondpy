@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-28                                                    #
+# Last Modified: 2026-02-02                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,19 +13,7 @@
 import typing
 import collections.abc
 
-import numpy
-import numpy.typing
-
-vector_1d: typing.TypeAlias = typing.Annotated[numpy.typing.ArrayLike,
-                                               numpy.float64, "[m, 1]"]
-
-vector_of_matrices: typing.TypeAlias = collections.abc.Sequence[
-    typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]]
-
-transition_function: typing.TypeAlias = typing.Callable[[vector_1d,
-                                                         vector_of_matrices, HistoryStamp], vector_1d]
-
-transition: typing.TypeAlias = tuple[transition_function, vector_of_matrices]
+import numpy as np
 
 
 class HistoryStamp:
@@ -44,38 +32,38 @@ class HistoryStamp:
         ...
 
     @property
-    def intervention_admissions(self) -> vector_1d:
+    def intervention_admissions(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing intervention admission history."
     @intervention_admissions.setter
-    def intervention_admissions(self, arg0: vector_1d) -> None:
+    def intervention_admissions(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def total_overdoses(self) -> vector_1d:
+    def total_overdoses(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing overdose history."
     @total_overdoses.setter
-    def total_overdoses(self, arg0: vector_1d) -> None:
+    def total_overdoses(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def fatal_overdoses(self) -> vector_1d:
+    def fatal_overdoses(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing fatal overdose history."
     @fatal_overdoses.setter
-    def fatal_overdoses(self, arg0: vector_1d) -> None:
+    def fatal_overdoses(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def background_mortality(self) -> vector_1d:
+    def background_mortality(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing background_mortality history."
     @background_mortality.setter
-    def background_mortality(self, arg0: vector_1d) -> None:
+    def background_mortality(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def state(self) -> vector_1d:
+    def state(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing state history"
     @state.setter
-    def state(self, arg0: vector_1d) -> None:
+    def state(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
 
@@ -95,38 +83,38 @@ class CostStamp:
         ...
 
     @property
-    def fatal_overdoses(self) -> vector_1d:
+    def fatal_overdoses(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing fatal overdose cost information."
     @fatal_overdoses.setter
-    def fatal_overdoses(self, arg0: vector_1d) -> None:
+    def fatal_overdoses(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def healthcare(self) -> vector_1d:
+    def healthcare(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing healthcare cost information."
     @healthcare.setter
-    def healthcare(self, arg0: vector_1d) -> None:
+    def healthcare(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def non_fatal_overdoses(self) -> vector_1d:
+    def non_fatal_overdoses(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing non-fatal overdose cost information."
     @non_fatal_overdoses.setter
-    def non_fatal_overdoses(self, arg0: vector_1d) -> None:
+    def non_fatal_overdoses(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def pharmaceuticals(self) -> vector_1d:
+    def pharmaceuticals(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing pharmaceutical cost information."
     @pharmaceuticals.setter
-    def pharmaceuticals(self, arg0: vector_1d) -> None:
+    def pharmaceuticals(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
     @property
-    def treatments(self) -> vector_1d:
+    def treatments(self) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         "The matrix containing treatment cost information."
     @treatments.setter
-    def treatments(self, arg0: vector_1d) -> None:
+    def treatments(self, arg0: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]) -> None:
         ...
 
 
