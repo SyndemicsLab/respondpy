@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-02                                                    #
+# Last Modified: 2026-02-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -28,7 +28,7 @@ from ._core.logging import (  # pylint: disable=import-error,no-name-in-module
     LogType, CreationStatus, create_file_logger, log_info, log_warning, log_error, log_debug, kDebug, kError, kExists, kInfo, kNotCreated, kSuccess, kWarn
 )
 
-# from ._core.transition import Transition  # pylint: disable=import-error,no-name-in-module
+from ._core.transition import Transition  # pylint: disable=import-error,no-name-in-module
 
 from ._core.markov import Markov  # pylint: disable=import-error,no-name-in-module
 
@@ -51,6 +51,7 @@ __all__ = [
     "HistoryStamp",
     "LogType",
     "Markov",
+    "Transition",
     "ResultSets",
     "Totals",
     "UtilityType",
