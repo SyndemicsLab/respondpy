@@ -4,7 +4,7 @@
 # Created Date: 2026-02-02                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-02                                                    #
+# Last Modified: 2026-02-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,6 +24,19 @@ class Transition:
     """
 
     def __init__(self) -> None:
+        ...
+
+    @property
+    def transition_matrices(self) -> collections.abc.Sequence[
+        typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, 1]"]
+    ]:
+        "A list of transition matrices."
+    @transition_matrices.setter
+    def transition_matrices(self, arg0: collections.abc.Sequence[
+        typing.Annotated[
+            np.typing.ArrayLike, np.float64, "[m, 1]"]
+    ]) -> None:
         ...
 
     def SetCallback(
