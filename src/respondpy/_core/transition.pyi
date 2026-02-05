@@ -39,7 +39,7 @@ class Transition:
     ]) -> None:
         ...
 
-    def SetCallback(
+    def set_callback(
             self,
             callback: typing.Callable[[
                 typing.Annotated[
@@ -58,7 +58,7 @@ class Transition:
         Setter for the callback function
         """
 
-    def Execute(self, state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], ts: collections.abc.Sequence[typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]], hs: HistoryStamp) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
+    def execute(self, state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], ts: collections.abc.Sequence[typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]], hs: HistoryStamp) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
         """
         Execution function for running the callback
         """

@@ -4,7 +4,7 @@
 # Created Date: 2026-01-16                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-28                                                    #
+# Last Modified: 2026-02-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -47,6 +47,7 @@ def delete(db_file, table_name):
     conn.close()
 
 
+@pytest.mark.unit
 class TestWriting:
     """Test Class for the file writing.py
     """
@@ -198,6 +199,7 @@ class TestWriting:
         assert self._count_rows(setup, "cohort") == df.height+1
 
 
+@pytest.mark.unit
 class TestInvalidWriting:
     """Class to test the invalid writing attempts
     """

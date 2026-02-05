@@ -100,6 +100,10 @@ xfail_strict = true
 testpaths = ["tests"]
 required_plugins = ["pytest-benchmark"]
 log_level = "DEBUG"
+markers = [
+    "smoke: Marks tests as smoke tests to respond import accuracy.",
+    "unit: Marks tests as unit tests to verify basic functionality."
+]
 
 [tool.mypy]
 python_version = 3.12
