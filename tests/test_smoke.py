@@ -12,13 +12,10 @@
 
 """
 Smoke Tests to ensure RESPOND compiled. 
-Run with `uv run python -m respondpy.test`.
+Run with `uv run pytest -m smoke`.
 """
 
 from __future__ import annotations
-
-import typing
-import collections.abc
 
 import pytest
 import numpy as np
@@ -38,14 +35,6 @@ def test_markov() -> None:
 def test_add_transition() -> None:
     markov = rpy.Markov()
     t = rpy.Transition()
-
-    # def test_callback(
-    #         a: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"],
-    #         b: collections.abc.Sequence[
-    #             typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]],
-    #         c: rpy.HistoryStamp
-    # ) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
-    #     return a
 
     def test_callback(a, b, c):
         return a

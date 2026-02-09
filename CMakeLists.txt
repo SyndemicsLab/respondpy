@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 1467573136e98105fb06caa08cd7d915ae87194c # feature/breakout-transition-class
+    GIT_TAG 9a221bd016a477357281d3269af9c45c6de909b4 # cherrypick/new-transition-file
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)
