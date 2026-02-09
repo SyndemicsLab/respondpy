@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-05                                                    #
+# Last Modified: 2026-02-09                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,31 +24,51 @@ import respondpy as rpy
 
 
 @pytest.mark.smoke
-def test_markov() -> None:
+def test_model() -> None:
     state = np.array([10, 20, 30])
-    markov = rpy.Markov()
-    markov.set_state(state)
-    np.testing.assert_array_equal(state, markov.get_state())
+    model = rpy.Model("markov", "console")
+    model.set_state(state)
+    np.testing.assert_array_equal(state, model.get_state())
 
 
 @pytest.mark.smoke
-def test_add_transition() -> None:
-    markov = rpy.Markov()
-    t = rpy.Transition()
+def test_one_step() -> None:
+    state = np.array([1.3, 1.1, 1.8])
+    migra = np.array([0.0, 0.0, 0.0])
+    inter = np.array([[0.1, 0.2, 0.5], [0.3, 0.2, 0.3], [0.7, 0.2, 0.3]])
+    behav = np.array([[0.3, 0.2, 0.1], [0.4, 0.2, 0.1], [0.3, 0.4, 0.1]])
+    overd = np.array([0.01, 0.01, 0.02])
+    fatal = np.array([0.01, 0.01, 0.01])
+    backg = np.array([0.001, 0.001, 0.002])
 
-    def test_callback(a, b, c):
-        return a
+    model = rpy.Model("markov", "console")
+    model.set_state(state)
 
-    t.set_callback(test_callback)
-    t.transition_matrices = [np.array([1.0, 1.0])]
-    markov.add_transition(t)
+    migr = rpy.Transition("migration", "console")
+    migr.add_transition_matrix(migra)
+    model.add_transition(migr)
 
-#     def temp_callable(s: rpy.vector_1d, t: rpy.vector_of_matrices, h: rpy.HistoryStamp) -> rpy.vector_1d:
-#         return s
+    beha = rpy.Transition("behavior", "console")
+    beha.add_transition_matrix(behav)
+    model.add_transition(beha)
 
-#     data = list(np.array([1.0, 0.9, 0.8]))
+    inte = rpy.Transition("intervention", "console")
+    inte.add_transition_matrix(inter)
+    model.add_transition(inte)
 
-#     transition = (temp_callable, data)
+    over = rpy.Transition("overdose", "console")
+    over.add_transition_matrix(overd)
+    over.add_transition_matrix(fatal)
+    model.add_transition(over)
 
-#     markov.add_transition(transition)
-#     markov.run(1)
+    back = rpy.Transition("background_death", "console")
+    back.add_transition_matrix(backg)
+    model.add_transition(back)
+
+    model.run_transitions()
+
+    assert model.get_transition_names(
+    ) == ["migration", "behavior", "intervention", "overdose", "background_death"]
+
+    expected = [0.76715528791564891, 0.72320370216816077, 1.037712429738102]
+    np.testing.assert_almost_equal(model.get_state(), expected)
