@@ -20,7 +20,7 @@ using namespace respond;
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_transition(py::module &m) {
-    py::class_<Transition> t(m, "Transition");
+    py::class_<Transition, py::smart_holder> t(m, "Transition");
     t.def(py::init(&TransitionFactory::CreateTransition), py::arg("type"),
           py::arg("log_name") = "console")
         .def("execute", &Transition::Execute)

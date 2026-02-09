@@ -19,7 +19,7 @@ using namespace respond;
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_model(py::module &m) {
-    py::class_<Model>(m, "Model")
+    py::class_<Model, py::smart_holder>(m, "Model")
         .def(py::init(&Model::Create), py::arg("name"),
              py::arg("log_name") = "console")
         .def("set_state", &Model::SetState)
@@ -35,12 +35,13 @@ void register_model(py::module &m) {
         .def("__repr__",
              [](const Model &m) {
                  return "<respondpy.Model named " + m.GetModelName() +
-                        " with " + len(m.GetTransitionNames()) +
+                        " with " +
+                        std::to_string(m.GetTransitionNames().size()) +
                         " transitions>";
              })
         .def("__copy__", [](const Model &self) { return self.clone(); })
         .def(
             "__deepcopy__",
             [](const Model &self, py::dict) { return self.clone(); },
-            "memo") // memo argument is required by Python's deepcopy protocol;
+            "memo"); // memo argument is required by Python's deepcopy protocol;
 }

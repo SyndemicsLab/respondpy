@@ -12,6 +12,8 @@
 
 #include <respondpy/pybind11.hpp>
 
+#include <string>
+
 #include <respond/history.hpp>
 
 namespace py = pybind11;
@@ -20,7 +22,8 @@ using namespace respond;
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_history(py::module &m) {
     py::class_<History>(m, "History")
-        .def(py::init(), pybind11::arg("name") = "state",
+        .def(py::init<std::string, std::string>(),
+             pybind11::arg("name") = "state",
              pybind11::arg("log_name") = "console")
         .def("__copy__", [](const History &self) { return History(self); })
         .def("get_state_map", &History::GetStateMap,

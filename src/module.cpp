@@ -22,11 +22,11 @@ void register_simulation(py::module &m);
 void register_transition(py::module &m);
 
 PYBIND11_MODULE(_core, m, py::mod_gil_not_used()) {
-    py::module cost_effectiveness = m.def_submodule("cost_effectiveness");
-    register_cost_effectiveness(cost_effectiveness);
-
     py::module history_mod = m.def_submodule("history");
     register_history(history_mod);
+
+    py::module cost_effectiveness = m.def_submodule("cost_effectiveness");
+    register_cost_effectiveness(cost_effectiveness);
 
     py::module logging = m.def_submodule("logging");
     register_logging(logging);

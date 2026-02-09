@@ -1,64 +1,28 @@
-################################################################################
-# File: transition.pyi                                                         #
-# Project: respondpy                                                           #
-# Created Date: 2026-02-02                                                     #
-# Author: Matthew Carroll                                                      #
-# -----                                                                        #
-# Last Modified: 2026-02-04                                                    #
-# Modified By: Matthew Carroll                                                 #
-# -----                                                                        #
-# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
-################################################################################
-
-import typing
+from __future__ import annotations
 import collections.abc
-
-import numpy as np
-
-from .types import HistoryStamp
-
-
+import numpy
+import numpy.typing
+import respondpy._core.history
+import typing
+__all__: list[str] = ['Transition']
 class Transition:
-    """
-    Helper class describing the Transition requirements.
-    """
-
-    def __init__(self) -> None:
+    def __copy__(self) -> Transition:
         ...
-
-    @property
-    def transition_matrices(self) -> collections.abc.Sequence[
-        typing.Annotated[
-            np.typing.ArrayLike, np.float64, "[m, 1]"]
-    ]:
-        "A list of transition matrices."
-    @transition_matrices.setter
-    def transition_matrices(self, arg0: collections.abc.Sequence[
-        typing.Annotated[
-            np.typing.ArrayLike, np.float64, "[m, 1]"]
-    ]) -> None:
+    def __deepcopy__(self, arg0: dict) -> Transition:
+        """
+        memo
+        """
+    def __init__(self, type: str, log_name: str = 'console') -> None:
         ...
-
-    def set_callback(
-            self,
-            callback: typing.Callable[[
-                typing.Annotated[
-                    np.typing.ArrayLike, np.float64, "[m, 1]"
-                ], collections.abc.Sequence[
-                    typing.Annotated[
-                        np.typing.ArrayLike, np.float64, "[m, 1]"]
-                ], HistoryStamp
-            ],
-            typing.Annotated[
-                np.typing.ArrayLike,
-                np.float64, "[m, 1]"
-            ]]
-    ) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
-        """
-        Setter for the callback function
-        """
-
-    def execute(self, state: typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"], ts: collections.abc.Sequence[typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]], hs: HistoryStamp) -> typing.Annotated[np.typing.ArrayLike, np.float64, "[m, 1]"]:
-        """
-        Execution function for running the callback
-        """
+    def __repr__(self) -> str:
+        ...
+    def add_transition_matrix(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, n]"]) -> None:
+        ...
+    def clear_transition_matrices(self) -> None:
+        ...
+    def execute(self, arg0: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], arg1: collections.abc.Mapping[str, respondpy._core.history.History]) -> typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]:
+        ...
+    def get_log_name(self) -> str:
+        ...
+    def get_transition_name(self) -> str:
+        ...

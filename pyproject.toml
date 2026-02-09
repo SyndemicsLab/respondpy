@@ -42,6 +42,7 @@ dev = [
     "ipykernel",
     "nbconvert",
     "polars>=1.37.1",
+    "pybind11-stubgen>=2.5.5",
     "pytest>=9.0.2",
     "setuptools_scm",
     "typer",

@@ -20,7 +20,8 @@ using namespace respond;
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_simulation(py::module &m) {
     py::class_<Simulation>(m, "Simulation")
-        .def(py::init(), py::arg("log_name") = "console")
+        .def(py::init<>())
+        .def(py::init<const std::string &>())
         .def("run", &Simulation::Run)
         .def("add_model", &Simulation::AddModel)
         .def("get_models", &Simulation::GetModels)
@@ -31,8 +32,8 @@ void register_simulation(py::module &m) {
         .def("get_log_name", &Simulation::GetLogName)
         .def("__repr__",
              [](const Simulation &m) {
-                 return "<respondpy.Simulation with " + len(m.GetModelNames()) +
-                        " models>";
+                 return "<respondpy.Simulation with " +
+                        std::to_string(m.GetModelNames().size()) + " models>";
              })
         .def("__copy__",
              [](const Simulation &self) { return Simulation(self); })
