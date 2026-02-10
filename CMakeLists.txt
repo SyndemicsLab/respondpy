@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 9a221bd016a477357281d3269af9c45c6de909b4 # cherrypick/new-transition-file
+    GIT_TAG c40b2c01653cd7d8175f13a8ad0cf8cf0c68d0b3 # cherrypick/new-transition-file
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)
