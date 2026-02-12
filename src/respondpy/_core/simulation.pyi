@@ -47,16 +47,16 @@ class Simulation:
     def get_log_name(self) -> str:
         ...
 
-    def get_model_histories(self) -> Sequence[dict[str, list[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
+    def get_model_histories(self) -> Sequence[dict[str, Sequence[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
         ...
 
-    def get_model_history_names(self) -> list[tuple[str, str]]:
+    def get_model_history_names(self) -> Sequence[tuple[str, str]]:
         ...
 
-    def get_model_names(self) -> list[str]:
+    def get_model_names(self) -> Sequence[str]:
         ...
 
-    def get_models(self) -> list[respondpy._core.model.Model]:
+    def get_models(self) -> Sequence[respondpy._core.model.Model]:
         ...
 
     def run(self) -> None:
