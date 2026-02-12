@@ -4,7 +4,7 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-02-09                                                  //
+// Last Modified: 2026-02-12                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -32,6 +32,7 @@ void register_model(py::module &m) {
         .def("set_histories", &Model::SetHistories)
         .def("get_model_name", &Model::GetModelName)
         .def("get_log_name", &Model::GetLogName)
+        .def("create_default_histories", &Model::CreateDefaultHistories)
         .def("__repr__",
              [](const Model &m) {
                  return "<respondpy.Model named " + m.GetModelName() +

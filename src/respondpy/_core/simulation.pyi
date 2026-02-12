@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-10                                                    #
+# Last Modified: 2026-02-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,10 +24,6 @@ __all__: list[str] = ['Simulation']
 
 
 class Simulation:
-    @staticmethod
-    def create_default_histories(log_name: str) -> dict[str, respondpy._core.history.History]:
-        ...
-
     def __copy__(self) -> Simulation:
         ...
 
@@ -63,5 +59,5 @@ class Simulation:
     def get_models(self) -> list[respondpy._core.model.Model]:
         ...
 
-    def run(self, duration: typing.SupportsInt) -> None:
+    def run(self) -> None:
         ...

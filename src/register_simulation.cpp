@@ -4,7 +4,7 @@
 // Created Date: 2026-02-09                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-02-09                                                  //
+// Last Modified: 2026-02-12                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -36,7 +36,5 @@ void register_simulation(py::module &m) {
                         std::to_string(m.GetModelNames().size()) + " models>";
              })
         .def("__copy__",
-             [](const Simulation &self) { return Simulation(self); })
-        .def_static("create_default_histories",
-                    &Simulation::CreateDefaultHistories);
+             [](const Simulation &self) { return Simulation(self); });
 }
