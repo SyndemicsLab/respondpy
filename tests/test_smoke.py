@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-09                                                    #
+# Last Modified: 2026-02-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -33,13 +33,13 @@ def test_model() -> None:
 
 @pytest.mark.smoke
 def test_one_step() -> None:
-    state = np.array([1.3, 1.1, 1.8])
-    migra = np.array([0.0, 0.0, 0.0])
+    state = np.array([[1.3], [1.1], [1.8]])
+    migra = np.array([[0.0], [0.0], [0.0]])
     inter = np.array([[0.1, 0.2, 0.5], [0.3, 0.2, 0.3], [0.7, 0.2, 0.3]])
     behav = np.array([[0.3, 0.2, 0.1], [0.4, 0.2, 0.1], [0.3, 0.4, 0.1]])
-    overd = np.array([0.01, 0.01, 0.02])
-    fatal = np.array([0.01, 0.01, 0.01])
-    backg = np.array([0.001, 0.001, 0.002])
+    overd = np.array([[0.01], [0.01], [0.02]])
+    fatal = np.array([[0.01], [0.01], [0.01]])
+    backg = np.array([[0.001], [0.001], [0.002]])
 
     model = rpy.Model("markov", "console")
     model.set_state(state)
@@ -69,6 +69,6 @@ def test_one_step() -> None:
 
     assert model.get_transition_names(
     ) == ["migration", "behavior", "intervention", "overdose", "background_death"]
-
+    print(model.get_state())
     expected = [0.76715528791564891, 0.72320370216816077, 1.037712429738102]
     np.testing.assert_almost_equal(model.get_state(), expected)
