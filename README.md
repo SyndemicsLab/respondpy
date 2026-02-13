@@ -33,3 +33,20 @@ We are currently working on supporting a ManyLinux build of the project. This ca
 ```bash
 uvx cibuildwheel
 ```
+
+## Deployment Notes
+
+Currently, we deploy using the following commands:
+
+```bash
+uv build
+uvx cibuildwheel
+```
+
+After building into a folder called `wheelhouse` we remove the `*.whl` file in the `dist/` directory (only leaving the `.tar.gz`) and run the command:
+
+```bash
+uv publish --index testpypi dist/* wheelhouse/*
+```
+
+To testpypi we use the username `__token__` and our API key generated from our account.
