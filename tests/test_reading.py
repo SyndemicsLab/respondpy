@@ -4,14 +4,12 @@
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-28                                                    #
+# Last Modified: 2026-02-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
 ################################################################################
 import sqlite3
-import numpy as np
-from numpy.testing import assert_array_equal
 
 import pytest
 
@@ -47,6 +45,7 @@ def setup(tmp_path_factory, db_schema, db_intervention_insert, db_behavior_inser
     return mem_str
 
 
+@pytest.mark.unit
 class TestReading:
     """Test Class for the file reading.py
     """
