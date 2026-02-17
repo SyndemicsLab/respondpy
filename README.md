@@ -1,6 +1,6 @@
 # RESPONDPY
 
-:snake: Welcome to RESPOND for Python! :snake: This repository acts as a set of python bindings for the Syndemics Lab's RESPOND model. As such, it is simply a set of wrappers and helper functions for ease of use in various lab projects. Our project can be installed from PyPI or build locally.
+:snake: Welcome to RESPOND for Python! :snake: This repository acts as a set of python bindings for the Syndemics Lab's RESPOND model. As such, it is simply a set of wrappers and helper functions for ease of use in various lab projects. Our project can be installed from PyPI or built locally.
 
 ## RESPOND
 
