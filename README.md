@@ -4,7 +4,7 @@
 
 ## RESPOND
 
-RESPOND is a model developed by the Syndemics Lab at Boston Medical Center to study the various cost-effectiveness impacts of different treatment options for Substance Use Disorders (SUD). While originally built to study Opioid Use Disorder (OUD), RESPOND is a Markov model with the ability to scale to encompass various different treatment options and drug use behaviors. This repository adds bindings and helper functions to easily work with SQLite, both for our own analysts and for our web app to utilize. The original RESPOND model is written in C++ and can be found [on GitHub](https://github.com/SyndemicsLab/respond).
+RESPOND is a simulation model developed by the Syndemics Lab at Boston Medical Center to study the various cost-effectiveness impacts of different treatment options for substance use disorders (SUD). While originally built to study opioid use disorder (OUD), RESPOND is a Markov model with the ability to scale to encompass various drug use behaviors and treatment approaches or venues. This repository adds bindings and helper functions to easily work with SQLite. The original RESPOND model is written in R and C++ and can be found [on GitHub](https://github.com/SyndemicsLab/respondv1).
 
 ## Pybind11
 
