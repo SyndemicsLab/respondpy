@@ -22,7 +22,6 @@ from respondpy._core.model import Model  # pylint: disable=import-error,no-name-
 from respondpy._core.simulation import Simulation  # pylint: disable=import-error,no-name-in-module
 from respondpy.data.parameters import Parameter
 from respondpy.io.reading import get_cohorts
-
 from respondpy.execute.build_transition import get_data_array
 
 
