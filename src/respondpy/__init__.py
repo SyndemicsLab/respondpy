@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-09                                                    #
+# Last Modified: 2026-02-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -14,6 +14,9 @@ from __future__ import annotations
 from .version import version as __version__  # pylint: disable=import-error,no-name-in-module
 
 from .data.parameters import Parameter
+
+from .execute.build_simulation import build_simulation
+from .execute.build_transition import get_data_array
 
 from .io.reading import (
     get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_cohorts, get_behavior_table, get_intervention_table, get_sample_ids_by_table
@@ -34,6 +37,8 @@ from ._core.transition import Transition  # pylint: disable=import-error,no-name
 
 __all__ = [
     "Parameter",  # data.parameters
+    "build_simulation",
+    "get_data_array",
     "get_parameter_by_id_and_time",  # io.reading
     "get_state_names",
     "get_behaviors",
