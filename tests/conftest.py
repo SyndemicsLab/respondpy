@@ -4,7 +4,7 @@
 # Created Date: 2025-11-24                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-01-26                                                    #
+# Last Modified: 2026-02-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -226,3 +226,30 @@ INSERT INTO overdose (sample, intervention, behavior, time, probability) VALUES 
 def db_fod_insert():
     return """
 INSERT INTO overdose_fatality (sample, intervention, behavior, time, probability) VALUES (1, 1, 1, 1, 0.1), (1, 1, 2, 1, 0.2), (1, 2, 1, 1, 0.3), (1, 2, 2, 1, 0.4);"""
+
+
+@pytest.fixture
+def insert_complete_sample():
+    return """
+INSERT INTO cohort (id, description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES (1, "Test Cohort 1", 1, 1, 1, 1, 1, 1, 1, 1);
+
+INSERT INTO intervention (id, name) VALUES (1, "no_treatment"), (2, "early_buprenorphine"), (3, "buprenorphine"), (4, "post_buprenorphine");
+
+INSERT INTO behavior (id, name) VALUES (1, "active_injection"), (2, "nonactive_injection");
+
+INSERT INTO initial_population (sample, intervention, behavior, count) VALUES (1, 1, 1, 100), (1, 1, 2, 150), (1, 2, 1, 200), (1, 2, 2, 250), (1, 3, 1, 0), (1, 3, 2, 0), (1, 4, 1, 0), (1, 4, 2, 0);
+
+INSERT INTO population_change (sample, intervention, behavior, time, count) VALUES (1, 1, 1, 1, 100), (1, 1, 2, 1, 150), (1, 2, 1, 1, 200), (1, 2, 2, 1, 250), (1, 3, 1, 1, 0), (1, 3, 2, 1, 0), (1, 4, 1, 1, 0), (1, 4, 2, 1, 0);
+
+INSERT INTO intervention_transition (sample, behavior, time, initial_intervention, new_intervention, probability) VALUES (1, 1, 1, 1, 1, 0.8),(1, 2, 1, 1, 1, 0.7),(1, 1, 1, 1, 2, 0.2),(1, 2, 1, 1, 2, 0.3),(1, 1, 1, 1, 3, 0.0),(1, 2, 1, 1, 3, 0.0),(1, 1, 1, 1, 4, 0.0),(1, 2, 1, 1, 4, 0.0),(1, 1, 1, 2, 1, 0.0),(1, 2, 1, 2, 1, 0.0),(1, 1, 1, 2, 2, 0.7),(1, 2, 1, 2, 2, 0.6),(1, 1, 1, 2, 3, 0.2),(1, 2, 1, 2, 3, 0.1),(1, 1, 1, 2, 4, 0.1),(1, 2, 1, 2, 4, 0.3),(1, 1, 1, 3, 1, 0.0),(1, 2, 1, 3, 1, 0.0),(1, 1, 1, 3, 2, 0.0),(1, 2, 1, 3, 2, 0.0),(1, 1, 1, 3, 3, 0.8),(1, 2, 1, 3, 3, 0.8),(1, 1, 1, 3, 4, 0.2),(1, 2, 1, 3, 4, 0.2),(1, 1, 1, 4, 1, 0.8),(1, 2, 1, 4, 1, 0.8),(1, 1, 1, 4, 2, 0.0),(1, 2, 1, 4, 2, 0.0),(1, 1, 1, 4, 3, 0.0),(1, 2, 1, 4, 3, 0.0),(1, 1, 1, 4, 4, 0.2),(1, 2, 1, 4, 4, 0.2);
+
+INSERT INTO behavior_transition (sample, intervention, time, initial_behavior, new_behavior, probability) VALUES (1, 1, 1, 1, 1, 0.8),(1, 1, 1, 1, 2, 0.2),(1, 1, 1, 2, 1, 0.1),(1, 1, 1, 2, 2, 0.9),(1, 2, 1, 1, 1, 0.9),(1, 2, 1, 1, 2, 0.1),(1, 2, 1, 2, 1, 0.7),(1, 2, 1, 2, 2, 0.3),(1, 3, 1, 1, 1, 0.3),(1, 3, 1, 1, 2, 0.7),(1, 3, 1, 2, 1, 0.4),(1, 3, 1, 2, 2, 0.6),(1, 4, 1, 1, 1, 0.3),(1, 4, 1, 1, 2, 0.7),(1, 4, 1, 2, 1, 0.2),(1, 4, 1, 2, 2, 0.8);
+
+INSERT INTO smr (sample, intervention, behavior, time, ratio) VALUES (1, 1, 1, 1, 2.0), (1, 1, 2, 1, 2.1), (1, 2, 1, 1, 2.0), (1, 2, 2, 1, 2.1), (1, 3, 1, 1, 2.0), (1, 3, 2, 1, 2.1), (1, 4, 1, 1, 2.0), (1, 4, 2, 1, 2.1);
+
+INSERT INTO background_mortality (sample, time, probability) VALUES (1, 1, .25);
+
+INSERT INTO overdose (sample, intervention, behavior, time, probability) VALUES (1, 1, 1, 1, 0.8), (1, 1, 2, 1, 0.7),(1, 2, 1, 1, 0.8), (1, 2, 2, 1, 0.7),(1, 3, 1, 1, 0.8), (1, 3, 2, 1, 0.7),(1, 4, 1, 1, 0.8), (1, 4, 2, 1, 0.7);
+
+INSERT INTO overdose_fatality (sample, intervention, behavior, time, probability) VALUES (1, 1, 1, 1, 0.1), (1, 1, 2, 1, 0.2), (1, 2, 1, 1, 0.1), (1, 2, 2, 1, 0.2), (1, 3, 1, 1, 0.1), (1, 3, 2, 1, 0.2), (1, 4, 1, 1, 0.1), (1, 4, 2, 1, 0.2);
+"""

@@ -10,9 +10,11 @@ RESPOND is a simulation model developed by the Syndemics Lab at Boston Medical C
 
 This tool makes use of the popular tool [Pybind11](https://pybind11.readthedocs.io/en/stable/index.html). From here, we expose bindings for users to connect to via Python.
 
-## Building
+## Building and Installing
 
-We make use of [Scikit-build-core](https://scikit-build-core.readthedocs.io/en/latest/index.html) along with CMake to build the library.
+The bindings are available on PyPI! They can be installed via `pip install respondpy`.
+
+If you want to build the project locally, we make use of [scikit-build-core](https://scikit-build-core.readthedocs.io/en/latest/index.html) along with CMake to build the library. To build locally, you can clone the repository here.
 
 ```bash
 git clone git@github.com:SyndemicsLab/respondpy.git
@@ -22,27 +24,6 @@ uv build
 
 This results in a wheel and `tar.gz` being placed in a `dist/` directory. From here, we use `uv` to include it in other projects. Future work would be to allow for building device independent wheels and publishing to PyPI where we could install anywhere.
 
-## ManyLinux Build
+## Supported OSes
 
-We are currently working on supporting a ManyLinux build of the project. This can be tested via the `cibuildwheel` tool.
-
-```bash
-uvx cibuildwheel
-```
-
-## Deployment Notes
-
-Currently, we deploy using the following commands:
-
-```bash
-uv build
-uvx cibuildwheel
-```
-
-After building into a folder called `wheelhouse` we remove the `*.whl` file in the `dist/` directory (only leaving the `.tar.gz`) and run the command:
-
-```bash
-uv publish --index testpypi dist/* wheelhouse/*
-```
-
-To testpypi we use the username `__token__` and our API key generated from our account.
+We are currently working on supporting as many OSes as possible. As these are bindings for a C++ project, we are limited in our capacity. For the moment, we are generating many linux builds for python versions >= 3.10. We do not have a Windows or Mac build at the present.
