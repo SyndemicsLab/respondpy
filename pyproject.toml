@@ -17,6 +17,7 @@ keywords = ["simulation", "Opioid Use Disorder", "Syndemics"]
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 dependencies = [
+    "nox>=2026.2.9",
     "numpy",
     "polars>=1.37.1",
     "pytest-cov>=7.0.0",

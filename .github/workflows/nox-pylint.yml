@@ -1,0 +1,34 @@
+name: Nox Pylint
+
+on:
+    push:
+        branches:
+            - main
+            - feature/**
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    pylint:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  version: "0.10.11"
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.12"
+
+            - name: Install dependencies
+              run: uv sync --group github
+
+            - name: Run pylint session
+              run: uv run nox -s pylint
