@@ -16,6 +16,38 @@ import sqlite3
 
 from respondpy.data.parameters import Parameter
 
+
+_db_connections: dict[str, sqlite3.Connection] = {}
+_states_cache: dict[tuple[str, str], list[str]] = {}
+_state_table_cache: dict[tuple[str, str], list[tuple[int, str]]] = {}
+
+
+def _normalize_db_path(db: str | Path) -> str:
+    """Return a normalized database path string for connection and cache keys."""
+    return str(Path(db).resolve())
+
+
+def _get_connection(db: str | Path) -> sqlite3.Connection:
+    """Return a cached sqlite connection for the database path."""
+    db_path = _normalize_db_path(db)
+    con = _db_connections.get(db_path)
+    if con is None:
+        con = sqlite3.connect(db_path)
+        _db_connections[db_path] = con
+    return con
+
+
+def _clear_caches_for_testing() -> None:
+    """Clear cached connections and lookup tables.
+
+    Intended for tests that need a clean module state between runs.
+    """
+    for con in _db_connections.values():
+        con.close()
+    _db_connections.clear()
+    _states_cache.clear()
+    _state_table_cache.clear()
+
 # Internal Functions
 
 
@@ -39,12 +71,17 @@ def _get_states(
         list[str]: List of possible state names from the table in the SQLite
             database.
     """
+    db_path = _normalize_db_path(db)
+    cache_key = (db_path, state)
+    if cache_key in _states_cache:
+        return _states_cache[cache_key]
+
     stmt = f"SELECT name FROM {state} ORDER BY id"
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     cur.execute(stmt)
     result = [row[0] for row in cur.fetchall()]
-    con.close()
+    _states_cache[cache_key] = result
     return result
 
 
@@ -68,12 +105,17 @@ def _get_state_table(
         list[str]: List of possible state names from the table in the SQLite
             database.
     """
+    db_path = _normalize_db_path(db)
+    cache_key = (db_path, state)
+    if cache_key in _state_table_cache:
+        return _state_table_cache[cache_key]
+
     stmt = f"SELECT id, name FROM {state} ORDER BY id"
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     cur.execute(stmt)
     result = [(row[0], row[1]) for row in cur.fetchall()]
-    con.close()
+    _state_table_cache[cache_key] = result
     return result
 
 
@@ -112,7 +154,7 @@ def _get_initial_cohort_by_id(
         "i.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT i.name AS intervention, b.name AS behavior, count
@@ -123,10 +165,9 @@ def _get_initial_cohort_by_id(
         ORDER BY
         {i_order}, {b_order}
         """
-    cur.execute(stmt, str(sample_id))
+    cur.execute(stmt, (str(sample_id),))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -147,7 +188,7 @@ def _get_migration_by_id_and_timestep(
         "i.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT i.name AS intervention, b.name AS behavior, count
@@ -161,7 +202,6 @@ def _get_migration_by_id_and_timestep(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -186,7 +226,7 @@ def _get_intervention_trans_by_id_and_time(
         "ni.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT ii.name AS initial_intervention, ni.name AS new_intervention, b.name AS behavior, probability
@@ -201,7 +241,6 @@ def _get_intervention_trans_by_id_and_time(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -226,7 +265,7 @@ def _get_behavior_trans_by_id_and_time(
         "ib.name", _get_states(db, state="behavior"))
     nb_order = _get_column_order(
         "nb.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT i.name AS intervention, ib.name AS initial_behavior, nb.name AS new_behavior, probability
@@ -241,7 +280,6 @@ def _get_behavior_trans_by_id_and_time(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -264,7 +302,7 @@ def _get_od_by_id_and_time(
         "i.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT i.name AS intervention, b.name AS behavior, probability
@@ -278,7 +316,6 @@ def _get_od_by_id_and_time(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -301,7 +338,7 @@ def _get_fod_by_id_and_time(
         "i.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     cur.execute(
         f"""
@@ -315,7 +352,6 @@ def _get_fod_by_id_and_time(
         """, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -334,7 +370,7 @@ def _get_bg_death_by_id_and_time(
     Returns:
         tuple[list, list]: behavior transitions as a numpy array.
     """
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = """
         SELECT probability
@@ -344,7 +380,6 @@ def _get_bg_death_by_id_and_time(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 
@@ -367,7 +402,7 @@ def _get_smr_by_id_and_time(
         "i.name", _get_states(db, state="intervention"))
     b_order = _get_column_order(
         "b.name", _get_states(db, state="behavior"))
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     stmt = f"""
         SELECT i.name AS intervention, b.name AS behavior, ratio
@@ -381,7 +416,6 @@ def _get_smr_by_id_and_time(
     cur.execute(stmt, (str(sample_id), str(time)))
     col_names = [d[0] for d in cur.description]
     result = cur.fetchall()
-    con.close()
     return col_names, result
 
 # External Functions
@@ -395,7 +429,7 @@ def get_sample_ids_by_table(
         raise FileNotFoundError(
             f"The database file was not found when attempting to retrieve sample ids by table! File specified: {db}.")
 
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
 
     # Check 2 things:
@@ -406,14 +440,12 @@ def get_sample_ids_by_table(
         SELECT count(name) FROM sqlite_master WHERE type='table' AND name=?
     """, (table_name,))
     if cur.fetchone()[0] != 1:
-        con.close()
         raise ValueError(f"The specified table does not exist: {table_name}")
 
     # Be very careful here, this works and isn't gonna get SQL Injection attacked because we verify the table_name in the check above.
     stmt = f"SELECT DISTINCT sample FROM {table_name}"
     cur.execute(stmt)
     result = [row[0] for row in cur.fetchall()]
-    con.close()
     return result
 
 
@@ -508,7 +540,7 @@ def get_state_names(
     if not Path(db).is_file():
         raise FileNotFoundError(
             f"The database file was not found when attempting to retrieve state names! File specified: {db}.")
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     cur.execute(
         """
@@ -519,7 +551,6 @@ def get_state_names(
         """
     )
     result = cur.fetchall()
-    con.close()
     return result
 
 
@@ -535,7 +566,7 @@ def get_cohorts(db: str | Path) -> tuple[list[str], list]:
     if not Path(db).is_file():
         raise FileNotFoundError(
             f"The database file was not found when attempting to retrieve state names! File specified: {db}.")
-    con = sqlite3.connect(db)
+    con = _get_connection(db)
     cur = con.cursor()
     cur.execute(
         """
@@ -544,5 +575,4 @@ def get_cohorts(db: str | Path) -> tuple[list[str], list]:
     )
     column_names = [description[0] for description in cur.description]
     result = cur.fetchall()
-    con.close()
     return column_names, result
