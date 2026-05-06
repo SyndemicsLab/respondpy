@@ -72,3 +72,27 @@ def test_one_step() -> None:
     print(model.get_state())
     expected = [0.76715528791564891, 0.72320370216816077, 1.037712429738102]
     np.testing.assert_almost_equal(model.get_state(), expected)
+
+
+@pytest.mark.smoke
+def test_simulation_sparse_histories() -> None:
+    """Verify get_model_sparse_histories returns a name-keyed dict of History objects."""
+    state = np.array([10.0, 20.0, 30.0])
+    model = rpy.Model("markov", "console")
+    model.set_state(state)
+    model.create_default_histories()
+
+    sim = rpy.Simulation()
+    sim.add_model(model)
+    sim.run()
+
+    sparse = sim.get_model_sparse_histories()
+
+    assert isinstance(sparse, dict), "Expected a dict keyed by model name"
+    assert "markov" in sparse, "Expected 'markov' model name as key"
+
+    model_histories = sparse["markov"]
+    assert isinstance(model_histories, dict), "Expected inner dict keyed by history name"
+
+    for hist in model_histories.values():
+        assert isinstance(hist, rpy.History), "Expected History values in inner dict"
