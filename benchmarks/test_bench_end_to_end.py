@@ -1,0 +1,147 @@
+################################################################################
+# File: bench_end_to_end.py                                                    #
+# Project: respondpy                                                           #
+# Created Date: 2026-05-06                                                     #
+# Author: Matthew Carroll                                                      #
+# -----                                                                        #
+# Last Modified: 2026-05-06                                                    #
+# Modified By: Matthew Carroll                                                 #
+# -----                                                                        #
+# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
+################################################################################
+
+"""
+End-to-end benchmarks for the respondpy simulation pipeline.
+
+Three phases are benchmarked individually and as a combined pipeline:
+    1. load   — read data from SQLite and construct the Simulation
+    2. run    — execute all model transitions for the full duration
+    3. write  — export all model histories to CSV files
+
+Run with:
+    uv run pytest benchmarks/ -v --benchmark-only
+Or via the nox session:
+    uv run nox -s benchmark
+"""
+
+from __future__ import annotations
+
+from configparser import ConfigParser
+from pathlib import Path
+
+import polars as pl
+import pytest
+
+from respondpy import Simulation, build_simulation
+
+# ---------------------------------------------------------------------------
+# CSV history writer (local to benchmarks — not part of the distributed lib)
+# ---------------------------------------------------------------------------
+
+
+def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
+    """Write each model's densified state histories to a separate CSV file.
+
+    Output format per file:
+        history_name, timestep, state_0, state_1, ..., state_n
+
+    Files are named ``<model_name>_histories.csv`` and written to *out_dir*.
+    """
+    histories = sim.get_model_histories()
+    for model_name, model_hist in histories.items():
+        rows: list[dict] = []
+        for hist_name, state_vectors in model_hist.items():
+            for t, vec in enumerate(state_vectors):
+                row = {"history_name": hist_name, "timestep": t}
+                row.update({f"state_{i}": float(v) for i, v in enumerate(vec)})
+                rows.append(row)
+        if rows:
+            pl.DataFrame(rows).write_csv(
+                out_dir / f"{model_name}_histories.csv")
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 — load
+# ---------------------------------------------------------------------------
+
+@pytest.mark.benchmark
+def test_bench_load_data(benchmark, benchmark_db, benchmark_config):
+    """Benchmark SQLite data loading and Simulation construction.
+
+    Measures the time to call build_simulation() from scratch on each round,
+    including all database reads and model/transition setup.
+    """
+    benchmark.pedantic(
+        build_simulation,
+        args=([1], benchmark_db, benchmark_config),
+        rounds=10,
+        iterations=1,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — run
+# ---------------------------------------------------------------------------
+
+@pytest.mark.benchmark
+def test_bench_run_model(benchmark, benchmark_db, benchmark_config):
+    """Benchmark sim.run() in isolation.
+
+    The Simulation is rebuilt fresh before each round so that history state
+    from a prior run does not carry over and inflate subsequent measurements.
+    """
+    def _setup():
+        sim = build_simulation([1], benchmark_db, benchmark_config)
+        return (sim,), {}
+
+    benchmark.pedantic(
+        lambda sim: sim.run(),
+        setup=_setup,
+        rounds=10,
+        iterations=1,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — write
+# ---------------------------------------------------------------------------
+
+@pytest.mark.benchmark
+def test_bench_write_histories(benchmark, benchmark_db, benchmark_config, tmp_path):
+    """Benchmark CSV history export in isolation.
+
+    The Simulation is built and run once in setup; only the CSV write is timed.
+    """
+    def _setup():
+        sim = build_simulation([1], benchmark_db, benchmark_config)
+        sim.run()
+        return (sim, tmp_path), {}
+
+    benchmark.pedantic(
+        _write_histories_to_csv,
+        setup=_setup,
+        rounds=10,
+        iterations=1,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Combined — end-to-end
+# ---------------------------------------------------------------------------
+
+@pytest.mark.benchmark
+def test_bench_end_to_end(benchmark, benchmark_db, benchmark_config, tmp_path):
+    """Benchmark the full pipeline: load → run → write CSV.
+
+    Use this figure for direct comparison with RESPONDv1 wall-clock timings.
+    """
+    def _pipeline():
+        sim = build_simulation([1], benchmark_db, benchmark_config)
+        sim.run()
+        _write_histories_to_csv(sim, tmp_path)
+
+    benchmark.pedantic(
+        _pipeline,
+        rounds=10,
+        iterations=1,
+    )

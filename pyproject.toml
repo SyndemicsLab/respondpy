@@ -17,10 +17,8 @@ keywords = ["simulation", "Opioid Use Disorder", "Syndemics"]
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 dependencies = [
-    "nox>=2026.2.9",
     "numpy",
     "polars>=1.37.1",
-    "pytest-cov>=7.0.0",
 ]
 
 [project.urls]
@@ -43,6 +41,7 @@ dev = [
     { include-group = "test" },
     "ipykernel",
     "nbconvert",
+    "nox>=2026.2.9",
     "polars>=1.37.1",
     "pybind11-stubgen>=2.5.5",
     "pytest>=9.0.2",
@@ -63,6 +62,7 @@ examples = []
 test = [
     "cloudpickle",
     "pytest-benchmark",
+    "pytest-cov>=7.0.0",
     "pytest>=6.0",
     "pytest-benchmark",
     "numpy",
@@ -73,6 +73,10 @@ github = [
   { include-group = "test" },
   "setuptools_scm",
   "pytest-github-actions-annotate-failures"
+]
+benchmark = [
+  { include-group = "test" },
+  "polars>=1.37.1",
 ]
 
 [[tool.scikit-build.generate]]
@@ -111,7 +115,8 @@ required_plugins = ["pytest-benchmark"]
 log_level = "DEBUG"
 markers = [
     "smoke: Marks tests as smoke tests to respond import accuracy.",
-    "unit: Marks tests as unit tests to verify basic functionality."
+    "unit: Marks tests as unit tests to verify basic functionality.",
+    "benchmark: Marks benchmarks for end-to-end performance measurement."
 ]
 
 [tool.mypy]

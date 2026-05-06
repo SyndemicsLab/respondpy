@@ -1663,25 +1663,36 @@ name = "respondpy"
 version = "0.1.2"
 source = { editable = "." }
 dependencies = [
-    { name = "nox" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "polars" },
-    { name = "pytest-cov" },
 ]
 
 [package.dev-dependencies]
+benchmark = [
+    { name = "cloudpickle" },
+    { name = "hypothesis", marker = "sys_platform != 'ios'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "polars" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
+]
 dev = [
     { name = "cloudpickle" },
     { name = "hypothesis", marker = "sys_platform != 'ios'" },
     { name = "ipykernel" },
     { name = "nbconvert" },
+    { name = "nox" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "polars" },
     { name = "pybind11-stubgen" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
     { name = "setuptools-scm" },
     { name = "typer" },
@@ -1706,6 +1717,7 @@ github = [
     { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov" },
     { name = "pytest-github-actions-annotate-failures" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
     { name = "setuptools-scm" },
@@ -1717,29 +1729,40 @@ test = [
     { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "nox", specifier = ">=2026.2.9" },
     { name = "numpy" },
     { name = "polars", specifier = ">=1.37.1" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
 ]
 
 [package.metadata.requires-dev]
+benchmark = [
+    { name = "cloudpickle" },
+    { name = "hypothesis", marker = "sys_platform != 'ios'", specifier = ">=6.0" },
+    { name = "numpy" },
+    { name = "polars", specifier = ">=1.37.1" },
+    { name = "pytest", specifier = ">=6.0" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
+]
 dev = [
     { name = "cloudpickle" },
     { name = "hypothesis", marker = "sys_platform != 'ios'", specifier = ">=6.0" },
     { name = "ipykernel" },
     { name = "nbconvert" },
+    { name = "nox", specifier = ">=2026.2.9" },
     { name = "numpy" },
     { name = "polars", specifier = ">=1.37.1" },
     { name = "pybind11-stubgen", specifier = ">=2.5.5" },
     { name = "pytest", specifier = ">=6.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
     { name = "setuptools-scm" },
     { name = "typer" },
@@ -1761,6 +1784,7 @@ github = [
     { name = "numpy" },
     { name = "pytest", specifier = ">=6.0" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-github-actions-annotate-failures" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
     { name = "setuptools-scm" },
@@ -1771,6 +1795,7 @@ test = [
     { name = "numpy" },
     { name = "pytest", specifier = ">=6.0" },
     { name = "pytest-benchmark" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", marker = "sys_platform != 'ios'" },
 ]
 
