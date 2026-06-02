@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-12                                                    #
+# Last Modified: 2026-06-01                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,7 +16,6 @@ from collections.abc import Sequence
 
 import numpy
 import numpy.typing
-import respondpy._core.history
 import respondpy._core.model
 import typing
 

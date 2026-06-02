@@ -4,7 +4,7 @@
 # Created Date: 2026-02-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-26                                                    #
+# Last Modified: 2026-06-01                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -15,17 +15,18 @@ import itertools
 import polars as pl
 import numpy as np
 
-import respondpy as rpy
+from respondpy.io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_behavior_table, get_intervention_table
+from respondpy.data.parameters import Parameter
 
 # Internal Functions
 
 
-def _validate_time(time: int | None, p: rpy.Parameter) -> int:
+def _validate_time(time: int | None, p: Parameter) -> int:
     """Helper function to validate a good time value for the specified parameter. If the parameter is
 
     Args:
         time (int | None): The time variable to check.
-        p (rpy.Parameter): The parameter to validate time against.
+        p (Parameter): The parameter to validate time against.
 
     Raises:
         ValueError: If time is None and the parameter is not the initial cohort, warn the user they need a time.
@@ -34,18 +35,18 @@ def _validate_time(time: int | None, p: rpy.Parameter) -> int:
         int: The parameter time or 0 if None and the parameter is an initial cohort.
     """
     if time is None:
-        if p != rpy.Parameter.INITIAL_COHORT:
+        if p != Parameter.INITIAL_COHORT:
             raise ValueError(
                 f"Parameter being extracted requires a time value be provided, but none was found: {p}")
         return 0
     return time
 
 
-def _get_sample_column_string(p: rpy.Parameter) -> str:
+def _get_sample_column_string(p: Parameter) -> str:
     """Getter for the column name in cohort representing the sample ID based on the parameter specified.
 
     Args:
-        p (rpy.Parameter): The parameter we want the column name for.
+        p (Parameter): The parameter we want the column name for.
 
     Raises:
         ValueError: Invalid parameter specified.
@@ -53,28 +54,28 @@ def _get_sample_column_string(p: rpy.Parameter) -> str:
     Returns:
         str: The column name in the cohort table for the parameter sample.
     """
-    if p == rpy.Parameter.INITIAL_COHORT:
+    if p == Parameter.INITIAL_COHORT:
         return "initial_population_sample"
-    if p == rpy.Parameter.MIGRATION_COHORT:
+    if p == Parameter.MIGRATION_COHORT:
         return "population_change_sample"
-    if p == rpy.Parameter.INTERVENTION_TRANSITION_PROBABILITY:
+    if p == Parameter.INTERVENTION_TRANSITION_PROBABILITY:
         return "intervention_transition_sample"
-    if p == rpy.Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
+    if p == Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
         return "behavior_transition_sample"
-    if p == rpy.Parameter.OVERDOSE_PROBABILITY:
+    if p == Parameter.OVERDOSE_PROBABILITY:
         return "overdose_sample"
-    if p == rpy.Parameter.OVERDOSE_FATALITY_PROBABILITY:
+    if p == Parameter.OVERDOSE_FATALITY_PROBABILITY:
         return "overdose_fatality_sample"
-    if p == rpy.Parameter.STANDARD_MORTALITY_RATIO:
+    if p == Parameter.STANDARD_MORTALITY_RATIO:
         return "smr_sample"
-    if p == rpy.Parameter.BACKGROUND_DEATH_PROBABILITY:
+    if p == Parameter.BACKGROUND_DEATH_PROBABILITY:
         return "background_mortality_sample"
     raise ValueError(
         f"Parameter value supplied is not implemented in the cohort table! {p}.")
 
 
 def _get_parameter_data(
-        p: rpy.Parameter,
+        p: Parameter,
         db: str | Path,
         sample_ids: pl.DataFrame,
         time: int
@@ -82,7 +83,7 @@ def _get_parameter_data(
     """Getter for the parameter data from the database.
 
     Args:
-        p (rpy.Parameter): The parameter to retrieve from the database.
+        p (Parameter): The parameter to retrieve from the database.
         db (str | Path): The path to the database file.
         sample_ids (pl.DataFrame): The cohort table containing the sample IDs.
         time (int): The time point to get data for.
@@ -91,7 +92,7 @@ def _get_parameter_data(
         pl.LazyFrame: A LazyFrame containing the parameter data from the database. The columns match the columns of the select statement, a state vector returns 3 columns ['intervention', 'behavior', 'value'] pattern where a transition matrix returns 4 columns ['init_intervention', 'init_behaivor' 'next_parameter', 'value']. Constant values return the single column.
     """
     sid_name = _get_sample_column_string(p)
-    ret_cols, ret_values = rpy.get_parameter_by_id_and_time(
+    ret_cols, ret_values = get_parameter_by_id_and_time(
         p, db, sample_ids.select(pl.col(sid_name)).item(), time
     )
     return pl.LazyFrame(ret_values, schema=ret_cols, orient='row')
@@ -99,7 +100,7 @@ def _get_parameter_data(
 
 def _fill_missing_values(
         lf: pl.LazyFrame,
-        p: rpy.Parameter,
+        p: Parameter,
         db: str | Path,
         sample_ids: pl.DataFrame,
         time: int
@@ -108,7 +109,7 @@ def _fill_missing_values(
 
     Args:
         lf (pl.LazyFrame): LazyFrame containing the sampled parameters
-        p (rpy.Parameter): Parameter of the data the LazyFrame contains
+        p (Parameter): Parameter of the data the LazyFrame contains
         db (str | Path): Path to the database file
         sample_ids (pl.DataFrame): The row of sample ids from the cohort table
         time (int): Timestep for the sampled parameters
@@ -121,16 +122,16 @@ def _fill_missing_values(
         pl.LazyFrame: A set of data composed of both fixed and sampled parameters. A state vector returns a 3 column ['intervention', 'behavior', 'value'] pattern where a transition matrix returns 4 columns ['init_intervention', 'init_behavior' 'next_parameter', 'value']. Constant values return the single column.
     """
     # quick exit if background mortality since it is a cohort constant
-    if p == rpy.Parameter.BACKGROUND_DEATH_PROBABILITY:
+    if p == Parameter.BACKGROUND_DEATH_PROBABILITY:
         return lf
     sid_name = _get_sample_column_string(p)
 
-    num_states = len(rpy.get_state_names(db))
-    if p == rpy.Parameter.INTERVENTION_TRANSITION_PROBABILITY:
-        num_states *= len(rpy.get_interventions(db))
+    num_states = len(get_state_names(db))
+    if p == Parameter.INTERVENTION_TRANSITION_PROBABILITY:
+        num_states *= len(get_interventions(db))
         # check the height of a dataframe is the size of the intervention list in the db
-    elif p == rpy.Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
-        num_states *= len(rpy.get_behaviors(db))
+    elif p == Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
+        num_states *= len(get_behaviors(db))
         # check the height of a dataframe is the size of the behavior list in the db
 
     sample_id = sample_ids.select(pl.col(sid_name)).item()
@@ -145,7 +146,7 @@ def _fill_missing_values(
     if sample_id == 1:
         raise ValueError(
             f"The first sample in the database for parameter {p} does not have {num_states} values!")
-    one_cols, one_values = rpy.get_parameter_by_id_and_time(p, db, 1, time)
+    one_cols, one_values = get_parameter_by_id_and_time(p, db, 1, time)
     return _fill_gaps_with_sample(lf, pl.LazyFrame(one_values, schema=one_cols, orient='row'))
 
 
@@ -241,7 +242,7 @@ def _sort_dataframes(lf: pl.LazyFrame, db: str | Path) -> pl.LazyFrame:
 
 
 def _extract_values(
-        p: rpy.Parameter,
+        p: Parameter,
         lf: pl.LazyFrame,
         *,
         n: int = 64  # 16 interventions * 4 behaviors
@@ -249,7 +250,7 @@ def _extract_values(
     """Helper function to convert the dataframe rows to a numpy array reshaped into either a numpy state vector [n x 1] or transition matrix [n x n].
 
     Args:
-        p (rpy.Parameter): The parameter we are extracting data for
+        p (Parameter): The parameter we are extracting data for
         results (pl.LazyFrame): The dataframe rows
         n (int, optional): The number of states in the state vector. Defaults to 64, assuming 16 interventions and 4 behaviors.
 
@@ -259,19 +260,19 @@ def _extract_values(
     Returns:
         np.ndarray: A numpy matrix of either [n x 1] or [n x n]
     """
-    if p in [rpy.Parameter.INITIAL_COHORT, rpy.Parameter.MIGRATION_COHORT]:
+    if p in [Parameter.INITIAL_COHORT, Parameter.MIGRATION_COHORT]:
         values = lf.select(pl.col("count")).collect().to_numpy().reshape(n, 1)
-    elif p in [rpy.Parameter.INTERVENTION_TRANSITION_PROBABILITY,
-               rpy.Parameter.BEHAVIOR_TRANSITION_PROBABILITY]:
+    elif p in [Parameter.INTERVENTION_TRANSITION_PROBABILITY,
+               Parameter.BEHAVIOR_TRANSITION_PROBABILITY]:
         values = lf.select(pl.col("probability")
                            ).collect().to_numpy().reshape(n, n)
-    elif p in [rpy.Parameter.OVERDOSE_PROBABILITY,
-               rpy.Parameter.OVERDOSE_FATALITY_PROBABILITY]:
+    elif p in [Parameter.OVERDOSE_PROBABILITY,
+               Parameter.OVERDOSE_FATALITY_PROBABILITY]:
         values = lf.select(pl.col("probability")
                            ).collect().to_numpy().reshape(n, 1)
-    elif p == rpy.Parameter.STANDARD_MORTALITY_RATIO:
+    elif p == Parameter.STANDARD_MORTALITY_RATIO:
         values = lf.select(pl.col("ratio")).collect().to_numpy().reshape(n, 1)
-    elif p == rpy.Parameter.BACKGROUND_DEATH_PROBABILITY:
+    elif p == Parameter.BACKGROUND_DEATH_PROBABILITY:
         values = np.repeat(lf.select(pl.col("probability")
                                      ).collect().to_numpy(), n).reshape(n, 1)
     else:
@@ -299,10 +300,10 @@ def _sort_state_vector(lf: pl.LazyFrame, db: str | Path) -> pl.LazyFrame:
         raise ValueError(
             f"Invalid columns provided when attempting to sort state vector: {s}")
     behaviors = pl.LazyFrame(
-        rpy.get_behavior_table(db), schema=["b_id", "b_name"], orient='row')
+        get_behavior_table(db), schema=["b_id", "b_name"], orient='row')
 
     interventions = pl.LazyFrame(
-        rpy.get_intervention_table(db), schema=["i_id", "i_name"], orient='row')
+        get_intervention_table(db), schema=["i_id", "i_name"], orient='row')
 
     # Sort first by behaviors, then by interventions
     return lf.join(
@@ -329,10 +330,10 @@ def _sort_transition_matrix(lf: pl.LazyFrame, db: str | Path) -> pl.LazyFrame:
         raise ValueError(
             f"Invalid columns provided when attempting to sort transition matrix: {lf.columns}")
     behaviors = pl.LazyFrame(
-        rpy.get_behavior_table(db), schema=["b_id", "b_name"])
+        get_behavior_table(db), schema=["b_id", "b_name"])
 
     interventions = pl.LazyFrame(
-        rpy.get_intervention_table(db), schema=["i_id", "i_name"])
+        get_intervention_table(db), schema=["i_id", "i_name"])
 
     # Sort order:
     #   1. Next Behavior
@@ -397,7 +398,7 @@ def _get_zero_transition_matrix(db: str | Path) -> pl.LazyFrame:
     Returns:
         pl.LazyFrame: A LazyFrame depicting a zero transition matrix. Columns are: ['intervention', 'behavior', 'next_intervention', 'next_behavior', 'values']
     """
-    state_names = rpy.get_state_names(db)
+    state_names = get_state_names(db)
     name_product = itertools.product(state_names, state_names)
     flat_names = [list(itertools.chain.from_iterable(t)) for t in name_product]
 
@@ -418,7 +419,7 @@ def _get_zero_transition_matrix(db: str | Path) -> pl.LazyFrame:
 
 
 def get_data_array(
-        p: rpy.Parameter,
+        p: Parameter,
         db: str | Path,
         sample_ids: pl.DataFrame,
         time: int | None = None
@@ -426,7 +427,7 @@ def get_data_array(
     """Helper function used to extract transitions from the database based on the cohort sample and the corresponding sample IDs.
 
     Args:
-        p (rpy.Parameter): The parameter to extract.
+        p (Parameter): The parameter to extract.
         db (str | Path): The string or Path object to the database.
         sample_ids (pl.DataFrame): The cohort sample containing the sample IDs.
         time (int | None): The timestep we are using to extract the transition. None is only valid when the initial cohort is being extracted.
@@ -442,4 +443,4 @@ def get_data_array(
     lf = _fill_missing_values(lf, p, db, sample_ids, time)
     lf = _build_transition_matrix_from_partial(lf, db)
     lf = _sort_dataframes(lf, db)
-    return _extract_values(p, lf, n=len(rpy.get_state_names(db)))
+    return _extract_values(p, lf, n=len(get_state_names(db)))

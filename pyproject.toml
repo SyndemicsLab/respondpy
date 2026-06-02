@@ -142,13 +142,12 @@ test-command = "python -m pytest -n auto --benchmark-disable tests"
 test-sources = ["pyproject.toml", "tests"]
 test-skip = [
   "cp310-win_arm64",
-  "cp310-musllinux_*",
-  "pp310-manylinux_aarch64",
-  "pp310-macosx_arm64",
   "cp31*-musllinux_*", # Threading test crashes
-  "cp313*",  # polars-runtime-32 lacks wheels for 3.13 and 3.14
+  "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
   "cp314*",
   "pp*",  # polars-runtime-32 unsupported on PyPy 3.11 (pp73)
+  "pp310-macosx_arm64",
+  "pp310-manylinux_aarch64",
   "gp311_242-macosx_x86_64",
   "gp311_242-manylinux_aarch64",
   "gp311_242-win*",  # pytest crashes with module 'io' has no attribute '_WindowsConsoleIO'
@@ -161,6 +160,7 @@ environment.PIP_ONLY_BINARY = "numpy"
 environment.PIP_PREFER_BINARY = "1"
 environment.UV_ONLY_BINARY = "numpy"
 environment.UV_PREFER_BINARY = "1"
+environment.CMAKE_BUILD_PARALLEL_LEVEL = "3"
 
 [tool.cibuildwheel.pyodide]
 build-frontend = {name = "build", args = ["--exports", "whole_archive"]}

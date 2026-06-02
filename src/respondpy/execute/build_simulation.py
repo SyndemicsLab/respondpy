@@ -4,7 +4,7 @@
 # Created Date: 2026-02-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-26                                                    #
+# Last Modified: 2026-06-01                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -17,12 +17,13 @@ from collections.abc import Sequence
 import polars as pl
 import numpy as np
 
-from respondpy._core.transition import Transition  # pylint: disable=import-error,no-name-in-module
-from respondpy._core.model import Model  # pylint: disable=import-error,no-name-in-module
-from respondpy._core.simulation import Simulation  # pylint: disable=import-error,no-name-in-module
+from respondpy._core.transition import Transition  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
+from respondpy._core.model import Model  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
+from respondpy._core.simulation import Simulation  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 from respondpy.data.parameters import Parameter
 from respondpy.io.reading import get_cohorts
-from respondpy.execute.build_transition import get_data_array
+
+from .build_transition import get_data_array
 
 
 def _get_list_of_ints(config_string: str) -> list[int]:

@@ -4,14 +4,14 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-26                                                    #
+# Last Modified: 2026-06-01                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
 ################################################################################
 
 from __future__ import annotations
-from .version import version as __version__  # pylint: disable=import-error,no-name-in-module
+from .version import version as __version__  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
 from .data.parameters import Parameter
 
@@ -23,17 +23,17 @@ from .io.reading import (
 )
 from .io.writing import insert_parameter, insert_cohort
 
-from ._core.cost_effectiveness import discount, cwise_product, cwise_min, calculate_life_years  # pylint: disable=import-error,no-name-in-module
+from ._core.cost_effectiveness import discount, cwise_product, cwise_min, calculate_life_years  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
-from ._core.history import History, HistoryMode, Snapshot, Accumulated, get_default_history_mode  # pylint: disable=import-error,no-name-in-module
+from ._core.history import History  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
-from ._core.logging import CreationStatus, kError, kExists, kNotCreated, kSuccess, LogType, kInfo, kWarn, kDebug, LogPattern, kSimple, kStandard, kDetailed, kThreadSafe, create_file_logger, create_shared_file_sink, create_shared_logger, set_log_pattern, get_log_pattern, set_flush_interval, flush_all_loggers, check_logger_exists, get_logger_info, set_logger_level, log_debug, log_error, log_info, log_warning  # pylint: disable=import-error,no-name-in-module
+from ._core.logging import CreationStatus, LogType, create_file_logger, kDebug, kError, kExists, kInfo, kNotCreated, kSuccess, kWarn, log_debug, log_error, log_info, log_warning   # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
-from ._core.model import Model  # pylint: disable=import-error,no-name-in-module
+from ._core.model import Model  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
-from ._core.simulation import Simulation  # pylint: disable=import-error,no-name-in-module
+from ._core.simulation import Simulation  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
-from ._core.transition import Transition  # pylint: disable=import-error,no-name-in-module
+from ._core.transition import Transition  # pylint: disable=no-name-in-module # type: ignore[reportMissingModuleSource]
 
 __all__ = [
     "Parameter",  # data.parameters
@@ -54,10 +54,6 @@ __all__ = [
     "cwise_min",
     "calculate_life_years",
     "History",  # _core.history
-    "HistoryMode",
-    "Snapshot",
-    "Accumulated",
-    "get_default_history_mode",
     "CreationStatus",  # _core.logging
     "kError",
     "kExists",
@@ -67,21 +63,7 @@ __all__ = [
     "kInfo",
     "kWarn",
     "kDebug",
-    "LogPattern",
-    "kSimple",
-    "kStandard",
-    "kDetailed",
-    "kThreadSafe",
     "create_file_logger",
-    "create_shared_file_sink",
-    "create_shared_logger",
-    "set_log_pattern",
-    "get_log_pattern",
-    "set_flush_interval",
-    "flush_all_loggers",
-    "check_logger_exists",
-    "get_logger_info",
-    "set_logger_level",
     "log_debug",
     "log_error",
     "log_info",
