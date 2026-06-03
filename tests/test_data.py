@@ -73,3 +73,58 @@ def test_update_retention_probability_happy_path() -> None:
 
     assert result.equals(expected)
     assert verify_transition_probability(result, "initial_intervention")
+
+
+@pytest.mark.unit
+def test_update_retention_probability_expanded_matrix_happy_path() -> None:
+    expanded = pl.DataFrame(
+        {
+            "intervention": [1, 1, 2, 2],
+            "behavior": [1, 1, 1, 1],
+            "next_intervention": [1, 2, 1, 2],
+            "next_behavior": [1, 1, 1, 1],
+            "probability": [0.0, 0.2, 0.4, 0.0],
+        }
+    )
+
+    result = update_retention_probability(
+        expanded,
+        "intervention",
+        "next_intervention",
+        probability_column="probability",
+        group_columns=["intervention", "behavior"],
+        unique_key_columns=[
+            "intervention",
+            "behavior",
+            "next_intervention",
+            "next_behavior",
+        ],
+        retention_pairs=[
+            ("intervention", "next_intervention"),
+            ("behavior", "next_behavior"),
+        ],
+        complete_missing=False,
+    ).sort(["intervention", "behavior", "next_intervention", "next_behavior"])
+
+    expected = pl.DataFrame(
+        {
+            "intervention": [1, 1, 2, 2],
+            "behavior": [1, 1, 1, 1],
+            "next_intervention": [1, 2, 1, 2],
+            "next_behavior": [1, 1, 1, 1],
+            "probability": [0.8, 0.2, 0.4, 0.6],
+        }
+    )
+
+    assert result.equals(expected)
+    assert verify_transition_probability(
+        result,
+        "intervention",
+        group_columns=["intervention", "behavior"],
+        unique_key_columns=[
+            "intervention",
+            "behavior",
+            "next_intervention",
+            "next_behavior",
+        ],
+    )

@@ -169,6 +169,8 @@ def update_retention_probability(
     probability_column: str = "probability",
     group_columns: list[str] | None = None,
     unique_key_columns: list[str] | None = None,
+    retention_pairs: list[tuple[str, str]] | None = None,
+    complete_missing: bool = True,
     tolerance: float = 1e-12,
     forbid_negative_retention: bool = True,
 ) -> pl.DataFrame:
@@ -195,24 +197,39 @@ def update_retention_probability(
     if not active_unique_keys:
         active_unique_keys = active_group_columns + [destination_column]
 
+    active_retention_pairs = retention_pairs or [(origin_column, destination_column)]
+
     _require_columns(
         transition_matrix,
         active_group_columns + [origin_column, destination_column],
     )
+    _require_columns(
+        transition_matrix,
+        [c for pair in active_retention_pairs for c in pair],
+    )
     _validate_probability_column(transition_matrix, probability_column)
     _ensure_no_duplicate_keys(transition_matrix, active_unique_keys)
 
-    completed = _complete_transition_rows(
-        transition_matrix,
-        active_group_columns,
-        origin_column,
-        destination_column,
-        probability_column=probability_column,
-    )
+    if complete_missing:
+        completed = _complete_transition_rows(
+            transition_matrix,
+            active_group_columns,
+            origin_column,
+            destination_column,
+            probability_column=probability_column,
+        )
+    else:
+        completed = transition_matrix
+
+    is_retention = pl.lit(True)
+    for origin_col, destination_col in active_retention_pairs:
+        is_retention = is_retention & (
+            pl.col(destination_col) == pl.col(origin_col)
+        )
 
     non_retention = (
         completed
-        .filter(pl.col(destination_column) != pl.col(origin_column))
+        .filter(~is_retention)
         .group_by(active_group_columns)
         .agg(pl.col(probability_column).sum().alias("__non_retention_sum"))
     )
@@ -247,7 +264,7 @@ def update_retention_probability(
     result = (
         completed.join(retention_targets, on=active_group_columns, how="left")
         .with_columns(
-            pl.when(pl.col(destination_column) == pl.col(origin_column))
+            pl.when(is_retention)
             .then(pl.col("__retention_target"))
             .otherwise(pl.col(probability_column))
             .alias(probability_column)

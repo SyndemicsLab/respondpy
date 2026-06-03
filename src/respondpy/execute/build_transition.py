@@ -4,7 +4,7 @@
 # Created Date: 2026-02-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-02                                                    #
+# Last Modified: 2026-06-03                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -17,6 +17,7 @@ import numpy as np
 
 from respondpy.io.reading import get_parameter_by_id_and_time, get_state_names, get_behaviors, get_interventions, get_behavior_table, get_intervention_table
 from respondpy.data.parameters import Parameter
+from respondpy.data import transition_matrices
 
 # Internal Functions
 
@@ -98,6 +99,33 @@ def _get_parameter_data(
     return pl.LazyFrame(ret_values, schema=ret_cols, orient='row')
 
 
+def _verify_no_nulls(
+        df: pl.DataFrame,
+        sample_id: int,
+        p: Parameter,
+        *,
+        col_to_check: str = "probability"
+) -> None:
+    if df.select(pl.col(col_to_check).is_null().any()).item():
+        raise ValueError(
+            f"Null transition probabilities found for sample {sample_id} and parameter {p}"
+        )
+
+
+def _verify_no_duplicates(
+        df: pl.DataFrame,
+        key_columns: list[str],
+        sample_id: int,
+        p: Parameter
+) -> None:
+    if df.select(
+        pl.struct(key_columns).is_duplicated().any()
+    ).item():
+        raise ValueError(
+            f"Duplicate transition rows found for sample {sample_id} and parameter {p}"
+        )
+
+
 def _fill_missing_values(
         lf: pl.LazyFrame,
         p: Parameter,
@@ -124,36 +152,56 @@ def _fill_missing_values(
     # quick exit if background mortality since it is a cohort constant
     if p == Parameter.BACKGROUND_DEATH_PROBABILITY:
         return lf
+
     sid_name = _get_sample_column_string(p)
-
     num_states = len(get_state_names(db))
-    if p == Parameter.INTERVENTION_TRANSITION_PROBABILITY:
-        num_states *= len(get_interventions(db))
-        # check the height of a dataframe is the size of the intervention list in the db
-    elif p == Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
-        num_states *= len(get_behaviors(db))
-        # check the height of a dataframe is the size of the behavior list in the db
-
     sample_id = sample_ids.select(pl.col(sid_name)).item()
-    height = lf.collect().height
-    if height == num_states:
-        return lf
+    collected = lf.collect()
+    height = collected.height
+
+    if p == Parameter.INTERVENTION_TRANSITION_PROBABILITY:
+        key_columns = ["initial_intervention", "new_intervention", "behavior"]
+        _verify_no_nulls(collected, sample_id, p)
+        _verify_no_duplicates(collected, key_columns, sample_id, p)
+        num_states *= len(get_interventions(db))
+
+    elif p == Parameter.BEHAVIOR_TRANSITION_PROBABILITY:
+        key_columns = ["intervention", "initial_behavior", "new_behavior"]
+        _verify_no_nulls(collected, sample_id, p)
+        _verify_no_duplicates(collected, key_columns, sample_id, p)
+        num_states *= len(get_behaviors(db))
+
     if height > num_states:
         raise ValueError(
             f"Too many transition values found for sample {sample_id} and parameter {p}")
+
+    if height == num_states:
+        return collected.lazy()
+
+    # This is handled this way because it wants to break apart the transition matrices. Since I do not yet handle overdose static values it wants to keep the sample_id == 1. If we address that, we'll be able to error if its not in those parameter lists.
+
+    if p in [Parameter.INTERVENTION_TRANSITION_PROBABILITY,
+             Parameter.BEHAVIOR_TRANSITION_PROBABILITY]:
+        # Transition samples are expected to be sparse; zero fill and retention balancing
+        # are performed after state-to-state expansion.
+        return collected.lazy()
 
     # Below assumes the dataframe has only part of the data and we must load more from fixed samples
     if sample_id == 1:
         raise ValueError(
             f"The first sample in the database for parameter {p} does not have {num_states} values!")
     one_cols, one_values = get_parameter_by_id_and_time(p, db, 1, time)
-    return _fill_gaps_with_sample(lf, pl.LazyFrame(one_values, schema=one_cols, orient='row'))
+    return _fill_gaps_with_sample(
+        lf,
+        pl.LazyFrame(one_values, schema=one_cols, orient='row')
+    )
 
 
 def _build_transition_matrix_from_partial(
         partial: pl.LazyFrame,
         db: str | Path,
         *,
+        parameter: Parameter | None = None,
         on_cols: list | None = None
 ) -> pl.LazyFrame:
     """Helper function to build a transition matrix from the samples. This only executes if the partial has 4 columns (the indicator for a transition matrix). This function is needed because both transition matrices (interventions and behaviors) are sparse matrices.
@@ -220,6 +268,28 @@ def _build_transition_matrix_from_partial(
         ["intervention", "behavior", "next_intervention",
             "next_behavior", "probability"]
     )
+
+    if parameter in [Parameter.INTERVENTION_TRANSITION_PROBABILITY,
+                     Parameter.BEHAVIOR_TRANSITION_PROBABILITY]:
+        normalized = transition_matrices.update_retention_probability(
+            lf.collect(),
+            "intervention",
+            "next_intervention",
+            probability_column="probability",
+            group_columns=["intervention", "behavior"],
+            unique_key_columns=[
+                "intervention",
+                "behavior",
+                "next_intervention",
+                "next_behavior",
+            ],
+            retention_pairs=[
+                ("intervention", "next_intervention"),
+                ("behavior", "next_behavior"),
+            ],
+            complete_missing=False,
+        )
+        lf = normalized.lazy()
 
     return lf
 
