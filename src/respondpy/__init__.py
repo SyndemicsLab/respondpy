@@ -20,9 +20,18 @@ from .cost_effectiveness import (
     discount, cwise_product, cwise_min, calculate_life_years
 )
 from .history import History
-from .model import Model, build_model, add_transitions_to_model, build_model_transitions
-from .simulation import Simulation, build_simulation
-from .transition import Transition, transition_factory, build_timestep_transition
+
+from .model import (
+    Model, build_model, add_transitions_to_model, build_model_transitions
+)
+
+from .simulation import (
+    Simulation, build_simulation
+)
+
+from .transition import (
+    Transition, transition_factory, build_timestep_transition
+)
 
 __all__ = [
     "data",

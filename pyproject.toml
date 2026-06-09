@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.1.2"
+version = "0.2.0"
 description = "The Syndemic Lab's RESPOND Simulation Python Extension Module."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -45,6 +45,7 @@ dev = [
     "nox>=2026.2.9",
     "polars>=1.37.1",
     "pybind11-stubgen>=2.5.5",
+    "pylint>=4.0.5",
     "pytest>=9.0.2",
     "setuptools_scm",
     "typer",
@@ -147,15 +148,9 @@ test-skip = [
   "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
   "cp314*",
   "pp*",  # polars-runtime-32 unsupported on PyPy 3.11 (pp73)
-  "pp310-macosx_arm64",
-  "pp310-manylinux_aarch64",
-  "gp311_242-macosx_x86_64",
-  "gp311_242-manylinux_aarch64",
-  "gp311_242-win*",  # pytest crashes with module 'io' has no attribute '_WindowsConsoleIO'
-  "gp312_*",  # No numpy wheels yet
   "cp314*-ios_*",  # No numpy wheels yet
 ]
-enable = ["cpython-freethreading", "pypy"]
+enable = ["pypy"]
 environment-pass = ["SETUPTOOLS_SCM_PRETEND_VERSION"]
 environment.PIP_ONLY_BINARY = "numpy"
 environment.PIP_PREFER_BINARY = "1"
