@@ -1,10 +1,10 @@
 ################################################################################
-# File: test_execute.py                                                        #
+# File: test_simulation.py                                                     #
 # Project: respondpy                                                           #
 # Created Date: 2026-02-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-26                                                    #
+# Last Modified: 2026-06-09                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -19,7 +19,7 @@ from configparser import ConfigParser
 
 import pytest
 
-from respondpy import build_simulation
+import respondpy as rpy
 
 
 @pytest.fixture
@@ -80,5 +80,6 @@ def test_build_simulation(setup_data):
         setup_data (_type_): _description_
     """
     db, cfg = setup_data
-    sim = build_simulation([1], db, cfg)
+    inp = rpy.data.Input(db_path=db, conf_path=cfg)
+    sim = rpy.build_simulation([1], inp)
     assert len(sim.get_models()) == 1

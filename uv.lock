@@ -1784,6 +1784,7 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "polars" },
+    { name = "setuptools-scm" },
 ]
 
 [package.dev-dependencies]
@@ -1858,6 +1859,7 @@ test = [
 requires-dist = [
     { name = "numpy" },
     { name = "polars", specifier = ">=1.37.1" },
+    { name = "setuptools-scm", specifier = ">=10.0.5" },
 ]
 
 [package.metadata.requires-dev]

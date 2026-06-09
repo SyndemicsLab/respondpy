@@ -1,24 +1,24 @@
 ################################################################################
-# File: test_data.py                                                           #
+# File: _utils.py                                                              #
 # Project: respondpy                                                           #
-# Created Date: 2026-06-02                                                     #
+# Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-05                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
-
-import pytest
-
-import respondpy.data as rpydata
+from __future__ import annotations
 
 
-@pytest.mark.unit
-def test_build_constant_state_vector() -> None:
-    """Test the build_constant_state_vector function."""
-    state_vector = rpydata.build_constant_state_vector(5, 1)
-    assert state_vector.shape == (5,)
-    assert state_vector.to_numpy().sum() == 5
-    assert all(state_vector == 1)
+def str_to_int_list(config_string: str, *, delimiter: str = ',') -> list[int]:
+    """Converts a comma-separated string into a list of integers
+
+    Args:
+        config_string (str): A comma-separated string
+
+    Returns:
+        list[int]: The list of integers from the string
+    """
+    return [int(x.strip()) for x in config_string.split(delimiter)]

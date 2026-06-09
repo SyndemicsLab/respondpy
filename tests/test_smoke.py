@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-12                                                    #
+# Last Modified: 2026-06-05                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -92,7 +92,9 @@ def test_simulation_sparse_histories() -> None:
     assert "markov" in sparse, "Expected 'markov' model name as key"
 
     model_histories = sparse["markov"]
-    assert isinstance(model_histories, dict), "Expected inner dict keyed by history name"
+    assert isinstance(
+        model_histories, dict), "Expected inner dict keyed by history name"
 
     for hist in model_histories.values():
-        assert isinstance(hist, rpy.History), "Expected History values in inner dict"
+        assert isinstance(
+            hist, rpy.History), "Expected History values in inner dict"

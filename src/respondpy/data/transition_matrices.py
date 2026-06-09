@@ -4,13 +4,15 @@
 # Created Date: 2026-06-02                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-02                                                    #
+# Last Modified: 2026-06-09                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 import polars as pl
+
+from .parameters import ParameterType
 
 
 def _require_columns(frame: pl.DataFrame, columns: list[str]) -> None:
@@ -31,7 +33,8 @@ def _validate_probability_column(
 
 def _ensure_no_duplicate_keys(frame: pl.DataFrame, key_columns: list[str]) -> None:
     _require_columns(frame, key_columns)
-    has_duplicates = frame.select(pl.struct(key_columns).is_duplicated().any()).item()
+    has_duplicates = frame.select(
+        pl.struct(key_columns).is_duplicated().any()).item()
     if has_duplicates:
         raise ValueError(
             f"Duplicate transition rows found for key columns: {key_columns}"
@@ -85,12 +88,14 @@ def _complete_transition_rows(
     probability_column: str = "probability",
 ) -> pl.DataFrame:
     group_without_origin = [c for c in group_columns if c != origin_column]
-    transition_keys = group_without_origin + [origin_column, destination_column]
+    transition_keys = group_without_origin + \
+        [origin_column, destination_column]
 
     all_states = pl.concat(
         [
             transition_matrix.select(pl.col(origin_column).alias("_state")),
-            transition_matrix.select(pl.col(destination_column).alias("_state")),
+            transition_matrix.select(
+                pl.col(destination_column).alias("_state")),
         ]
     ).unique()
 
@@ -117,48 +122,112 @@ def _complete_transition_rows(
     )
 
 
-def verify_transition_probability(
-        transition_matrix: pl.DataFrame,
-        transition_column: str,
+def _build_filled_intervention_matrix(
+        num_interventions: int,
+        num_behaviors: int,
         *,
-    probability_column: str = "probability",
-    group_columns: list[str] | None = None,
-    unique_key_columns: list[str] | None = None,
-    tolerance: float = 1e-12,
-) -> bool:
-    """Checks that the transition probabilities that correspond to movement from the initial state sum to one.
-
-    Args:
-        transition_matrix (pl.DataFrame): _description_
-
-    Returns:
-        bool: _description_
-    """
-    inferred_group_columns, _, destination_column, inferred_unique_keys = (
-        _infer_transition_shape(transition_matrix)
-        if group_columns is None
-        else (group_columns, transition_column, "", [])
+        sample_id: int = 1,
+        time: int = 1,
+        constant: float = 0.0
+) -> pl.DataFrame:
+    interventions = pl.DataFrame(
+        {"initial_intervention": pl.arange(0, num_interventions, eager=True)}
     )
-    active_group_columns = group_columns or inferred_group_columns
-    active_unique_keys = unique_key_columns or inferred_unique_keys
-    if not active_unique_keys and destination_column:
-        active_unique_keys = active_group_columns + [destination_column]
-    if not active_unique_keys:
-        active_unique_keys = [
-            c for c in transition_matrix.columns if c != probability_column
-        ]
+    new_interventions = pl.DataFrame(
+        {"new_intervention": pl.arange(0, num_interventions, eager=True)}
+    )
+    behaviors = pl.DataFrame(
+        {"behavior": pl.arange(0, num_behaviors, eager=True)})
 
-    _require_columns(transition_matrix, active_group_columns)
-    _validate_probability_column(transition_matrix, probability_column)
-    _ensure_no_duplicate_keys(transition_matrix, active_unique_keys)
-
-    grouped = transition_matrix.group_by(active_group_columns).agg(
-        pl.col(probability_column).sum().alias("prob_sum")
+    return (
+        interventions
+        .join(new_interventions, how="cross")
+        .join(behaviors, how="cross")
+        .with_columns(
+            sample=pl.lit(sample_id),
+            time=pl.lit(time),
+            probability=pl.lit(constant),
+        )
+        .select(
+            [
+                "sample",
+                "time",
+                "initial_intervention",
+                "new_intervention",
+                "behavior",
+                "probability",
+            ]
+        )
     )
 
-    return grouped.select(
-        (pl.col("prob_sum") - 1.0).abs().le(tolerance).all()
-    ).item()
+
+def _build_filled_behavior_matrix(
+        num_interventions: int,
+        num_behaviors: int,
+        *,
+        sample_id: int = 1,
+        time: int = 1,
+        constant: float = 0.0
+) -> pl.DataFrame:
+    behaviors = pl.DataFrame(
+        {"initial_behavior": pl.arange(0, num_behaviors, eager=True)}
+    )
+    new_behaviors = pl.DataFrame(
+        {"new_behavior": pl.arange(0, num_behaviors, eager=True)}
+    )
+    interventions = pl.DataFrame(
+        {"intervention": pl.arange(0, num_interventions, eager=True)})
+
+    return (
+        behaviors
+        .join(new_behaviors, how="cross")
+        .join(interventions, how="cross")
+        .with_columns(
+            sample=pl.lit(sample_id),
+            time=pl.lit(time),
+            probability=pl.lit(constant),
+        )
+        .select(
+            [
+                "sample",
+                "time",
+                "initial_behavior",
+                "new_behavior",
+                "intervention",
+                "probability",
+            ]
+        )
+    )
+
+
+def build_constant_transition(
+    parameter: ParameterType,
+    num_interventions: int,
+    num_behaviors: int,
+    *,
+    sample_id: int = 1,
+    time: int = 1,
+    constant: float = 0.0
+) -> pl.DataFrame:
+    if parameter == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
+        return _build_filled_intervention_matrix(
+            num_interventions,
+            num_behaviors,
+            sample_id=sample_id,
+            time=time,
+            constant=constant,
+        )
+    if parameter == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+        return _build_filled_behavior_matrix(
+            num_interventions,
+            num_behaviors,
+            sample_id=sample_id,
+            time=time,
+            constant=constant,
+        )
+    raise ValueError(
+        f"ParameterType {parameter} is not a valid state transition parameter."
+    )
 
 
 def update_retention_probability(
@@ -197,7 +266,8 @@ def update_retention_probability(
     if not active_unique_keys:
         active_unique_keys = active_group_columns + [destination_column]
 
-    active_retention_pairs = retention_pairs or [(origin_column, destination_column)]
+    active_retention_pairs = retention_pairs or [
+        (origin_column, destination_column)]
 
     _require_columns(
         transition_matrix,
@@ -288,38 +358,45 @@ def update_retention_probability(
     return result
 
 
-def _build_zero_intervention_matrix(
-        num_interventions: int,
-        num_behaviors: int,
-        *,
-        sample_id: int = 1,
-        time: int = 1
-) -> pl.DataFrame:
-    interventions = pl.DataFrame(
-        {"initial_intervention": pl.arange(0, num_interventions, eager=True)}
-    )
-    new_interventions = pl.DataFrame(
-        {"new_intervention": pl.arange(0, num_interventions, eager=True)}
-    )
-    behaviors = pl.DataFrame({"behavior": pl.arange(0, num_behaviors, eager=True)})
+def verify_transition_probability(
+    transition_matrix: pl.DataFrame,
+    transition_column: str,
+    *,
+    probability_column: str = "probability",
+    group_columns: list[str] | None = None,
+    unique_key_columns: list[str] | None = None,
+    tolerance: float = 1e-12,
+) -> bool:
+    """Checks that the transition probabilities that correspond to movement from the initial state sum to one.
 
-    return (
-        interventions
-        .join(new_interventions, how="cross")
-        .join(behaviors, how="cross")
-        .with_columns(
-            sample=pl.lit(sample_id),
-            time=pl.lit(time),
-            probability=pl.lit(0.0),
-        )
-        .select(
-            [
-                "sample",
-                "time",
-                "initial_intervention",
-                "new_intervention",
-                "behavior",
-                "probability",
-            ]
-        )
+    Args:
+        transition_matrix (pl.DataFrame): _description_
+
+    Returns:
+        bool: _description_
+    """
+    inferred_group_columns, _, destination_column, inferred_unique_keys = (
+        _infer_transition_shape(transition_matrix)
+        if group_columns is None
+        else (group_columns, transition_column, "", [])
     )
+    active_group_columns = group_columns or inferred_group_columns
+    active_unique_keys = unique_key_columns or inferred_unique_keys
+    if not active_unique_keys and destination_column:
+        active_unique_keys = active_group_columns + [destination_column]
+    if not active_unique_keys:
+        active_unique_keys = [
+            c for c in transition_matrix.columns if c != probability_column
+        ]
+
+    _require_columns(transition_matrix, active_group_columns)
+    _validate_probability_column(transition_matrix, probability_column)
+    _ensure_no_duplicate_keys(transition_matrix, active_unique_keys)
+
+    grouped = transition_matrix.group_by(active_group_columns).agg(
+        pl.col(probability_column).sum().alias("prob_sum")
+    )
+
+    return grouped.select(
+        (pl.col("prob_sum") - 1.0).abs().le(tolerance).all()
+    ).item()

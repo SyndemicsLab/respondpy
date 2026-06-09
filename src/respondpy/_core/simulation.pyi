@@ -49,6 +49,9 @@ class Simulation:
     def get_model_histories(self) -> Sequence[dict[str, Sequence[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
         ...
 
+    def get_model_sparse_histories(self) -> dict[str, dict[str, typing.Any]]:
+        ...
+
     def get_model_history_names(self) -> Sequence[tuple[str, str]]:
         ...
 
