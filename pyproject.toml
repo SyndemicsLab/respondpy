@@ -188,6 +188,8 @@ omit = [
 
 [tool.pylint]
 py-version = "3.12"
+# Shim added to make sure pylint can find our modules since the pybind11 is messing with uv virtual environments. This just adds the src directory to the path before pylint runs but shouldn't impact any distribution details.
+init-hook = "import os,sys; sys.path.insert(0, os.path.join(os.getcwd(), 'src'))"
 ignore-patterns = ['.*\.pyi']
 ignore = "version.py"
 extension-pkg-allow-list = ["respondpy._core"]

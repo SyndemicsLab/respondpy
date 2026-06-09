@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-05                                                    #
+# Last Modified: 2026-06-09                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -21,6 +21,20 @@ import pytest
 import numpy as np
 
 import respondpy as rpy
+
+
+@pytest.mark.smoke
+def test_import() -> None:
+    """Test that we can import the module."""
+    import respondpy
+    assert respondpy.__version__ is not None
+
+
+@pytest.mark.smoke
+def test_data_import() -> None:
+    import respondpy.data
+    assert respondpy.data.__all__ is not None
+    assert isinstance(respondpy.__dir__(), list)
 
 
 @pytest.mark.smoke

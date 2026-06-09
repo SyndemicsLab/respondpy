@@ -60,4 +60,4 @@ def validate_time_list(ct_list: list[int]) -> list[int]:
     ct_list.sort(reverse=True)
     if ct_list[-1] == 1:
         ct_list.pop()
-    return ct_list
+    return ct_list[::-1]

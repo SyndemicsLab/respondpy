@@ -12,7 +12,7 @@
 
 import polars as pl
 
-from .parameters import ParameterType
+from .parameters import Parameter, ParameterType
 
 
 def _require_columns(frame: pl.DataFrame, columns: list[str]) -> None:
@@ -121,28 +121,25 @@ def _complete_transition_rows(
         .select(group_columns + [destination_column, probability_column])
     )
 
+# Welp, right now this is struggling because by nature a markov transition matrix is square. However, because we have transition operations we have a bit of a different behavior resulting in half matrices. This is because there is only one way movement in each transition operation and so we'd have duplcate column values in the "next" columns (e.g. intervention transitions would duplicate the behavior states). Gotta think more about this one.
+
 
 def _build_filled_intervention_matrix(
-        num_interventions: int,
-        num_behaviors: int,
+        interventions: list[str],
+        behaviors: list[str],
         *,
         sample_id: int = 1,
         time: int = 1,
         constant: float = 0.0
 ) -> pl.DataFrame:
-    interventions = pl.DataFrame(
-        {"initial_intervention": pl.arange(0, num_interventions, eager=True)}
-    )
-    new_interventions = pl.DataFrame(
-        {"new_intervention": pl.arange(0, num_interventions, eager=True)}
-    )
-    behaviors = pl.DataFrame(
-        {"behavior": pl.arange(0, num_behaviors, eager=True)})
+    inter = pl.DataFrame({"initial_intervention": interventions})
+    new_inter = pl.DataFrame({"new_intervention": interventions})
+    behav = pl.DataFrame({"behavior": behaviors})
 
     return (
-        interventions
-        .join(new_interventions, how="cross")
-        .join(behaviors, how="cross")
+        inter
+        .join(new_inter, how="cross")
+        .join(behav, how="cross")
         .with_columns(
             sample=pl.lit(sample_id),
             time=pl.lit(time),
@@ -162,26 +159,21 @@ def _build_filled_intervention_matrix(
 
 
 def _build_filled_behavior_matrix(
-        num_interventions: int,
-        num_behaviors: int,
+        interventions: list[str],
+        behaviors: list[str],
         *,
         sample_id: int = 1,
         time: int = 1,
         constant: float = 0.0
 ) -> pl.DataFrame:
-    behaviors = pl.DataFrame(
-        {"initial_behavior": pl.arange(0, num_behaviors, eager=True)}
-    )
-    new_behaviors = pl.DataFrame(
-        {"new_behavior": pl.arange(0, num_behaviors, eager=True)}
-    )
-    interventions = pl.DataFrame(
-        {"intervention": pl.arange(0, num_interventions, eager=True)})
+    behav = pl.DataFrame({"initial_behavior": behaviors})
+    new_behav = pl.DataFrame({"new_behavior": behaviors})
+    inter = pl.DataFrame({"intervention": interventions})
 
     return (
-        behaviors
-        .join(new_behaviors, how="cross")
-        .join(interventions, how="cross")
+        behav
+        .join(new_behav, how="cross")
+        .join(inter, how="cross")
         .with_columns(
             sample=pl.lit(sample_id),
             time=pl.lit(time),
@@ -201,9 +193,9 @@ def _build_filled_behavior_matrix(
 
 
 def build_constant_transition(
-    parameter: ParameterType,
-    num_interventions: int,
-    num_behaviors: int,
+    parameter: Parameter,
+    interventions: list[str],
+    behaviors: list[str],
     *,
     sample_id: int = 1,
     time: int = 1,
@@ -211,16 +203,16 @@ def build_constant_transition(
 ) -> pl.DataFrame:
     if parameter == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
         return _build_filled_intervention_matrix(
-            num_interventions,
-            num_behaviors,
+            interventions,
+            behaviors,
             sample_id=sample_id,
             time=time,
             constant=constant,
         )
     if parameter == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
         return _build_filled_behavior_matrix(
-            num_interventions,
-            num_behaviors,
+            interventions,
+            behaviors,
             sample_id=sample_id,
             time=time,
             constant=constant,
@@ -243,16 +235,6 @@ def update_retention_probability(
     tolerance: float = 1e-12,
     forbid_negative_retention: bool = True,
 ) -> pl.DataFrame:
-    """_summary_
-
-    Args:
-        transition_matrix (pl.DataFrame): _description_
-        transition_column (str): _description_
-        probability_column (str, optional): _description_. Defaults to "probability".
-
-    Returns:
-        pl.DataFrame: _description_
-    """
     inferred_group_columns, inferred_origin, inferred_destination, inferred_unique_keys = (
         _infer_transition_shape(transition_matrix)
         if group_columns is None

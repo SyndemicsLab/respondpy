@@ -118,7 +118,7 @@ class Input:
             self,
             state: Literal["intervention", "behavior"]
     ) -> list[tuple[int, str]]:
-        if self.states[state]:
+        if state in self.states:
             return self.states[state]
 
         stmt = f"SELECT id, name FROM {state} ORDER BY id"
@@ -133,7 +133,7 @@ class Input:
         Returns:
             list[tuple[str]]: List of tuples containing intervention, behavior combinations that form the state names.
         """
-        if self.states["combination"]:
+        if "combination" in self.states:
             return self.states["combination"]
 
         stmt = """
@@ -199,23 +199,31 @@ class Input:
         if not param.is_time_varying():
             cols, vals = self._connect_and_fetchall(
                 stmt, (str(sample_id),))
+            lzdf = pl.LazyFrame(
+                vals, schema=cols, orient='row'
+            ).with_columns(sample=sample_id)
         else:
             cols, vals = self._connect_and_fetchall(
                 stmt, (str(sample_id), str(time)))
+            lzdf = pl.LazyFrame(
+                vals, schema=cols, orient='row'
+            ).with_columns(
+                sample=sample_id,
+                time=time
+            )
 
-        return pl.LazyFrame(vals, schema=cols, orient='row')
+        return lzdf
 
     def _combine_dataframes(
             self,
             df1: pl.LazyFrame,
             df2: pl.LazyFrame,
             *,
-            join_cols: list[str] | None = None,
             value_col: str = "probability"
     ) -> pl.LazyFrame:
-        if join_cols is None:
-            join_cols = ["intervention", "behavior"]
-        joined_lf = df1.join(df2, on=join_cols, how="left", suffix="_new")
+        # We want to join on all columns except the value column, and then collapse the value column so that if there is a value in df2 it takes precedence, but if there isn't then we keep the value from df1. This allows us to fill in missing values with the constant dataframes.
+        joined_lf = df1.join(
+            df2, on=df1.collect_schema().names(), how="left", suffix="_new")
         collapsed_df = joined_lf.with_columns(
             pl.when(
                 pl.col(f"{value_col}_new").is_null()
@@ -224,7 +232,7 @@ class Input:
             ).otherwise(
                 pl.col(f"{value_col}_new")
             ).alias(value_col)
-        ).select(pl.col(df1.columns))
+        ).select(pl.col(df1.collect_schema().names()))
         return collapsed_df
 
     def _extract_values(
@@ -290,35 +298,33 @@ class Input:
         complete_state_vector = (
             param.is_state_vector_operation() and n_rows == n_states
         )
-        complete_intervention_transition = (
-            n_rows == n_states * n_interventions and
-            param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY
-        )
-        complete_behavior_transition = (
-            n_rows == n_states * n_behaviors and
-            param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+        complete_transition = (
+            n_rows == n_states * n_states and param in [
+                ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]
         )
 
-        if complete_state_vector or complete_behavior_transition or complete_intervention_transition:
+        if complete_state_vector or complete_transition:
             return lf
 
         if param.is_state_vector_operation():
             return self._combine_dataframes(
                 build_constant_state_vector(
-                    n_interventions, n_behaviors, sample_id=sample_id, time=time
+                    self.get_interventions(), self.get_behaviors(), sample_id=sample_id, time=time
                 ).lazy(),
-                lf, value_col=param.get_value_column_name()
+                lf,
+                value_col=param.get_value_column_name()
             )
+        temp = build_constant_transition(
+            param,
+            self.get_interventions(),
+            self.get_behaviors(),
+            sample_id=sample_id,
+            time=time
+        ).lazy()
 
         res = self._combine_dataframes(
-            build_constant_transition(
-                param.get_parameter_type(),
-                n_interventions,
-                n_behaviors,
-                sample_id=sample_id,
-                time=time
-            ).lazy(),
-            lf, value_col=param.get_value_column_name())
+            temp, lf, value_col=param.get_value_column_name()
+        )
 
         init_col = param.get_initial_state_column_name()
         next_col = param.get_next_state_column_name()

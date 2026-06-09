@@ -1,7 +1,7 @@
 ################################################################################
-# File: test_data.py                                                           #
+# File: test_data_state_vectors.py                                             #
 # Project: respondpy                                                           #
-# Created Date: 2026-06-02                                                     #
+# Created Date: 2026-06-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
 # Last Modified: 2026-06-09                                                    #
@@ -19,6 +19,6 @@ import respondpy.data as rpydata
 def test_build_constant_state_vector() -> None:
     """Test the build_constant_state_vector function."""
     state_vector = rpydata.build_constant_state_vector(5, 1)
-    # assert state_vector.shape == (5,)
-    # assert state_vector.to_numpy().sum() == 5
-    # assert all(state_vector == 1)
+    assert state_vector.shape == (5, 5)
+    assert state_vector.select("probability").to_numpy().sum() == 0
+    assert all(state_vector["probability"] == 0.0)

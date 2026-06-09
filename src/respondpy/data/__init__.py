@@ -16,10 +16,10 @@ from .parameters import ParameterType, Parameter
 
 from .state_vectors import build_constant_state_vector
 from .logic_conditions import (
-    verify_no_nulls, verify_no_duplicates
+    verify_no_nulls, verify_no_duplicates, validate_time_list
 )
 from .transition_matrices import (
-    update_retention_probability, verify_transition_probability
+    build_constant_transition, update_retention_probability, verify_transition_probability
 )
 from .input import Input
 
@@ -30,7 +30,9 @@ __all__ = [
     "verify_transition_probability",
     "verify_no_nulls",
     "verify_no_duplicates",
+    "build_constant_transition",
     "build_constant_state_vector",
+    "validate_time_list",
     "Input"
 ]
 

@@ -34,9 +34,11 @@ class Parameter():
         self.__parameter_type = parameter_type
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, Parameter):
-            return NotImplemented
-        return self.__parameter_type == other.get_parameter_type()
+        if isinstance(other, Parameter):
+            return self.__parameter_type == other.get_parameter_type()
+        if isinstance(other, ParameterType):
+            return self.__parameter_type == other
+        return False
 
     def __repr__(self) -> str:
         return f"Parameter(parameter_type={self.__parameter_type})"
