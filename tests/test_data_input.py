@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 import numpy as np
+import polars as pl
 
 import respondpy.data as rpydata
 
@@ -224,3 +225,122 @@ def test_select_parameter_smr(input_data):
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
+
+
+@pytest.mark.unit
+def test_input_initialization_requires_complete_paths(setup_db):
+    db_path = setup_db
+    with pytest.raises(ValueError, match="Must provide either a path"):
+        rpydata.Input(db_path=db_path)
+
+
+@pytest.mark.unit
+def test_get_connection_raises_when_missing(input_data):
+    input_data._connection = None
+    with pytest.raises(ConnectionError, match="No database connection established"):
+        input_data._get_connection()
+
+
+@pytest.mark.unit
+def test_check_valid_list_edge_cases(input_data):
+    assert input_data._check_valid_list([], 2) is False
+    assert input_data._check_valid_list([(1, 2)], 3) is False
+    assert input_data._check_valid_list([(1, 2)], 2) is True
+
+
+@pytest.mark.unit
+def test_connect_and_executemany_rejects_bad_shapes(input_data):
+    with pytest.raises(ValueError, match="Expected list of tuples with 2 items each"):
+        input_data._connect_and_executemany(
+            [(1,)],
+            "INSERT INTO intervention(id, name) VALUES (?, ?)"
+        )
+
+
+@pytest.mark.unit
+def test_get_sample_ids_by_table_valid_and_invalid(input_data):
+    assert input_data._get_sample_ids_by_table("initial_population") == [1]
+    with pytest.raises(ValueError, match="does not exist"):
+        input_data._get_sample_ids_by_table("not_a_real_table")
+
+
+@pytest.mark.unit
+def test_get_sample_id_for_parameter_missing_cohort_raises(input_data):
+    with pytest.raises(ValueError, match="No sample ID found"):
+        input_data._get_sample_id_for_parameter(
+            rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT),
+            cohort_id=999,
+        )
+
+
+@pytest.mark.unit
+def test_select_parameter_raw_returns_numpy(input_data):
+    result = input_data.select_parameter(
+        rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT),
+        cohort_id=1,
+        time=1,
+        raw=True,
+    )
+    assert isinstance(result, np.ndarray)
+    assert result.shape[0] > 0
+
+
+@pytest.mark.unit
+def test_extract_values_rejects_invalid_parameter(input_data):
+    class InvalidParameter:
+        def get_value_column_name(self):
+            return "probability"
+
+        def is_state_vector_operation(self):
+            return False
+
+        def is_transition_matrix_operation(self):
+            return False
+
+    with pytest.raises(ValueError, match="Invalid parameter applied"):
+        input_data._extract_values(
+            InvalidParameter(),
+            pl.LazyFrame({"probability": [1.0]}),
+            n=1,
+        )
+
+
+@pytest.mark.unit
+def test_zero_invalid_transitions_passthrough_for_non_transition_param(input_data):
+    transition_matrix = pl.DataFrame(
+        {
+            "initial_intervention": ["A"],
+            "new_intervention": ["B"],
+            "initial_behavior": ["X"],
+            "new_behavior": ["Y"],
+            "probability": [0.5],
+        }
+    )
+
+    out = input_data._zero_invalid_transitions(
+        rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT),
+        transition_matrix,
+    )
+    assert out.equals(transition_matrix)
+
+
+@pytest.mark.unit
+def test_insert_cohorts_adds_new_row(input_data):
+    before_cols, before_rows = input_data.get_cohorts()
+    assert "id" in before_cols
+
+    input_data.insert_cohorts([
+        ("Second Cohort", 1, 1, 1, 1, 1, 1, 1, 1)
+    ])
+
+    _, after_rows = input_data.get_cohorts()
+    assert len(after_rows) == len(before_rows) + 1
+
+
+@pytest.mark.unit
+def test_insert_parameter_adds_sample_row(input_data):
+    parameter = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+    input_data.insert_parameter(parameter, [(2, 1, 1, 42.0)])
+
+    sample_ids = input_data._get_sample_ids_by_table("initial_population")
+    assert 2 in sample_ids
