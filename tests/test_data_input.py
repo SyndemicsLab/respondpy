@@ -155,9 +155,72 @@ def test_get_cohorts(input_data):
 
 
 @pytest.mark.unit
-def test_select_parameter(input_data):
+def test_select_parameter_intervention(input_data):
     param = rpydata.Parameter(
         rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_behavior(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_initial_cohort(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.INITIAL_COHORT)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_migrating_cohort(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.MIGRATION_COHORT)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_overdose(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.OVERDOSE_PROBABILITY)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_fatal_overdose(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_background_mortality(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY)
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+    assert isinstance(result, np.ndarray)
+    print(result)
+
+
+@pytest.mark.unit
+def test_select_parameter_smr(input_data):
+    param = rpydata.Parameter(
+        rpydata.ParameterType.STANDARD_MORTALITY_RATIO)
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)

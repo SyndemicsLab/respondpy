@@ -237,8 +237,6 @@ class Input:
         val_col_name = param.get_value_column_name()
         if param.is_state_vector_operation():
             vec = lf.select(pl.col(val_col_name)).collect().to_numpy()
-            if param == ParameterType.BACKGROUND_DEATH_PROBABILITY:
-                return np.repeat(vec, n).reshape(n, 1)
             return vec.reshape(n, 1)
         if param.is_transition_matrix_operation():
             return lf.select(
