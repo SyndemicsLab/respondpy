@@ -18,17 +18,13 @@ def _sort_state_vector(
     behaviors: list[tuple[int, str]],
     interventions: list[tuple[int, str]]
 ) -> pl.LazyFrame:
-    """Sorting function for a state vector. Expects the columns ['intervention' 'behavior'].
+    """Sort a state-vector dataframe by intervention and behavior ids.
 
-    Args:
-        lf (pl.LazyFrame): A sorted LazyFrame
-        db (str | Path): A path to the database file.
-
-    Raises:
-        ValueError: Invalid column names.
-
-    Returns:
-        pl.LazyFrame: A sorted LazyFrame (sorted by intervention, behavior).
+    :param lf: State-vector LazyFrame with ``intervention`` and ``behavior``.
+    :param behaviors: Ordered ``(id, name)`` behavior tuples.
+    :param interventions: Ordered ``(id, name)`` intervention tuples.
+    :returns: Sorted LazyFrame in deterministic state order.
+    :raises ValueError: If required state columns are missing.
     """
     s = lf.collect_schema().names()
     if 'intervention' not in s or 'behavior' not in s:
@@ -53,17 +49,13 @@ def _sort_transition_matrix(
     behaviors: list[tuple[int, str]],
     interventions: list[tuple[int, str]]
 ) -> pl.LazyFrame:
-    """Sorting function for the transition matrix. It expects the columns ['intervention', 'behavior', 'next_intervention', 'next_behavior']
+    """Sort a transition-matrix dataframe into deterministic state order.
 
-    Args:
-        lf (pl.LazyFrame): The LazyFrame to sort.
-        db (str | Path): A path to the database file.
-
-    Raises:
-        ValueError: Invalid column names.
-
-    Returns:
-        pl.LazyFrame: A sorted LazyFrame (sorted by intervention, behavior, next_intervention, next_behavior).
+    :param lf: Transition LazyFrame with initial and next state columns.
+    :param behaviors: Ordered ``(id, name)`` behavior tuples.
+    :param interventions: Ordered ``(id, name)`` intervention tuples.
+    :returns: Sorted LazyFrame for stable downstream reshaping/comparison.
+    :raises ValueError: If required transition columns are missing.
     """
     if 'intervention' not in lf.columns or 'behavior' not in lf.columns or 'next_intervention' not in lf.columns or 'next_behavior' not in lf.columns:
         raise ValueError(
@@ -93,14 +85,15 @@ def sort_dataframes(
         behaviors: list[tuple[int, str]],
         interventions: list[tuple[int, str]]
 ) -> pl.LazyFrame:
-    """Generalized sorting function to direct the sorting order. Only LazyFrames with state vectors (3 columns) or transition matrices (4 columns)are sorted, all other LazyFrames are returned as is.
+    """Sort known RESPOND shapes while leaving other schemas unchanged.
 
-    Args:
-        lf (pl.LazyFrame): LazyFrame to sort.
-        db (str | Path): A path to the database file.
+    Dataframes with 3 columns are treated as state vectors, and dataframes with
+    4 columns as transition matrices.
 
-    Returns:
-        pl.LazyFrame: A sorted LazyFrame.
+    :param lf: LazyFrame to sort.
+    :param behaviors: Ordered ``(id, name)`` behavior tuples.
+    :param interventions: Ordered ``(id, name)`` intervention tuples.
+    :returns: Sorted LazyFrame when shape is recognized, otherwise input.
     """
     if len(lf.collect_schema().names()) == 3:
         return _sort_state_vector(lf, behaviors, interventions)
@@ -112,12 +105,9 @@ def sort_dataframes(
 def get_column_order(col_name: str, values: list[str]) -> str:
     """Get the SQL ORDER BY clause for a given column and list of values.
 
-    Args:
-        col_name (str): column in the SQLite table to order by.
-        values (list[str]): List of values to order by.
-
-    Returns:
-        str: String representing the SQL ORDER BY clause.
+    :param col_name: Column expression used in generated CASE conditions.
+    :param values: Ordered values representing desired sort priority.
+    :returns: SQL CASE expression suitable for ORDER BY clauses.
     """
     order_clause = "CASE\n"
     for idx, v in enumerate(values):

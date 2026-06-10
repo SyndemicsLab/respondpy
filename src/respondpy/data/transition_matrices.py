@@ -13,9 +13,6 @@
 import polars as pl
 import numpy as np
 
-from .parameters import Parameter, ParameterType
-
-
 def _require_columns(
         frame: pl.LazyFrame | pl.DataFrame, columns: list[str]
 ) -> None:
@@ -94,6 +91,16 @@ def build_constant_transition(
     time: int = 1,
     constant: float = 0.0
 ) -> pl.LazyFrame:
+    """Build a complete constant-valued transition matrix table.
+
+    :param interventions: Ordered intervention names.
+    :param behaviors: Ordered behavior names.
+    :param sample_id: Sample identifier written into output rows.
+    :param time: Timestep written into output rows.
+    :param constant: Constant probability assigned before normalization.
+    :returns: LazyFrame containing all from/to state combinations.
+    :raises ValueError: If the generated matrix is not square.
+    """
     init_behav = pl.LazyFrame({"initial_behavior": behaviors})
     new_behav = pl.LazyFrame({"new_behavior": behaviors})
     init_inter = pl.LazyFrame({"initial_intervention": interventions})
@@ -137,6 +144,17 @@ def combine_dataframes(
         *,
         value_col: str = "probability"
 ) -> pl.LazyFrame:
+    """Overlay raw sampled values onto a complete template dataframe.
+
+    Values in ``raw_data_df`` take precedence over template values where keys
+    match.
+
+    :param complete_df: Fully enumerated dataframe used as fallback.
+    :param raw_data_df: Observed values to merge into template.
+    :param value_col: Name of numeric value column to collapse.
+    :returns: Combined LazyFrame with a single ``value_col``.
+    :raises ValueError: If join key columns are incompatible.
+    """
     join_cols = raw_data_df.collect_schema().names()
     join_cols.remove(value_col)
     if not set(
@@ -171,6 +189,23 @@ def update_retention_probability(
     tolerance: float = 1e-12,
     forbid_negative_retention: bool = True,
 ) -> pl.DataFrame:
+    """Set retention probabilities so each transition group sums to one.
+
+    Retention rows are those where origin-state columns equal destination-state
+    columns. Their values are replaced by ``1 - sum(non_retention)`` per group.
+
+    :param transition_matrix: Transition rows to normalize.
+    :param transition_columns: Origin-state column(s).
+    :param new_columns: Destination-state column(s).
+    :param probability_column: Probability column to update.
+    :param group_columns: Grouping keys defining one origin state/time/sample.
+    :param unique_key_columns: Columns expected to uniquely identify rows.
+    :param tolerance: Floating-point tolerance for validation checks.
+    :param forbid_negative_retention: If ``True``, reject negative retention.
+    :returns: Transition dataframe with updated retention probabilities.
+    :raises ValueError: If schema validation fails or probabilities cannot be
+        normalized.
+    """
     if group_columns is None or unique_key_columns is None:
         group_cols, from_cols, to_cols, constraints = _default_transition_shape(
             transition_matrix)
@@ -297,13 +332,17 @@ def verify_transition_probability(
     unique_key_columns: list[str] | None = None,
     tolerance: float = 1e-12,
 ) -> bool:
-    """Checks that the transition probabilities that correspond to movement from the initial state sum to one.
+    """Check that transition probabilities sum to one within each group.
 
-    Args:
-        transition_matrix (pl.DataFrame): _description_
-
-    Returns:
-        bool: _description_
+    :param transition_matrix: Transition rows to verify.
+    :param transition_columns: Origin-state column(s), used with grouping.
+    :param probability_column: Probability column to sum.
+    :param group_columns: Explicit grouping keys. If omitted, defaults are
+        inferred.
+    :param unique_key_columns: Explicit unique-key columns. If omitted,
+        defaults are inferred.
+    :param tolerance: Absolute tolerance for checking sums against ``1.0``.
+    :returns: ``True`` when all transition groups sum to one.
     """
     if group_columns is None or unique_key_columns is None:
         group_cols, _, _, constraints = _default_transition_shape(

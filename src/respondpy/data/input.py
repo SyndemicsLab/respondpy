@@ -26,6 +26,12 @@ from .state_vectors import build_constant_state_vector
 
 
 class Input:
+    """Data access object for RESPOND SQLite and simulation configuration.
+
+    This class resolves cohort-linked sample ids, loads raw parameter tables,
+    and returns either raw rows or model-ready numpy arrays.
+    """
+
     def __init__(
         self,
         *,
@@ -35,6 +41,16 @@ class Input:
         db_path: str | Path | None = None,
         conf_path: str | Path | None = None
     ) -> None:
+        """Create an Input data source from a base path or explicit files.
+
+        :param path: Directory containing both database and config files.
+        :param db_name: Database filename used when ``path`` is provided.
+        :param conf_name: Config filename used when ``path`` is provided.
+        :param db_path: Explicit database file path.
+        :param conf_path: Explicit config file path.
+        :raises ValueError: If required path arguments are incomplete.
+        :raises FileNotFoundError: If database or config files do not exist.
+        """
         if path is not None:
             if isinstance(path, str):
                 path = Path(path)
@@ -74,6 +90,7 @@ class Input:
 
     @property
     def config(self) -> ConfigParser:
+        """Return parsed simulation configuration."""
         return self._config
 
     # Helper Functions for Database Operations
@@ -127,11 +144,9 @@ class Input:
         return self.states[state]
 
     def _get_state_names(self) -> list[tuple[str, str]]:
-        """Get the intervention and behavior names in a list of tuples sorted by intervention and behavior ID.
+        """Return ordered state-name tuples as ``(intervention, behavior)``.
 
-        Args:
-        Returns:
-            list[tuple[str]]: List of tuples containing intervention, behavior combinations that form the state names.
+        :returns: State label pairs sorted by intervention id then behavior id.
         """
         if "combination" in self.states:
             return self.states["combination"]
@@ -221,18 +236,13 @@ class Input:
         *,
         n: int = 64  # 16 interventions * 4 behaviors
     ) -> np.ndarray:
-        """Helper function to convert the dataframe rows to a numpy array reshaped into either a numpy state vector [n x 1] or transition matrix [n x n].
+        """Convert extracted rows to a model-ready state vector or matrix.
 
-        Args:
-            p (ParameterType): The parameter we are extracting data for
-            results (pl.LazyFrame): The dataframe rows
-            n (int, optional): The number of states in the state vector. Defaults to 64, assuming 16 interventions and 4 behaviors.
-
-        Raises:
-            ValueError: Invalid parameter provided.
-
-        Returns:
-            np.ndarray: A numpy matrix of either [n x 1] or [n x n]
+        :param param: Parameter descriptor controlling output shape.
+        :param lf: LazyFrame containing extracted values.
+        :param n: Number of states in the model.
+        :returns: ``(n, 1)`` state vector or ``(n, n)`` transition matrix.
+        :raises ValueError: If ``param`` cannot be mapped to either shape.
         """
         val_col_name = param.get_value_column_name()
         if param.is_state_vector_operation():
@@ -250,7 +260,14 @@ class Input:
         param: Parameter,
         transition_matrix: pl.DataFrame
     ) -> pl.DataFrame:
-        """Helper function to set the probability of invalid transitions to 0. For example, if we are extracting an intervention transition matrix, any transition that involves a change in behavior but not a change in intervention is invalid and should have its probability set to 0.
+        """Set structurally invalid transition probabilities to zero.
+
+        For intervention transitions, behavior changes are invalid. For behavior
+        transitions, intervention changes are invalid.
+
+        :param param: Parameter descriptor identifying transition type.
+        :param transition_matrix: Transition rows to sanitize.
+        :returns: Transition dataframe with invalid rows forced to zero.
         """
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
             m = transition_matrix.with_columns(
@@ -283,19 +300,17 @@ class Input:
         sample_id: int = 1,
         time: int = 1
     ) -> pl.LazyFrame:
-        """Helper function used to extract transitions from the database based on the cohort sample and the corresponding sample IDs.
+        """Return a complete parameter table with missing rows backfilled.
 
-        Args:
-            p(ParameterType): The parameter to extract.
-            db(str | Path): The string or Path object to the database.
-            sample_ids(pl.DataFrame): The cohort sample containing the sample IDs.
-            time(int | None): The timestep we are using to extract the transition. None is only valid when the initial cohort is being extracted.
+        State-vector parameters are completed from a constant state vector.
+        Transition parameters are completed from a constant transition matrix,
+        then normalized for retention probabilities.
 
-        Raises:
-            ValueError: Unimplemented Enum value.
-
-        Returns:
-            np.ndarray: The transition value as a numpy array.
+        :param param: Parameter descriptor to extract.
+        :param sample_id: Sample id selected from the cohort table.
+        :param time: Timestep used for time-varying parameters.
+        :returns: Complete and consistently ordered parameter rows.
+        :raises ValueError: If required transition state columns are missing.
         """
         lf = self._select_parameter_raw(param, sample_id, time)
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
@@ -364,6 +379,7 @@ class Input:
     # External Functions
 
     def get_interventions(self) -> list[str]:
+        """Return ordered intervention names from the database."""
         if self.interventions is None:
             self.interventions = list(map(
                 itemgetter(1),
@@ -372,6 +388,7 @@ class Input:
         return self.interventions
 
     def get_behaviors(self) -> list[str]:
+        """Return ordered behavior names from the database."""
         if self.behaviors is None:
             self.behaviors = list(map(
                 itemgetter(1),
@@ -380,11 +397,19 @@ class Input:
         return self.behaviors
 
     def get_cohorts(self) -> tuple[list[str], list]:
+        """Return raw cohort table data.
+
+        :returns: Tuple of column names and row tuples from ``cohort``.
+        """
         stmt = "SELECT * FROM cohort;"
         col_names, results = self._connect_and_fetchall(stmt)
         return col_names, results
 
     def insert_cohorts(self, data: list) -> None:
+        """Insert cohort rows into the cohort table.
+
+        :param data: Row tuples matching cohort insert statement order.
+        """
         sql_stmt = """
         INSERT INTO cohort(description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
@@ -397,6 +422,14 @@ class Input:
         time: int = 1,
         raw: bool = False
     ) -> np.ndarray:
+        """Select parameter data for a cohort and optional timestep.
+
+        :param param: Parameter descriptor to extract.
+        :param cohort_id: Cohort id used to resolve sample ids.
+        :param time: Timestep for time-varying parameters.
+        :param raw: When ``True``, return raw table rows as numpy values.
+        :returns: Raw rows or model-ready shaped numpy array.
+        """
         sample_id = self._get_sample_id_for_parameter(param, cohort_id)
         if raw:
             return self._select_parameter_raw(
@@ -413,4 +446,9 @@ class Input:
         param: Parameter,
         data: list,
     ) -> None:
+        """Insert parameter rows using parameter-specific SQL.
+
+        :param param: Parameter descriptor choosing target table and schema.
+        :param data: Row tuples matching ``param`` insert statement order.
+        """
         return self._connect_and_executemany(data, param.get_insert_statement())

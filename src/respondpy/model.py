@@ -31,6 +31,14 @@ def build_model(
         name: str = "markov",
         log_name: str = "console"
 ) -> Model:
+    """Build a Model with initialized state and configured transitions.
+
+    :param input_data: Loaded input data and simulation configuration.
+    :param cohort_id: Cohort identifier used to resolve sampled parameters.
+    :param name: Model name passed to the core model constructor.
+    :param log_name: Logger name used by the underlying core model.
+    :returns: A model ready to be added to a simulation.
+    """
     m = Model(name, log_name)
     init_pop = input_data.select_parameter(
         Parameter(ParameterType.INITIAL_COHORT), cohort_id, time=1).squeeze()
@@ -44,16 +52,16 @@ def build_model_transitions(
         input_data: Input,
         cohort_id: int
 ) -> Model:
-    """Helper function to build the transition list for the Markov model.
+    """Populate a model with per-timestep transitions for full duration.
 
-    Args:
-        model (Model): The model we are intended to add transitions to.
-        db (str | Path): The string or Path object to the database file.
-        config (ConfigParser): The object containing the config data.
-        sample_ids (pl.DataFrame): The cohort sample containing all the sample ids.
+    The first transition block is built from timestep 1. Additional timestep
+    transition blocks are either copied or rebuilt at configured
+    ``parameter_change_times`` values.
 
-    Returns:
-        rpy.Markov: The Markov model with the transitions added for the entire duration.
+    :param model: Model instance to mutate.
+    :param input_data: Loaded input data and simulation configuration.
+    :param cohort_id: Cohort identifier used to resolve sampled parameters.
+    :returns: The same model instance, with transitions appended.
     """
     # Add the first timestep
     ct_val = 1
@@ -81,14 +89,11 @@ def add_transitions_to_model(
         model: Model,
         t_transition: list[Transition]
 ) -> Model:
-    """Helper function to add the transitions to the Markov model.
+    """Append one timestep's transitions to a model.
 
-    Args:
-        model (Model): The model to add the transitions to.
-        t_transition (list[Transition]): A timestep (i.e. a list of transitions)
-
-    Returns:
-        rpy.Markov: The Markov model with the transitions added.
+    :param model: Model to update.
+    :param t_transition: Transition objects for one simulation timestep.
+    :returns: The same model instance, for chaining.
     """
     for t in t_transition:
         model.add_transition(t)

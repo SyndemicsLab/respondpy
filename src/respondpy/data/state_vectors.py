@@ -22,15 +22,16 @@ def build_constant_state_vector(
     value_column: str = "probability",
     constant: float = 0.0
 ) -> pl.DataFrame:
-    """Helper function to build a zero state vector. This is used when we have no sampled values for a state vector and need to fill in the zeros.
+    """Build a fully populated constant-valued state vector table.
 
-    Args:
-        sample (int): The sample ID for the row of the cohort table we are filling in.
-        interventions (list[str]): The list of interventions in the model.
-        behaviors (list[str]): The list of behaviors in the model.
-
-    Returns:
-        pl.LazyFrame: A LazyFrame containing all combinations of interventions and behaviors with a value of 0.0. Columns are ['intervention', 'behavior', 'value'].
+    :param interventions: Ordered intervention names.
+    :param behaviors: Ordered behavior names.
+    :param sample_id: Sample identifier written into output rows.
+    :param time: Timestep written into output rows.
+    :param value_column: Name of the generated value column.
+    :param constant: Constant value assigned to every state row.
+    :returns: Cross-product dataframe with one row per intervention-behavior
+        state.
     """
     inter = pl.DataFrame({"intervention": interventions})
 

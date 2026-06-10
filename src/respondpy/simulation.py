@@ -26,16 +26,12 @@ def build_simulation(
         *,
         log_name: str = "console"
 ) -> Simulation:
-    """Build a new simulation object. This function takes the cohorts, the database, and the config file then applies them to a new simulation. It creates a new model for each cohort id and adds it to the simulation returning the result.
+    """Build a simulation containing one model per cohort id.
 
-    Args:
-        cohort_ids (Sequence[int]): A sequence of ints identifying the cohorts.
-        db (str | Path): A database containing the data for the simulation.
-        config (ConfigParser): The `sim.conf` file used during the simulation.
-        log_name (str, optional): The name of the logger to apply to the simulation. Defaults to "console".
-
-    Returns:
-        Simulation: The new simulation object.
+    :param cohort_ids: Cohort identifiers to include in the simulation.
+    :param input_data: Loaded input data and simulation configuration.
+    :param log_name: Logger name used by the underlying core simulation/model.
+    :returns: A simulation object populated with cohort-specific models.
     """
     s = Simulation(log_name)
     for cohort_id in cohort_ids:

@@ -29,15 +29,12 @@ def transition_factory(
         *,
         log_name: str = "console"
 ) -> Transition:
-    """_summary_
+    """Create a transition and load its ordered transition matrices.
 
-    Args:
-        name (str): _description_
-        tran_matrices (list[np.ndarray]): _description_
-        log_name (str, optional): _description_. Defaults to "console".
-
-    Returns:
-        Transition: _description_
+    :param name: Transition name used by the core model.
+    :param tran_matrices: Matrix/vector operands consumed in execution order.
+    :param log_name: Logger name used by the underlying core transition.
+    :returns: A transition ready to be attached to a model.
     """
     t = Transition(name, log_name)
     for tm in tran_matrices:
@@ -50,15 +47,15 @@ def build_timestep_transition(
         input_data: Input,
         cohort_id: int
 ) -> list[Transition]:
-    """Helper function to build a single timestep because a timestep consists of the same transitions.
+    """Build the full ordered transition set for one timestep.
 
-    Args:
-        timestep (int): The integer for the timestep we want to build.
-        db (str | Path): The location of the database file.
-        sample_ids (pl.DataFrame): The cohort with the sample ids.
+    The returned transitions are: migration, intervention change, behavior
+    change, overdose, and background mortality.
 
-    Returns:
-        list[Transition]: The list of transitions that make the timestep.
+    :param timestep: Simulation timestep to sample.
+    :param input_data: Loaded input data and simulation configuration.
+    :param cohort_id: Cohort identifier used to resolve sampled parameters.
+    :returns: Transition list for exactly one model timestep.
     """
 
     migration = transition_factory(

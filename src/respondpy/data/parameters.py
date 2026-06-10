@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-10                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,6 +16,8 @@ from .database_helpers import get_column_order
 
 
 class ParameterType(Enum):
+    """Supported parameter families used in RESPOND."""
+
     INITIAL_COHORT = 1
     MIGRATION_COHORT = 2
     INTERVENTION_TRANSITION_PROBABILITY = 3
@@ -27,10 +29,16 @@ class ParameterType(Enum):
 
 
 class Parameter():
+    """Typed wrapper around ParameterType with SQL and schema helpers."""
+
     def __init__(
             self,
             parameter_type: ParameterType
     ) -> None:
+        """Create a parameter descriptor.
+
+        :param parameter_type: Enumerated parameter family.
+        """
         self.__parameter_type = parameter_type
 
     def __eq__(self, other) -> bool:
@@ -44,22 +52,31 @@ class Parameter():
         return f"Parameter(parameter_type={self.__parameter_type})"
 
     def get_parameter_type(self) -> ParameterType:
+        """Return the wrapped parameter type."""
         return self.__parameter_type
 
     def is_time_varying(self) -> bool:
+        """Return whether this parameter is indexed by timestep."""
         if self.__parameter_type == ParameterType.INITIAL_COHORT:
             return False
         return True
 
     def is_transition_matrix_operation(self) -> bool:
+        """Return whether this parameter maps to transition-matrix data."""
         if self.__parameter_type in [ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]:
             return True
         return False
 
     def is_state_vector_operation(self) -> bool:
+        """Return whether this parameter maps to state-vector data."""
         return not self.is_transition_matrix_operation()
 
     def get_value_column_name(self) -> str:
+        """Return the numeric value column name used for this parameter.
+
+        :returns: One of ``count``, ``probability``, or ``ratio``.
+        :raises ValueError: If the parameter type is not implemented.
+        """
         match self.__parameter_type:
             case ParameterType.STANDARD_MORTALITY_RATIO:
                 return "ratio"
@@ -75,6 +92,11 @@ class Parameter():
                 )
 
     def get_initial_state_column_name(self) -> str | None:
+        """Return the origin-state column name for transition parameters.
+
+        :returns: Origin-state column name, or ``None`` for non-transition
+            parameters.
+        """
         match self.__parameter_type:
             case ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
                 return "initial_intervention"
@@ -84,6 +106,11 @@ class Parameter():
                 return None
 
     def get_next_state_column_name(self) -> str | None:
+        """Return the destination-state column name for transition parameters.
+
+        :returns: Destination-state column name, or ``None`` for non-transition
+            parameters.
+        """
         match self.__parameter_type:
             case ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
                 return "new_intervention"
@@ -93,6 +120,11 @@ class Parameter():
                 return None
 
     def get_cohort_column_name(self) -> str:
+        """Return cohort-table sample column used by this parameter.
+
+        :returns: Column name in the ``cohort`` table.
+        :raises ValueError: If the parameter type is not implemented.
+        """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
                 return "initial_population_sample"
@@ -116,6 +148,11 @@ class Parameter():
                 )
 
     def get_insert_statement(self) -> str:
+        """Return the INSERT SQL template for this parameter table.
+
+        :returns: Parameter-specific SQL INSERT statement.
+        :raises ValueError: If the parameter type is not implemented.
+        """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
                 return "INSERT INTO initial_population VALUES (?, ?, ?, ?)"
@@ -141,6 +178,13 @@ class Parameter():
     def get_select_statement(
             self, interventions: list[str], behaviors: list[str]
     ) -> str:
+        """Return parameter-specific SELECT SQL with deterministic ordering.
+
+        :param interventions: Ordered intervention names used in ``ORDER BY``.
+        :param behaviors: Ordered behavior names used in ``ORDER BY``.
+        :returns: SQL query string for parameter extraction.
+        :raises ValueError: If SELECT generation is not implemented.
+        """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
                 return f"""

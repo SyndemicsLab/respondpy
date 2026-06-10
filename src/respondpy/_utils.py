@@ -13,12 +13,13 @@ from __future__ import annotations
 
 
 def str_to_int_list(config_string: str, *, delimiter: str = ',') -> list[int]:
-    """Converts a comma-separated string into a list of integers
+    """Parse a delimited integer string into a list of integers.
 
-    Args:
-        config_string (str): A comma-separated string
+    Whitespace around each token is stripped before conversion.
 
-    Returns:
-        list[int]: The list of integers from the string
+    :param config_string: Delimited string of integer-like values.
+    :param delimiter: Token delimiter used to split ``config_string``.
+    :returns: Parsed integers in input order.
+    :raises ValueError: If any token cannot be converted to ``int``.
     """
     return [int(x.strip()) for x in config_string.split(delimiter)]

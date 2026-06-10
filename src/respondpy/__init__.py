@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-10                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -53,4 +53,5 @@ __all__ = [
 
 
 def __dir__() -> list[str]:
+    """Return tab-completion symbols for the package namespace."""
     return __all__

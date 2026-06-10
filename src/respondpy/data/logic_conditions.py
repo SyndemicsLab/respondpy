@@ -22,6 +22,14 @@ def verify_no_nulls(
         *,
         col_to_check: str = "probability"
 ) -> None:
+    """Validate that a required value column contains no null values.
+
+    :param df: Data to validate.
+    :param sample_id: Sample id used only for error context.
+    :param p: Parameter type used only for error context.
+    :param col_to_check: Column expected to be fully populated.
+    :raises ValueError: If any null value is found.
+    """
     if df.select(pl.col(col_to_check).is_null().any()).item():
         raise ValueError(
             f"Null transition probabilities found for sample {sample_id} and parameter {p}"
@@ -34,6 +42,14 @@ def verify_no_duplicates(
         sample_id: int,
         p: ParameterType
 ) -> None:
+    """Validate that key columns uniquely identify transition rows.
+
+    :param df: Data to validate.
+    :param key_columns: Columns that must uniquely identify each row.
+    :param sample_id: Sample id used only for error context.
+    :param p: Parameter type used only for error context.
+    :raises ValueError: If duplicated keys are found.
+    """
     if df.select(
         pl.struct(key_columns).is_duplicated().any()
     ).item():
@@ -43,16 +59,15 @@ def verify_no_duplicates(
 
 
 def validate_time_list(ct_list: list[int]) -> list[int]:
-    """A validation function that validates and cleans up the change times from the config file.
+    """Validate and normalize configured parameter change times.
 
-    Args:
-        ct_list (list[int]): A parsed list of integers from the `simulation.parameter_change_times` entry in the `sim.conf`
+    The value ``1`` is removed because timestep 1 is always explicitly built in
+    model construction.
 
-    Raises:
-        ValueError: Invalid values provided in the config file.
-
-    Returns:
-        list[int]: The cleaned config values.
+    :param ct_list: Parsed integer values from
+        ``simulation.parameter_change_times``.
+    :returns: Validated and ascending change-time list.
+    :raises ValueError: If any value is less than or equal to zero.
     """
     if any(num <= 0 for num in ct_list):
         raise ValueError(
