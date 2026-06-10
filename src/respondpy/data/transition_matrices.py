@@ -4,19 +4,26 @@
 # Created Date: 2026-06-02                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-10                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 import polars as pl
+import numpy as np
 
 from .parameters import Parameter, ParameterType
 
 
-def _require_columns(frame: pl.DataFrame, columns: list[str]) -> None:
-    missing = [c for c in columns if c not in frame.columns]
+def _require_columns(
+        frame: pl.LazyFrame | pl.DataFrame, columns: list[str]
+) -> None:
+    if isinstance(frame, pl.LazyFrame):
+        frame_cols = set(frame.collect_schema().names())
+    else:
+        frame_cols = set(frame.columns)
+    missing = [c for c in columns if c not in frame_cols]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
@@ -31,8 +38,18 @@ def _validate_probability_column(
         raise ValueError(f"Null values found in {probability_column}")
 
 
-def _ensure_no_duplicate_keys(frame: pl.DataFrame, key_columns: list[str]) -> None:
-    _require_columns(frame, key_columns)
+def _ensure_no_duplicate_keys(
+        frame: pl.LazyFrame | pl.DataFrame,
+        key_columns: list[str] | None = None
+) -> None:
+    if not key_columns:
+        key_columns = frame.collect_schema().names()
+    else:
+        _require_columns(frame, key_columns)
+
+    # We have to collect because we need to verify the contents of the dataframe
+    if isinstance(frame, pl.LazyFrame):
+        frame = frame.collect()
     has_duplicates = frame.select(
         pl.struct(key_columns).is_duplicated().any()).item()
     if has_duplicates:
@@ -41,255 +58,186 @@ def _ensure_no_duplicate_keys(frame: pl.DataFrame, key_columns: list[str]) -> No
         )
 
 
-def _infer_transition_shape(
-    frame: pl.DataFrame,
-) -> tuple[list[str], str, str, list[str]]:
-    intervention_cols = {
+def _default_transition_shape(
+    frame: pl.LazyFrame | pl.DataFrame,
+) -> tuple[list[str], list[str], list[str], list[str]]:
+    default_cols = {
         "sample",
         "time",
         "initial_intervention",
         "new_intervention",
-        "behavior",
-    }
-    behavior_cols = {
-        "sample",
-        "time",
-        "intervention",
         "initial_behavior",
-        "new_behavior",
+        "new_behavior"
     }
 
-    cols = set(frame.columns)
-    if intervention_cols.issubset(cols):
-        group_columns = ["sample", "time", "initial_intervention", "behavior"]
-        origin_column = "initial_intervention"
-        destination_column = "new_intervention"
-        unique_key_columns = group_columns + [destination_column]
-        return group_columns, origin_column, destination_column, unique_key_columns
+    if isinstance(frame, pl.LazyFrame):
+        cols = set(frame.collect_schema().names())
+    else:
+        cols = set(frame.columns)
 
-    if behavior_cols.issubset(cols):
-        group_columns = ["sample", "time", "intervention", "initial_behavior"]
-        origin_column = "initial_behavior"
-        destination_column = "new_behavior"
-        unique_key_columns = group_columns + [destination_column]
-        return group_columns, origin_column, destination_column, unique_key_columns
+    if default_cols.issubset(cols):
+        from_cols = ['initial_intervention', 'initial_behavior']
+        to_cols = ['new_intervention', 'new_behavior']
+        sample_cols = ["sample", "time"]
+        grouping_cols = sample_cols + from_cols
+        unique_conditions = sample_cols + from_cols + to_cols
+        return grouping_cols, from_cols, to_cols, unique_conditions
 
-    raise ValueError(
-        "Unable to infer transition shape from columns. Expected intervention or behavior transition matrix columns."
-    )
-
-
-def _complete_transition_rows(
-    transition_matrix: pl.DataFrame,
-    group_columns: list[str],
-    origin_column: str,
-    destination_column: str,
-    *,
-    probability_column: str = "probability",
-) -> pl.DataFrame:
-    group_without_origin = [c for c in group_columns if c != origin_column]
-    transition_keys = group_without_origin + \
-        [origin_column, destination_column]
-
-    all_states = pl.concat(
-        [
-            transition_matrix.select(pl.col(origin_column).alias("_state")),
-            transition_matrix.select(
-                pl.col(destination_column).alias("_state")),
-        ]
-    ).unique()
-
-    strata = transition_matrix.select(group_without_origin).unique()
-    complete_keyspace = (
-        strata.join(
-            all_states.rename({"_state": origin_column}),
-            how="cross",
-        )
-        .join(
-            all_states.rename({"_state": destination_column}),
-            how="cross",
-        )
-    )
-
-    return (
-        complete_keyspace.join(
-            transition_matrix.select(transition_keys + [probability_column]),
-            on=transition_keys,
-            how="left",
-        )
-        .with_columns(pl.col(probability_column).fill_null(0.0))
-        .select(group_columns + [destination_column, probability_column])
-    )
-
-# Welp, right now this is struggling because by nature a markov transition matrix is square. However, because we have transition operations we have a bit of a different behavior resulting in half matrices. This is because there is only one way movement in each transition operation and so we'd have duplcate column values in the "next" columns (e.g. intervention transitions would duplicate the behavior states). Gotta think more about this one.
-
-
-def _build_filled_intervention_matrix(
-        interventions: list[str],
-        behaviors: list[str],
-        *,
-        sample_id: int = 1,
-        time: int = 1,
-        constant: float = 0.0
-) -> pl.DataFrame:
-    inter = pl.DataFrame({"initial_intervention": interventions})
-    new_inter = pl.DataFrame({"new_intervention": interventions})
-    behav = pl.DataFrame({"behavior": behaviors})
-
-    return (
-        inter
-        .join(new_inter, how="cross")
-        .join(behav, how="cross")
-        .with_columns(
-            sample=pl.lit(sample_id),
-            time=pl.lit(time),
-            probability=pl.lit(constant),
-        )
-        .select(
-            [
-                "sample",
-                "time",
-                "initial_intervention",
-                "new_intervention",
-                "behavior",
-                "probability",
-            ]
-        )
-    )
-
-
-def _build_filled_behavior_matrix(
-        interventions: list[str],
-        behaviors: list[str],
-        *,
-        sample_id: int = 1,
-        time: int = 1,
-        constant: float = 0.0
-) -> pl.DataFrame:
-    behav = pl.DataFrame({"initial_behavior": behaviors})
-    new_behav = pl.DataFrame({"new_behavior": behaviors})
-    inter = pl.DataFrame({"intervention": interventions})
-
-    return (
-        behav
-        .join(new_behav, how="cross")
-        .join(inter, how="cross")
-        .with_columns(
-            sample=pl.lit(sample_id),
-            time=pl.lit(time),
-            probability=pl.lit(constant),
-        )
-        .select(
-            [
-                "sample",
-                "time",
-                "initial_behavior",
-                "new_behavior",
-                "intervention",
-                "probability",
-            ]
-        )
-    )
+    raise ValueError("Unable to find default transition shape in columns.")
 
 
 def build_constant_transition(
-    parameter: Parameter,
     interventions: list[str],
     behaviors: list[str],
     *,
     sample_id: int = 1,
     time: int = 1,
     constant: float = 0.0
-) -> pl.DataFrame:
-    if parameter == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
-        return _build_filled_intervention_matrix(
-            interventions,
-            behaviors,
-            sample_id=sample_id,
-            time=time,
-            constant=constant,
-        )
-    if parameter == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
-        return _build_filled_behavior_matrix(
-            interventions,
-            behaviors,
-            sample_id=sample_id,
-            time=time,
-            constant=constant,
-        )
-    raise ValueError(
-        f"ParameterType {parameter} is not a valid state transition parameter."
+) -> pl.LazyFrame:
+    init_behav = pl.LazyFrame({"initial_behavior": behaviors})
+    new_behav = pl.LazyFrame({"new_behavior": behaviors})
+    init_inter = pl.LazyFrame({"initial_intervention": interventions})
+    new_inter = pl.LazyFrame({"new_intervention": interventions})
+
+    result = init_behav.join(
+        new_behav, how="cross"
+    ).join(
+        init_inter, how="cross"
+    ).join(
+        new_inter, how="cross"
+    ).with_columns(
+        sample=pl.lit(sample_id),
+        time=pl.lit(time),
+        probability=pl.lit(constant),
+    ).select(
+        [
+            "sample",
+            "time",
+            "initial_behavior",
+            "new_behavior",
+            "initial_intervention",
+            "new_intervention",
+            "probability",
+        ]
     )
+
+    n_states = len(interventions) * len(behaviors)
+
+    if result.select(pl.len()).collect().item() != n_states**2:
+        raise ValueError(
+            "The resulting transition matrix is not square. Check that the number of interventions and behaviors is correct."
+        )
+
+    return result
+
+
+def combine_dataframes(
+        complete_df: pl.LazyFrame,
+        raw_data_df: pl.LazyFrame,
+        *,
+        value_col: str = "probability"
+) -> pl.LazyFrame:
+    join_cols = raw_data_df.collect_schema().names()
+    join_cols.remove(value_col)
+    if not set(
+        join_cols
+    ).issubset(set(complete_df.collect_schema().names())):
+        raise ValueError(
+            f"The raw data dataframe must contain a subset of columns of the complete dataframe in order to combine them! Complete dataframe columns: {complete_df.collect_schema().names()}, raw data dataframe columns: {raw_data_df.collect_schema().names()}"
+        )
+    # We want to join on all columns except the value column, and then collapse the value column so that if there is a value in raw_data_df it takes precedence, but if there isn't then we keep the value from complete_df. This allows us to fill in missing values with the constant dataframes.
+    joined_lf = complete_df.join(
+        raw_data_df, on=join_cols, how="left", suffix="_new")
+    collapsed_df = joined_lf.with_columns(
+        pl.when(
+            pl.col(f"{value_col}_new").is_null()
+        ).then(
+            pl.col(value_col)
+        ).otherwise(
+            pl.col(f"{value_col}_new")
+        ).alias(value_col)
+    ).select(pl.all().exclude(f"{value_col}_new"))
+    return collapsed_df
 
 
 def update_retention_probability(
-    transition_matrix: pl.DataFrame,
-    transition_column: str,
-    new_column: str,
+    transition_matrix: pl.LazyFrame | pl.DataFrame,
+    transition_columns: str | list[str],
+    new_columns: str | list[str],
     *,
     probability_column: str = "probability",
     group_columns: list[str] | None = None,
     unique_key_columns: list[str] | None = None,
-    retention_pairs: list[tuple[str, str]] | None = None,
-    complete_missing: bool = True,
     tolerance: float = 1e-12,
     forbid_negative_retention: bool = True,
 ) -> pl.DataFrame:
-    inferred_group_columns, inferred_origin, inferred_destination, inferred_unique_keys = (
-        _infer_transition_shape(transition_matrix)
-        if group_columns is None
-        else (group_columns, transition_column, new_column, [])
+    if group_columns is None or unique_key_columns is None:
+        group_cols, from_cols, to_cols, constraints = _default_transition_shape(
+            transition_matrix)
+    else:
+        group_cols = group_columns
+        from_cols = transition_columns if isinstance(
+            transition_columns, list) else [transition_columns]
+        to_cols = new_columns if isinstance(
+            new_columns, list) else [new_columns]
+        constraints = []
+
+    _require_columns(transition_matrix, constraints + [probability_column])
+    _ensure_no_duplicate_keys(transition_matrix, constraints)
+
+    if len(to_cols) != len(from_cols):
+        raise ValueError(
+            "The number of transition from columns does not match the number of transition to columns!")
+
+    # we have to collect the LazyFrame here because we need to count rows
+    if isinstance(transition_matrix, pl.LazyFrame):
+        transition_matrix = transition_matrix.collect()
+
+    n_states = np.square(
+        np.prod([transition_matrix.n_unique(c) for c in from_cols])
     )
 
-    active_group_columns = group_columns or inferred_group_columns
-    origin_column = inferred_origin if group_columns is None else transition_column
-    destination_column = inferred_destination if group_columns is None else new_column
-    active_unique_keys = unique_key_columns or inferred_unique_keys
-    if not active_unique_keys:
-        active_unique_keys = active_group_columns + [destination_column]
+    if transition_matrix.select(pl.len()).item() != n_states:
+        required_cols = ['initial_intervention',
+                         'initial_behavior', 'sample', 'time']
+        if not set(required_cols).issubset(set(transition_matrix.columns)):
+            raise ValueError(
+                "Transition matrix is missing required columns for completion. Please provide a complete transition matrix or ensure that 'initial_intervention' and 'initial_behavior' columns are present for automatic completion."
+            )
+        inter = transition_matrix['initial_intervention'].unique().to_list()
+        behav = transition_matrix['initial_behavior'].unique().to_list()
+        sample = transition_matrix['sample'].unique().item()
+        time = transition_matrix['time'].unique().item()
 
-    active_retention_pairs = retention_pairs or [
-        (origin_column, destination_column)]
-
-    _require_columns(
-        transition_matrix,
-        active_group_columns + [origin_column, destination_column],
-    )
-    _require_columns(
-        transition_matrix,
-        [c for pair in active_retention_pairs for c in pair],
-    )
-    _validate_probability_column(transition_matrix, probability_column)
-    _ensure_no_duplicate_keys(transition_matrix, active_unique_keys)
-
-    if complete_missing:
-        completed = _complete_transition_rows(
-            transition_matrix,
-            active_group_columns,
-            origin_column,
-            destination_column,
-            probability_column=probability_column,
-        )
+        completed = combine_dataframes(
+            build_constant_transition(
+                inter, behav, sample_id=sample, time=time
+            ), transition_matrix.lazy(), value_col=probability_column).collect()
     else:
         completed = transition_matrix
 
+    from_to_pairs = [(from_cols, to_cols)]
+
+    _validate_probability_column(transition_matrix, probability_column)
+
     is_retention = pl.lit(True)
-    for origin_col, destination_col in active_retention_pairs:
-        is_retention = is_retention & (
-            pl.col(destination_col) == pl.col(origin_col)
-        )
+    for origin_cols, destination_cols in from_to_pairs:
+        for origin_col, destination_col in zip(origin_cols, destination_cols):
+            is_retention = is_retention & (
+                pl.col(destination_col) == pl.col(origin_col)
+            )
 
     non_retention = (
         completed
         .filter(~is_retention)
-        .group_by(active_group_columns)
+        .group_by(group_cols)  # Add new_behavior (if intervention)
         .agg(pl.col(probability_column).sum().alias("__non_retention_sum"))
     )
 
     retention_targets = (
-        completed.select(active_group_columns)
+        completed.select(group_cols)
         .unique()
-        .join(non_retention, on=active_group_columns, how="left")
+        .join(non_retention, on=group_cols, how="left")
         .with_columns(
             pl.col("__non_retention_sum").fill_null(0.0),
             (1.0 - pl.col("__non_retention_sum")).alias("__retention_target"),
@@ -314,7 +262,7 @@ def update_retention_probability(
     )
 
     result = (
-        completed.join(retention_targets, on=active_group_columns, how="left")
+        completed.join(retention_targets, on=group_cols, how="left")
         .with_columns(
             pl.when(is_retention)
             .then(pl.col("__retention_target"))
@@ -327,10 +275,10 @@ def update_retention_probability(
     # final invariant check; this keeps the function idempotent and defensive
     if not verify_transition_probability(
         result,
-        origin_column,
+        from_cols,
         probability_column=probability_column,
-        group_columns=active_group_columns,
-        unique_key_columns=active_unique_keys,
+        group_columns=group_cols,
+        unique_key_columns=constraints,
         tolerance=tolerance,
     ):
         raise ValueError(
@@ -342,7 +290,7 @@ def update_retention_probability(
 
 def verify_transition_probability(
     transition_matrix: pl.DataFrame,
-    transition_column: str,
+    transition_columns: str | list[str],
     *,
     probability_column: str = "probability",
     group_columns: list[str] | None = None,
@@ -357,25 +305,22 @@ def verify_transition_probability(
     Returns:
         bool: _description_
     """
-    inferred_group_columns, _, destination_column, inferred_unique_keys = (
-        _infer_transition_shape(transition_matrix)
-        if group_columns is None
-        else (group_columns, transition_column, "", [])
-    )
-    active_group_columns = group_columns or inferred_group_columns
-    active_unique_keys = unique_key_columns or inferred_unique_keys
-    if not active_unique_keys and destination_column:
-        active_unique_keys = active_group_columns + [destination_column]
-    if not active_unique_keys:
-        active_unique_keys = [
-            c for c in transition_matrix.columns if c != probability_column
-        ]
+    if group_columns is None or unique_key_columns is None:
+        group_cols, _, _, constraints = _default_transition_shape(
+            transition_matrix)
+    else:
+        group_cols = group_columns
+        constraints = transition_matrix.columns
+        constraints.remove(probability_column)
 
-    _require_columns(transition_matrix, active_group_columns)
+    if isinstance(transition_columns, str):
+        transition_columns = [transition_columns]
+
+    _require_columns(transition_matrix, group_cols)
     _validate_probability_column(transition_matrix, probability_column)
-    _ensure_no_duplicate_keys(transition_matrix, active_unique_keys)
+    _ensure_no_duplicate_keys(transition_matrix, constraints)
 
-    grouped = transition_matrix.group_by(active_group_columns).agg(
+    grouped = transition_matrix.group_by(group_cols).agg(
         pl.col(probability_column).sum().alias("prob_sum")
     )
 

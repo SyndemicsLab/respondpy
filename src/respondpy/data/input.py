@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-10                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -21,7 +21,7 @@ import polars as pl
 
 from .database_helpers import sort_dataframes
 from .parameters import Parameter, ParameterType
-from .transition_matrices import build_constant_transition, update_retention_probability
+from .transition_matrices import build_constant_transition, update_retention_probability, combine_dataframes
 from .state_vectors import build_constant_state_vector
 
 
@@ -214,27 +214,6 @@ class Input:
 
         return lzdf
 
-    def _combine_dataframes(
-            self,
-            df1: pl.LazyFrame,
-            df2: pl.LazyFrame,
-            *,
-            value_col: str = "probability"
-    ) -> pl.LazyFrame:
-        # We want to join on all columns except the value column, and then collapse the value column so that if there is a value in df2 it takes precedence, but if there isn't then we keep the value from df1. This allows us to fill in missing values with the constant dataframes.
-        joined_lf = df1.join(
-            df2, on=df1.collect_schema().names(), how="left", suffix="_new")
-        collapsed_df = joined_lf.with_columns(
-            pl.when(
-                pl.col(f"{value_col}_new").is_null()
-            ).then(
-                pl.col(value_col)
-            ).otherwise(
-                pl.col(f"{value_col}_new")
-            ).alias(value_col)
-        ).select(pl.col(df1.collect_schema().names()))
-        return collapsed_df
-
     def _extract_values(
         self,
         param: Parameter,
@@ -268,6 +247,38 @@ class Input:
         raise ValueError(
             "Invalid parameter applied when attempting to extract parameters!")
 
+    def _zero_invalid_transitions(
+        self,
+        param: Parameter,
+        transition_matrix: pl.DataFrame
+    ) -> pl.DataFrame:
+        """Helper function to set the probability of invalid transitions to 0. For example, if we are extracting an intervention transition matrix, any transition that involves a change in behavior but not a change in intervention is invalid and should have its probability set to 0.
+        """
+        if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
+            m = transition_matrix.with_columns(
+                pl.when(
+                    pl.col("new_behavior") != pl.col("initial_behavior")
+                ).then(
+                    pl.lit(0.0)
+                ).otherwise(
+                    pl.col("probability")
+                ).alias("probability")
+            )
+        elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+            m = transition_matrix.with_columns(
+                pl.when(
+                    pl.col("new_intervention") != pl.col(
+                        "initial_intervention")
+                ).then(
+                    pl.lit(0.0)
+                ).otherwise(
+                    pl.col("probability")
+                ).alias("probability")
+            )
+        else:
+            m = transition_matrix
+        return m
+
     def _get_parameter_filled(
         self,
         param: Parameter,
@@ -277,10 +288,10 @@ class Input:
         """Helper function used to extract transitions from the database based on the cohort sample and the corresponding sample IDs.
 
         Args:
-            p (ParameterType): The parameter to extract.
-            db (str | Path): The string or Path object to the database.
-            sample_ids (pl.DataFrame): The cohort sample containing the sample IDs.
-            time (int | None): The timestep we are using to extract the transition. None is only valid when the initial cohort is being extracted.
+            p(ParameterType): The parameter to extract.
+            db(str | Path): The string or Path object to the database.
+            sample_ids(pl.DataFrame): The cohort sample containing the sample IDs.
+            time(int | None): The timestep we are using to extract the transition. None is only valid when the initial cohort is being extracted.
 
         Raises:
             ValueError: Unimplemented Enum value.
@@ -289,6 +300,11 @@ class Input:
             np.ndarray: The transition value as a numpy array.
         """
         lf = self._select_parameter_raw(param, sample_id, time)
+        if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
+            lf = lf.rename({"behavior": "initial_behavior"})
+        elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+            lf = lf.rename({"intervention": "initial_intervention"})
+
         n_rows = lf.select(pl.len()).collect().item()
 
         n_interventions = len(self.get_interventions())
@@ -307,7 +323,7 @@ class Input:
             return lf
 
         if param.is_state_vector_operation():
-            return self._combine_dataframes(
+            return combine_dataframes(
                 build_constant_state_vector(
                     self.get_interventions(), self.get_behaviors(), sample_id=sample_id, time=time
                 ).lazy(),
@@ -315,14 +331,13 @@ class Input:
                 value_col=param.get_value_column_name()
             )
         temp = build_constant_transition(
-            param,
             self.get_interventions(),
             self.get_behaviors(),
             sample_id=sample_id,
             time=time
-        ).lazy()
+        )
 
-        res = self._combine_dataframes(
+        res = combine_dataframes(
             temp, lf, value_col=param.get_value_column_name()
         )
 
@@ -333,15 +348,17 @@ class Input:
                 f"Parameter {param} is missing the initial or next state column names required for transition matrix operations!"
             )
 
+        res = self._zero_invalid_transitions(param, res.collect())
+
         res = update_retention_probability(
-            res.collect(),
+            res,
             init_col,
             next_col,
             probability_column=param.get_value_column_name()
         )
 
         return sort_dataframes(
-            lf,
+            res.lazy(),
             self._get_single_state_table("intervention"),
             self._get_single_state_table("behavior")
         )
@@ -364,23 +381,16 @@ class Input:
             ))
         return self.behaviors
 
-    def insert_cohorts(self, data: list) -> None:
-        sql_stmt = """
-        INSERT INTO cohort (description, background_mortality_sample, behavior_transition_sample, initial_population_sample,intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES (?,?,?,?,?,?,?,?,?)
-        """
-        self._connect_and_executemany(data, sql_stmt)
-
     def get_cohorts(self) -> tuple[list[str], list]:
         stmt = "SELECT * FROM cohort;"
         col_names, results = self._connect_and_fetchall(stmt)
         return col_names, results
 
-    def insert_parameter(
-        self,
-        param: Parameter,
-        data: list,
-    ) -> None:
-        return self._connect_and_executemany(data, param.get_insert_statement())
+    def insert_cohorts(self, data: list) -> None:
+        sql_stmt = """
+        INSERT INTO cohort(description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self._connect_and_executemany(data, sql_stmt)
 
     def select_parameter(
         self,
@@ -399,3 +409,10 @@ class Input:
             self._get_parameter_filled(param, sample_id, time),
             n=len(self._get_state_names())
         )
+
+    def insert_parameter(
+        self,
+        param: Parameter,
+        data: list,
+    ) -> None:
+        return self._connect_and_executemany(data, param.get_insert_statement())
