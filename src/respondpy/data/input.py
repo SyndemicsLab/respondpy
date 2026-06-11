@@ -143,25 +143,6 @@ class Input:
         self.states[state] = [(row[0], row[1]) for row in results]
         return self.states[state]
 
-    def _get_state_names(self) -> list[tuple[str, str]]:
-        """Return ordered state-name tuples as ``(intervention, behavior)``.
-
-        :returns: State label pairs sorted by intervention id then behavior id.
-        """
-        if "combination" in self.states:
-            return self.states["combination"]
-
-        stmt = """
-            SELECT i.name AS intervention, b.name AS behavior
-            FROM intervention AS i
-            CROSS JOIN behavior AS b
-            ORDER BY i.id, b.id
-            """
-
-        _, results = self._connect_and_fetchall(stmt)
-        self.states["combination"] = [(row[0], row[1]) for row in results]
-        return self.states["combination"]
-
     def _get_sample_ids_by_table(
             self,
             table_name: str
@@ -396,6 +377,25 @@ class Input:
             ))
         return self.behaviors
 
+    def get_state_names(self) -> list[tuple[str, str]]:
+        """Return ordered state-name tuples as ``(intervention, behavior)``.
+
+        :returns: State label pairs sorted by intervention id then behavior id.
+        """
+        if "combination" in self.states:
+            return self.states["combination"]
+
+        stmt = """
+            SELECT i.name AS intervention, b.name AS behavior
+            FROM intervention AS i
+            CROSS JOIN behavior AS b
+            ORDER BY i.id, b.id
+            """
+
+        _, results = self._connect_and_fetchall(stmt)
+        self.states["combination"] = [(row[0], row[1]) for row in results]
+        return self.states["combination"]
+
     def get_cohorts(self) -> tuple[list[str], list]:
         """Return raw cohort table data.
 
@@ -444,7 +444,7 @@ class Input:
         return self._extract_values(
             param,
             self._get_parameter_filled(param, sample_id, time),
-            n=len(self._get_state_names())
+            n=len(self.get_state_names())
         )
 
     def insert_parameter(

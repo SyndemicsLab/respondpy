@@ -1,13 +1,16 @@
-name: Build Wheels
+name: Build and Deploy to PyPI
 
 on:
+    workflow_dispatch:
+    pull_request:
     push:
-        tags:
-            - "v*.*.*"
+    release:
+        types:
+            - published
 
 jobs:
     build_wheels:
-        name: Build wheels on ${{ matrix.os }}
+        name: Build wheels for ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
@@ -28,38 +31,58 @@ jobs:
                   persist-credentials: false
 
             - name: Install uv
-              uses: astral-sh/setup-uv@v7
+              uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
               with:
-                  version: "0.10.11"
+                  version: "0.11.20"
 
-            - name: Build wheels
-              uses: pypa/cibuildwheel@v3.4.0
-              # env:
-              #   CIBW_BUILD_FRONTEND: value
-              #   ...
-              # with:
-              #   package-dir: .
-              #   output-dir: wheelhouse
-              #   config-file: "{package}/pyproject.toml"
+            - name: Build Wheels
+              run: uvx cibuildwheel==4.0.0
+
+            # - name: Build wheels
+            #   uses: pypa/cibuildwheel@v3.4.0
+            # env:
+            #   CIBW_BUILD_FRONTEND: value
+            #   ...
+            # with:
+            #   package-dir: .
+            #   output-dir: wheelhouse
+            #   config-file: "{package}/pyproject.toml"
 
             - uses: actions/upload-artifact@v4
               with:
                   name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
                   path: ./wheelhouse/*.whl
 
-    publish:
-        name: Publish to PyPI
-        needs: build_wheels
+    build_sdist:
+        name: Build Source Distribution
         runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
+            - name: Build sdist
+              run: uvx build --sdist
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: cibw-sdist
+                  path: dist/*.tar.gz
+
+    upload_pypi:
+        name: Publish to PyPI
+        needs: [build_wheels, build_sdist]
+        runs-on: ubuntu-latest
+        environment:
+            name: pypi
+            url: https://pypi.org/p/respondpy/
         permissions:
             id-token: write
-
+        if: github.event_name == 'release' && github.event.action == 'published'
         steps:
             - name: Download wheel artifacts
               uses: actions/download-artifact@v5
               with:
                   path: dist
-                  pattern: cibw-wheels-*
+                  pattern: cibw-*
                   merge-multiple: true
 
             - name: Publish distributions to PyPI with attestations
