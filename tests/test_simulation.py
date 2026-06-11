@@ -4,7 +4,7 @@
 # Created Date: 2026-02-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-11                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -86,6 +86,29 @@ def test_build_simulation(setup_data):
     """
     db, cfg = setup_data
     inp = rpy.data.Input(db_path=db, conf_path=cfg)
-    sim = rpy.build_simulation([1], inp)
-    m = rpy.Model("markov")
-    # assert len(sim.get_models()) == 1
+    sim = rpy.build_simulation(inp)
+    assert len(sim.get_models()) == 1
+
+
+def test_build_simulation_with_cohort_id(setup_data):
+    """Basic unit test to verify the simulation can be built
+
+    Args:
+        setup_data (_type_): _description_
+    """
+    db, cfg = setup_data
+    inp = rpy.data.Input(db_path=db, conf_path=cfg)
+    sim = rpy.build_simulation(inp, cohort_ids=[1])
+    assert len(sim.get_models()) == 1
+
+
+def test_build_simulation_with_invalid_cohort_id(setup_data):
+    """Basic unit test to verify the simulation can be built
+
+    Args:
+        setup_data (_type_): _description_
+    """
+    db, cfg = setup_data
+    inp = rpy.data.Input(db_path=db, conf_path=cfg)
+    with pytest.raises(ValueError, match="Cohort IDs"):
+        rpy.build_simulation(inp, cohort_ids=[2])

@@ -4,7 +4,7 @@
 # Created Date: 2026-06-10                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-06-11                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -153,6 +153,13 @@ def test_get_cohorts(input_data):
     expected_results = [1, "Test Cohort 1", 1, 1, 1, 1, 1, 1, 1, 1]
     assert set(expected_col_names) == set(col_names)
     assert expected_results == list(results[0])
+
+
+@pytest.mark.unit
+def test_get_cohort_ids(input_data):
+    ids = input_data.get_cohort_ids()
+    expected_ids = [1]
+    assert expected_ids == ids
 
 
 @pytest.mark.unit

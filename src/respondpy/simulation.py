@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-11                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -21,9 +21,9 @@ __all__: list[str] = ['Simulation', 'build_simulation']
 
 
 def build_simulation(
-        cohort_ids: Sequence[int],
         input_data: Input,
         *,
+        cohort_ids: Sequence[int] | None = None,
         log_name: str = "console"
 ) -> Simulation:
     """Build a simulation containing one model per cohort id.
@@ -33,6 +33,15 @@ def build_simulation(
     :param log_name: Logger name used by the underlying core simulation/model.
     :returns: A simulation object populated with cohort-specific models.
     """
+    input_cohort_ids = input_data.get_cohort_ids()
+    if cohort_ids is None:
+        cohort_ids = input_cohort_ids
+    else:
+        missing_cohorts = set(cohort_ids) - set(input_cohort_ids)
+        if missing_cohorts:
+            raise ValueError(
+                f"Cohort IDs {missing_cohorts} not found in input data."
+            )
     s = Simulation(log_name)
     for cohort_id in cohort_ids:
         s.add_model(build_model(input_data, cohort_id, log_name=log_name))

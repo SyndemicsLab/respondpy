@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-06-11                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -404,6 +404,12 @@ class Input:
         stmt = "SELECT * FROM cohort;"
         col_names, results = self._connect_and_fetchall(stmt)
         return col_names, results
+
+    def get_cohort_ids(self) -> list[int]:
+        """Return a list of cohort ids from the cohort table."""
+        col_names, results = self.get_cohorts()
+        id_index = col_names.index("id")
+        return [row[id_index] for row in results]
 
     def insert_cohorts(self, data: list) -> None:
         """Insert cohort rows into the cohort table.
