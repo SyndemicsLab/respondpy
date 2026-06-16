@@ -1,10 +1,10 @@
 ################################################################################
-# File: bench_end_to_end.py                                                    #
+# File: test_bench_end_to_end.py                                               #
 # Project: respondpy                                                           #
 # Created Date: 2026-05-06                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-06                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -26,13 +26,13 @@ Or via the nox session:
 
 from __future__ import annotations
 
-from configparser import ConfigParser
 from pathlib import Path
 
 import polars as pl
 import pytest
 
 from respondpy import Simulation, build_simulation
+from respondpy.data import Input
 
 # ---------------------------------------------------------------------------
 # CSV history writer (local to benchmarks — not part of the distributed lib)
@@ -47,10 +47,10 @@ def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
 
     Files are named ``<model_name>_histories.csv`` and written to *out_dir*.
     """
-    histories = sim.get_model_histories()
-    for model_name, model_hist in histories.items():
+    all_model_histories = sim.get_model_histories()
+    for model_name, model_history in all_model_histories.items():
         rows: list[dict] = []
-        for hist_name, state_vectors in model_hist.items():
+        for hist_name, state_vectors in model_history.items():
             for t, vec in enumerate(state_vectors):
                 row = {"history_name": hist_name, "timestep": t}
                 row.update({f"state_{i}": float(v) for i, v in enumerate(vec)})
@@ -71,9 +71,11 @@ def test_bench_load_data(benchmark, benchmark_db, benchmark_config):
     Measures the time to call build_simulation() from scratch on each round,
     including all database reads and model/transition setup.
     """
+    input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+
     benchmark.pedantic(
         build_simulation,
-        args=([1], benchmark_db, benchmark_config),
+        kwargs={'input_data': input_data, 'cohort_ids': [1]},
         rounds=10,
         iterations=1,
     )
@@ -91,7 +93,8 @@ def test_bench_run_model(benchmark, benchmark_db, benchmark_config):
     from a prior run does not carry over and inflate subsequent measurements.
     """
     def _setup():
-        sim = build_simulation([1], benchmark_db, benchmark_config)
+        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+        sim = build_simulation(input_data, cohort_ids=[1])
         return (sim,), {}
 
     benchmark.pedantic(
@@ -113,7 +116,8 @@ def test_bench_write_histories(benchmark, benchmark_db, benchmark_config, tmp_pa
     The Simulation is built and run once in setup; only the CSV write is timed.
     """
     def _setup():
-        sim = build_simulation([1], benchmark_db, benchmark_config)
+        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+        sim = build_simulation(input_data, cohort_ids=[1])
         sim.run()
         return (sim, tmp_path), {}
 
@@ -136,7 +140,8 @@ def test_bench_end_to_end(benchmark, benchmark_db, benchmark_config, tmp_path):
     Use this figure for direct comparison with RESPONDv1 wall-clock timings.
     """
     def _pipeline():
-        sim = build_simulation([1], benchmark_db, benchmark_config)
+        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+        sim = build_simulation(input_data, cohort_ids=[1])
         sim.run()
         _write_histories_to_csv(sim, tmp_path)
 

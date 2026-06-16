@@ -4,7 +4,7 @@
 # Created Date: 2026-05-06                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-06                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -226,8 +226,9 @@ def benchmark_db(tmp_path_factory) -> Path:
 
 
 @pytest.fixture(scope="session")
-def benchmark_config() -> ConfigParser:
+def benchmark_config(tmp_path_factory) -> str:
     """Fixed simulation config used across all benchmarks."""
+    conf_path = tmp_path_factory.mktemp("bench-data") / "sim.conf"
     cfg = ConfigParser()
     cfg["simulation"] = {
         "duration": "52",
@@ -239,4 +240,6 @@ def benchmark_config() -> ConfigParser:
         "save_state_history": "true",
         "timesteps_to_report": "52",
     }
-    return cfg
+    with open(conf_path, "w", encoding='utf-8') as f:
+        cfg.write(f)
+    return conf_path
