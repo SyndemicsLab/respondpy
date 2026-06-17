@@ -26,10 +26,11 @@ from respondpy.data.transition_matrices import (
 
 @pytest.mark.unit
 def test_build_constant_transition_intervention() -> None:
-    inter = [f"I{i}" for i in range(16)]
-    behav = [f"B{j}" for j in range(4)]
+    inter_count, behavior_count = 16, 4
+    inter = [f"I{i}" for i in range(inter_count)]
+    behav = [f"B{j}" for j in range(behavior_count)]
     df = rpydata.build_constant_transition(inter, behav).collect()
-    assert df.shape == ((16 * 4)**2, 7)
+    assert df.shape == ((inter_count * behavior_count)**2, 7)
     assert set(df.columns) == {
         "sample", "time", "initial_intervention", "new_intervention", "initial_behavior", "new_behavior", "probability"}
 
