@@ -4,7 +4,7 @@
 # Created Date: 2026-06-10                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -96,7 +96,7 @@ def test_sort_state_vector_happy_path() -> None:
     ).collect()
 
     assert out.columns == ["intervention", "behavior", "count"]
-    assert out.select("count").to_series().to_list() == [20, 10, 40, 30]
+    assert out.select("count").to_series().to_list() == [10, 20, 30, 40]
 
 
 @pytest.mark.unit

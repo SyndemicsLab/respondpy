@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -39,9 +39,9 @@ def _sort_state_vector(
     # Sort first by behaviors, then by interventions
     return lf.join(
         behav, left_on="behavior", right_on="b_name", how="inner"
-    ).sort(pl.col("b_id")).drop("b_id").join(
+    ).join(
         inter, left_on="intervention", right_on="i_name", how="inner"
-    ).sort(pl.col("i_id")).drop("i_id")
+    ).sort(["i_id", "b_id"]).drop(["i_id", "b_id"])
 
 
 def _sort_transition_matrix(
