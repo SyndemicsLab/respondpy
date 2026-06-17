@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-11                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -317,12 +317,13 @@ class Input:
             return lf
 
         if param.is_state_vector_operation():
+            value_col = param.get_value_column_name()
             return combine_dataframes(
                 build_constant_state_vector(
-                    self.get_interventions(), self.get_behaviors(), sample_id=sample_id, time=time
+                    self.get_interventions(), self.get_behaviors(), sample_id=sample_id, time=time, value_column=value_col
                 ).lazy(),
                 lf,
-                value_col=param.get_value_column_name()
+                value_col=value_col
             )
         temp = build_constant_transition(
             self.get_interventions(),

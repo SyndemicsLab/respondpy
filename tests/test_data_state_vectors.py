@@ -4,7 +4,7 @@
 # Created Date: 2026-06-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -23,5 +23,5 @@ def test_build_constant_state_vector() -> None:
     state_vector = rpydata.build_constant_state_vector(inter, behav)
     print(state_vector)
     assert state_vector.shape == (6, 5)
-    assert state_vector.select("probability").to_numpy().sum() == 0
-    assert all(state_vector["probability"] == 0.0)
+    assert state_vector.select("count").to_numpy().sum() == 0
+    assert all(state_vector["count"] == 0.0)

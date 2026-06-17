@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -80,9 +80,7 @@ class Parameter():
         match self.__parameter_type:
             case ParameterType.STANDARD_MORTALITY_RATIO:
                 return "ratio"
-            case ParameterType.BACKGROUND_DEATH_PROBABILITY | ParameterType.OVERDOSE_PROBABILITY | ParameterType.OVERDOSE_FATALITY_PROBABILITY:
-                return "probability"
-            case ParameterType.INTERVENTION_TRANSITION_PROBABILITY | ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+            case ParameterType.BACKGROUND_DEATH_PROBABILITY | ParameterType.OVERDOSE_PROBABILITY | ParameterType.OVERDOSE_FATALITY_PROBABILITY | ParameterType.INTERVENTION_TRANSITION_PROBABILITY | ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
                 return "probability"
             case ParameterType.INITIAL_COHORT | ParameterType.MIGRATION_COHORT:
                 return "count"

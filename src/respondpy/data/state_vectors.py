@@ -4,7 +4,7 @@
 # Created Date: 2026-06-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -19,7 +19,7 @@ def build_constant_state_vector(
     *,
     sample_id: int = 1,
     time: int = 1,
-    value_column: str = "probability",
+    value_column: str = "count",
     constant: float = 0.0
 ) -> pl.DataFrame:
     """Build a fully populated constant-valued state vector table.
