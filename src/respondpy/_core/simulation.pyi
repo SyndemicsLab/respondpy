@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-12                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,7 +16,6 @@ from collections.abc import Sequence
 
 import numpy
 import numpy.typing
-import respondpy._core.history
 import respondpy._core.model
 import typing
 
@@ -47,7 +46,10 @@ class Simulation:
     def get_log_name(self) -> str:
         ...
 
-    def get_model_histories(self) -> Sequence[dict[str, Sequence[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
+    def get_model_histories(self) -> dict[str, dict[str, Sequence[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
+        ...
+
+    def get_model_sparse_histories(self) -> dict[str, dict[str, typing.Any]]:
         ...
 
     def get_model_history_names(self) -> Sequence[tuple[str, str]]:

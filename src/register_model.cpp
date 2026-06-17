@@ -33,6 +33,22 @@ void register_model(py::module &m) {
         .def("get_model_name", &Model::GetModelName)
         .def("get_log_name", &Model::GetLogName)
         .def("create_default_histories", &Model::CreateDefaultHistories)
+        .def("clear_histories", &Model::ClearHistories,
+             "Clear all history records and reset history tracking state.")
+        .def("set_history_capture_interval",
+             &Model::SetHistoryCaptureInterval,
+             py::arg("interval"),
+             "Set the global history capture interval. Records every "
+             "interval timesteps; values less than 1 default to full capture.")
+        .def("get_history_capture_interval",
+             &Model::GetHistoryCaptureInterval,
+             "Get the active capture interval. A value of 1 means full "
+             "capture.")
+        .def("set_final_timestep", &Model::SetFinalTimestep,
+             py::arg("final_timestep"),
+             "Set the final timestep that must always be recorded.")
+        .def("get_final_timestep", &Model::GetFinalTimestep,
+             "Get the configured final simulation timestep, or -1 if unset.")
         .def("__repr__",
              [](const Model &m) {
                  return "<respondpy.Model named " + m.GetModelName() +

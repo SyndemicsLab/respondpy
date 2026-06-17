@@ -21,3 +21,25 @@ def pylint(session: nox.Session) -> None:
     session.env["PYTHONPATH"] = "src"
     session.install("pylint", "numpy", "polars")
     session.run("pylint", "src/respondpy")
+
+
+@nox.session(python=["3.12"], venv_backend="uv")
+def benchmark(session: nox.Session) -> None:
+    """Run end-to-end benchmarks (not included in normal test runs).
+
+    Results are printed to stdout. Optionally pass --benchmark-save=<name>
+    to persist results for later comparison:
+
+        uv run nox -s benchmark -- --benchmark-save=baseline
+    """
+    session.env["PYTHONPATH"] = "build/respondpy"
+    session.install("--group=benchmark", ".")
+    session.run(
+        "pytest",
+        "benchmarks/",
+        "--benchmark-only",
+        "--benchmark-columns=min,mean,stddev,rounds",
+        "--benchmark-sort=name",
+        "-v",
+        *session.posargs,
+    )

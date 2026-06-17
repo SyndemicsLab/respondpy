@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-10                                                    #
+# Last Modified: 2026-06-01                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -12,8 +12,12 @@
 
 from __future__ import annotations
 import typing
-__all__: list[str] = ['CreationStatus', 'LogType', 'create_file_logger', 'kDebug', 'kError', 'kExists',
-                      'kInfo', 'kNotCreated', 'kSuccess', 'kWarn', 'log_debug', 'log_error', 'log_info', 'log_warning']
+
+__all__: list[str] = [
+    'CreationStatus', 'LogType', 'create_file_logger', 'kDebug', 'kError',
+    'kExists', 'kInfo', 'kNotCreated', 'kSuccess', 'kWarn', 'log_debug',
+    'log_error', 'log_info', 'log_warning'
+]
 
 
 class CreationStatus:
@@ -28,9 +32,10 @@ class CreationStatus:
 
       kNotCreated
     """
-    __members__: typing.ClassVar[dict[str, CreationStatus]
-                                 # value = {'kError': <CreationStatus.kError: -1>, 'kSuccess': <CreationStatus.kSuccess: 0>, 'kExists': <CreationStatus.kExists: 1>, 'kNotCreated': <CreationStatus.kNotCreated: 2>}
-                                 ]
+    __members__: typing.ClassVar[
+        dict[str, CreationStatus]
+        # value = {'kError': <CreationStatus.kError: -1>, 'kSuccess': <CreationStatus.kSuccess: 0>, 'kExists': <CreationStatus.kExists: 1>, 'kNotCreated': <CreationStatus.kNotCreated: 2>}
+    ]
     # value = <CreationStatus.kError: -1>
     kError: typing.ClassVar[CreationStatus]
     # value = <CreationStatus.kExists: 1>

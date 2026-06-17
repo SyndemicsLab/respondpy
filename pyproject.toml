@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.1.2"
+version = "0.2.0"
 description = "The Syndemic Lab's RESPOND Simulation Python Extension Module."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,10 +17,9 @@ keywords = ["simulation", "Opioid Use Disorder", "Syndemics"]
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 dependencies = [
-    "nox>=2026.2.9",
     "numpy",
     "polars>=1.37.1",
-    "pytest-cov>=7.0.0",
+    "setuptools-scm>=10.0.5",
 ]
 
 [project.urls]
@@ -43,8 +42,10 @@ dev = [
     { include-group = "test" },
     "ipykernel",
     "nbconvert",
+    "nox>=2026.2.9",
     "polars>=1.37.1",
     "pybind11-stubgen>=2.5.5",
+    "pylint>=4.0.5",
     "pytest>=9.0.2",
     "setuptools_scm",
     "typer",
@@ -63,6 +64,7 @@ examples = []
 test = [
     "cloudpickle",
     "pytest-benchmark",
+    "pytest-cov>=7.0.0",
     "pytest>=6.0",
     "pytest-benchmark",
     "numpy",
@@ -73,6 +75,10 @@ github = [
   { include-group = "test" },
   "setuptools_scm",
   "pytest-github-actions-annotate-failures"
+]
+benchmark = [
+  { include-group = "test" },
+  "polars>=1.37.1",
 ]
 
 [[tool.scikit-build.generate]]
@@ -111,7 +117,8 @@ required_plugins = ["pytest-benchmark"]
 log_level = "DEBUG"
 markers = [
     "smoke: Marks tests as smoke tests to respond import accuracy.",
-    "unit: Marks tests as unit tests to verify basic functionality."
+    "unit: Marks tests as unit tests to verify basic functionality.",
+    "benchmark: Marks benchmarks for end-to-end performance measurement."
 ]
 
 [tool.mypy]
@@ -137,25 +144,19 @@ test-command = "python -m pytest -n auto --benchmark-disable tests"
 test-sources = ["pyproject.toml", "tests"]
 test-skip = [
   "cp310-win_arm64",
-  "cp310-musllinux_*",
-  "pp310-manylinux_aarch64",
-  "pp310-macosx_arm64",
   "cp31*-musllinux_*", # Threading test crashes
-  "cp313*",  # polars-runtime-32 lacks wheels for 3.13 and 3.14
+  "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
   "cp314*",
   "pp*",  # polars-runtime-32 unsupported on PyPy 3.11 (pp73)
-  "gp311_242-macosx_x86_64",
-  "gp311_242-manylinux_aarch64",
-  "gp311_242-win*",  # pytest crashes with module 'io' has no attribute '_WindowsConsoleIO'
-  "gp312_*",  # No numpy wheels yet
   "cp314*-ios_*",  # No numpy wheels yet
 ]
-enable = ["cpython-freethreading", "pypy"]
+enable = ["pypy"]
 environment-pass = ["SETUPTOOLS_SCM_PRETEND_VERSION"]
 environment.PIP_ONLY_BINARY = "numpy"
 environment.PIP_PREFER_BINARY = "1"
 environment.UV_ONLY_BINARY = "numpy"
 environment.UV_PREFER_BINARY = "1"
+environment.CMAKE_BUILD_PARALLEL_LEVEL = "3"
 
 [tool.cibuildwheel.pyodide]
 build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
@@ -187,6 +188,8 @@ omit = [
 
 [tool.pylint]
 py-version = "3.12"
+# Shim added to make sure pylint can find our modules since the pybind11 is messing with uv virtual environments. This just adds the src directory to the path before pylint runs but shouldn't impact any distribution details.
+init-hook = "import os,sys; sys.path.insert(0, os.path.join(os.getcwd(), 'src'))"
 ignore-patterns = ['.*\.pyi']
 ignore = "version.py"
 extension-pkg-allow-list = ["respondpy._core"]
