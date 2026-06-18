@@ -12,6 +12,8 @@ jobs:
     build_wheels:
         name: Build wheels for ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
+        permissions:
+            contents: read
         strategy:
             matrix:
                 # macos-15-intel is an Intel runner, macos-14 is Apple silicon
@@ -55,6 +57,8 @@ jobs:
     build_sdist:
         name: Build Source Distribution
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
         steps:
             - uses: actions/checkout@v6
               with:
