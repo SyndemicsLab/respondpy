@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-06-24                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -360,6 +360,10 @@ class Input:
 
     # External Functions
 
+    def get_intervention_id_maps(self) -> dict[int, str]:
+        """Return a map of intervention ids to names."""
+        return dict(self._get_single_state_table(state="intervention"))
+
     def get_interventions(self) -> list[str]:
         """Return ordered intervention names from the database."""
         if self.interventions is None:
@@ -368,6 +372,10 @@ class Input:
                 self._get_single_state_table(state="intervention")
             ))
         return self.interventions
+
+    def get_behavior_id_maps(self) -> dict[int, str]:
+        """Return a map of behavior ids to names."""
+        return dict(self._get_single_state_table(state="behavior"))
 
     def get_behaviors(self) -> list[str]:
         """Return ordered behavior names from the database."""
