@@ -144,12 +144,11 @@ test-command = "python -m pytest -n auto --benchmark-disable tests"
 test-sources = ["pyproject.toml", "tests"]
 test-skip = [
   "cp31*-win32", # polars-runtime-32 fails on 32 bit Windows
-  "cp310-win_arm64",
-  "cp31*-musllinux_*", # Threading test crashes
+  "cp31*-musllinux_*", # Threading test crashes on musllinux
   "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
-  "cp314*",
+  "cp314*", # polars-runtime-32 has issues with abi3 on 3.13 and above
   "pp*",  # polars-runtime-32 unsupported on PyPy 3.11 (pp73)
-  "cp314*-ios_*",  # No numpy wheels yet
+  "cp314*-ios_*",  # No numpy wheels yet for ios on 3.14
 ]
 enable = ["pypy"]
 environment-pass = ["SETUPTOOLS_SCM_PRETEND_VERSION"]
@@ -173,6 +172,16 @@ environment.PIP_EXTRA_INDEX_URL = "https://pypi.anaconda.org/beeware/simple/"
 select = "pp310-macosx_arm64"
 inherit.environment = "append"
 environment.MACOSX_DEPLOYMENT_TARGET = "14.0"
+
+[[tool.cibuildwheel.overrides]]
+select = ["cp3*-win_arm64"]
+inherit.environment = "append"
+test-command = "python -m pytest -n 1 --benchmark-disable tests"
+environment.OMP_NUM_THREADS = "1"
+environment.OPENBLAS_NUM_THREADS = "1"
+environment.MKL_NUM_THREADS = "1"
+environment.NUMEXPR_NUM_THREADS = "1"
+environment.POLARS_MAX_THREADS = "1"
 
 [[tool.cibuildwheel.overrides]]
 select = ["gp*"]
