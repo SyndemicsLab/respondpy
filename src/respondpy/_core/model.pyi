@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-12                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -66,7 +66,7 @@ class Model:
     def set_histories(self, histories: collections.abc.Mapping[str, respondpy._core.history.History]) -> None:
         ...
 
-    def set_state(self, state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"]) -> None:
+    def set_state(self, state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64]) -> None:
         ...
 
     def create_default_histories(self) -> None:
