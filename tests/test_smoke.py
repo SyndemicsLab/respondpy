@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -39,7 +39,7 @@ def test_data_import() -> None:
 
 @pytest.mark.smoke
 def test_model() -> None:
-    state = np.array([10, 20, 30])
+    state = np.array([[10, 20, 30]])
     model = rpy.Model("markov", "console")
     model.set_state(state)
     np.testing.assert_array_equal(state, model.get_state())
@@ -91,7 +91,7 @@ def test_one_step() -> None:
 @pytest.mark.smoke
 def test_simulation_sparse_histories() -> None:
     """Verify get_model_sparse_histories returns a name-keyed dict of History objects."""
-    state = np.array([10.0, 20.0, 30.0])
+    state = np.array([[10.0, 20.0, 30.0]])
     model = rpy.Model("markov", "console")
     model.set_state(state)
     model.create_default_histories()
