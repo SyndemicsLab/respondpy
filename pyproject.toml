@@ -72,9 +72,6 @@ template = '''
 __version__ = version = "$version"
 '''
 
-[tool.uv.pip]
-only-binary = ["numpy"]
-
 [[tool.uv.index]]
 name = "testpypi"
 url = "https://test.pypi.org/simple/"
