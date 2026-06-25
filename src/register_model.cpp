@@ -23,7 +23,7 @@ void register_model(py::module &m) {
         .def(py::init(&Model::Create), py::arg("name"),
              py::arg("log_name") = "console")
         .def("set_state",
-             [](Model &m, py::EigenDRef<Eigen::VectorXd> vec) {
+             [](Model &m, const py::EigenDRef<const Eigen::MatrixXd> &vec) {
                  return m.SetState(vec);
              })
         .def("get_state", &Model::GetState)
