@@ -66,7 +66,7 @@ class Model:
     def set_histories(self, histories: collections.abc.Mapping[str, respondpy._core.history.History]) -> None:
         ...
 
-    def set_state(self, state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64]) -> None:
+    def set_state(self, state: typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]", "flags.writeable"]) -> None:
         ...
 
     def create_default_histories(self) -> None:

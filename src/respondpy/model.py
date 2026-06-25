@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -41,7 +41,7 @@ def build_model(
     """
     m = Model(name, log_name)
     init_pop = input_data.select_parameter(
-        Parameter(ParameterType.INITIAL_COHORT), cohort_id, time=1).squeeze()
+        Parameter(ParameterType.INITIAL_COHORT), cohort_id, time=1).reshape(-1, 1)
     m.set_state(init_pop)
     m = build_model_transitions(m, input_data, cohort_id)
     return m
