@@ -4,7 +4,7 @@
 # Created Date: 2026-06-10                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-11                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -141,6 +141,23 @@ def test_get_behaviors(input_data):
     expected_behaviors = ['active_injection', 'nonactive_injection']
     assert isinstance(behaviors, list)
     assert set(behaviors) == set(expected_behaviors)
+
+
+@pytest.mark.unit
+def test_get_interventions_id_maps(input_data):
+    interventions = input_data.get_intervention_id_maps()
+    expected_interventions = {
+        1: 'no_treatment', 2: 'early_buprenorphine', 3: 'buprenorphine', 4: 'post_buprenorphine'}
+    assert isinstance(interventions, dict)
+    assert interventions == expected_interventions
+
+
+@pytest.mark.unit
+def test_get_behaviors_id_maps(input_data):
+    behaviors = input_data.get_behavior_id_maps()
+    expected_behaviors = {1: 'active_injection', 2: 'nonactive_injection'}
+    assert isinstance(behaviors, dict)
+    assert behaviors == expected_behaviors
 
 
 @pytest.mark.unit
