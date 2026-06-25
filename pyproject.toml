@@ -123,7 +123,7 @@ ignore_missing_imports = true
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
 test-groups = ["test"]
-test-command = "uv run pytest"
+test-command = "python -m pytest --benchmark-disable tests"
 test-sources = ["pyproject.toml", "tests"]
 test-skip = [
   "cp31*-win32", # polars-runtime-32 fails on 32 bit Windows
