@@ -41,7 +41,7 @@ def build_model(
     """
     m = Model(name, log_name)
     init_pop = input_data.select_parameter(
-        Parameter(ParameterType.INITIAL_COHORT), cohort_id, time=1).reshape(-1, 1)
+        Parameter(ParameterType.INITIAL_COHORT), cohort_id, time=1)
     m.set_state(init_pop)
     m = build_model_transitions(m, input_data, cohort_id)
     return m
