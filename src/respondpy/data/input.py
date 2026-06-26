@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -12,11 +12,12 @@
 
 import sqlite3
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Annotated
 from operator import itemgetter
 from configparser import ConfigParser
 
 import numpy as np
+import numpy.typing as npt
 import polars as pl
 
 from .database_helpers import sort_dataframes
@@ -216,7 +217,7 @@ class Input:
         lf: pl.LazyFrame,
         *,
         n: int = 64  # 16 interventions * 4 behaviors
-    ) -> np.ndarray:
+    ) -> Annotated[npt.NDArray[np.float64], "[m, 1] | [m, m]"]:
         """Convert extracted rows to a model-ready state vector or matrix.
 
         :param param: Parameter descriptor controlling output shape.
@@ -360,6 +361,10 @@ class Input:
 
     # External Functions
 
+    def get_intervention_id_maps(self) -> dict[int, str]:
+        """Return a map of intervention ids to names."""
+        return dict(self._get_single_state_table(state="intervention"))
+
     def get_interventions(self) -> list[str]:
         """Return ordered intervention names from the database."""
         if self.interventions is None:
@@ -368,6 +373,10 @@ class Input:
                 self._get_single_state_table(state="intervention")
             ))
         return self.interventions
+
+    def get_behavior_id_maps(self) -> dict[int, str]:
+        """Return a map of behavior ids to names."""
+        return dict(self._get_single_state_table(state="behavior"))
 
     def get_behaviors(self) -> list[str]:
         """Return ordered behavior names from the database."""

@@ -1,0 +1,78 @@
+name: Build and Deploy to TestPyPI
+
+on: workflow_dispatch
+
+jobs:
+    build_wheels:
+        name: Build wheels for ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+                os:
+                    [
+                        ubuntu-latest,
+                        ubuntu-24.04-arm,
+                        windows-latest,
+                        windows-11-arm,
+                        macos-15-intel,
+                        macos-14,
+                    ]
+
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
+
+            - name: Build wheels
+              uses: pypa/cibuildwheel@v3.4.0
+              with:
+                  extras: "uv"
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+                  path: ./wheelhouse/*.whl
+
+    build_sdist:
+        name: Build Source Distribution
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+              with:
+                  version: "0.11.20"
+
+            - name: Build sdist
+              run: uvx --from build pyproject-build
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: cibw-sdist
+                  path: dist/*.tar.gz
+
+    upload_pypi:
+        name: Publish to PyPI
+        needs: [build_wheels, build_sdist]
+        runs-on: ubuntu-latest
+        environment:
+            name: testpypi
+            url: https://test.pypi.org/p/respondpy/
+        permissions:
+            id-token: write
+        steps:
+            - name: Download wheel artifacts
+              uses: actions/download-artifact@v5
+              with:
+                  path: dist
+                  pattern: cibw-*
+                  merge-multiple: true
+
+            - name: Publish distributions to PyPI with attestations
+              uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  packages-dir: dist
+                  attestations: true

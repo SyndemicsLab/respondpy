@@ -4,7 +4,7 @@
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-09                                                    #
+# Last Modified: 2026-06-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -38,11 +38,28 @@ def test_data_import() -> None:
 
 
 @pytest.mark.smoke
-def test_model() -> None:
-    state = np.array([10, 20, 30])
+def test_model_Nx0() -> None:
+    state = np.array([10.0, 20.0, 30.0]).squeeze()
     model = rpy.Model("markov", "console")
     model.set_state(state)
     np.testing.assert_array_equal(state, model.get_state())
+
+
+@pytest.mark.smoke
+def test_model_1xN() -> None:
+    state = np.array([[10.0, 20.0, 30.0]]).squeeze()
+    model = rpy.Model("markov", "console")
+    print(state.shape)
+    model.set_state(state)
+    np.testing.assert_array_equal(state, model.get_state())
+
+
+@pytest.mark.smoke
+def test_model_Nx1() -> None:
+    state = np.array([[10.0], [20.0], [30.0]])
+    model = rpy.Model("markov", "console")
+    model.set_state(state)
+    np.testing.assert_array_equal(state.squeeze(), model.get_state())
 
 
 @pytest.mark.smoke

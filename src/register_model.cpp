@@ -4,7 +4,7 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-02-12                                                  //
+// Last Modified: 2026-06-25                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -22,7 +22,10 @@ void register_model(py::module &m) {
     py::class_<Model, py::smart_holder>(m, "Model")
         .def(py::init(&Model::Create), py::arg("name"),
              py::arg("log_name") = "console")
-        .def("set_state", &Model::SetState)
+        .def("set_state",
+             [](Model &m, const py::EigenDRef<const Eigen::MatrixXd> &vec) {
+                 return m.SetState(vec);
+             })
         .def("get_state", &Model::GetState)
         .def("run_transitions", &Model::RunTransitions)
         .def("add_transition", &Model::AddTransition)
@@ -35,13 +38,11 @@ void register_model(py::module &m) {
         .def("create_default_histories", &Model::CreateDefaultHistories)
         .def("clear_histories", &Model::ClearHistories,
              "Clear all history records and reset history tracking state.")
-        .def("set_history_capture_interval",
-             &Model::SetHistoryCaptureInterval,
+        .def("set_history_capture_interval", &Model::SetHistoryCaptureInterval,
              py::arg("interval"),
              "Set the global history capture interval. Records every "
              "interval timesteps; values less than 1 default to full capture.")
-        .def("get_history_capture_interval",
-             &Model::GetHistoryCaptureInterval,
+        .def("get_history_capture_interval", &Model::GetHistoryCaptureInterval,
              "Get the active capture interval. A value of 1 means full "
              "capture.")
         .def("set_final_timestep", &Model::SetFinalTimestep,

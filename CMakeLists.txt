@@ -4,7 +4,7 @@ project(RESPONDPY LANGUAGES CXX)
 
 include(FetchContent)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard to compile with, 17")
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard to compile with, 20")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 6a134d60fefd54b00f433c4814f4c4bcb9eace9a
+    GIT_TAG dde215f20e921e0d52a9f749cd14e91c925b18ac
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)
