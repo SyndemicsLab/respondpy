@@ -1,11 +1,6 @@
 name: Build and Deploy to TestPyPI
 
-on:
-    workflow_dispatch:
-    pull_request:
-    release:
-        types:
-            - published
+on: workflow_dispatch
 
 jobs:
     build_wheels:
@@ -14,13 +9,14 @@ jobs:
         strategy:
             matrix:
                 # macos-15-intel is an Intel runner, macos-14 is Apple silicon
-                os: [
+                os:
+                    [
                         ubuntu-latest,
                         ubuntu-24.04-arm,
                         windows-latest,
                         windows-11-arm,
-                        # macos-15-intel,
-                        # macos-14,
+                        macos-15-intel,
+                        macos-14,
                     ]
 
         steps:
@@ -67,7 +63,6 @@ jobs:
             url: https://test.pypi.org/p/respondpy/
         permissions:
             id-token: write
-        if: github.event_name == 'release' && github.event.action == 'published'
         steps:
             - name: Download wheel artifacts
               uses: actions/download-artifact@v5
