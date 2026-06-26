@@ -1,37 +1,47 @@
 [build-system]
-requires = ["scikit-build-core>=0.11", "pybind11"]
+requires = ["scikit-build-core>=0.11", "pybind11", "numpy", "polars>=1.37.1"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.2.1"
+version = "0.2.2"
 description = "The Syndemic Lab's RESPOND Simulation Python Extension Module."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Matthew Carroll", email = "Matthew.Carroll@bmc.org" },
     { name = "Dimitri Baptiste", email = "Dimitri.Baptiste@bmc.org" },
 ]
-maintainers = [{ name = "Syndemics Lab", email = "Benjamin.Linas@bmc.org" }]
-keywords = ["simulation", "Opioid Use Disorder", "Syndemics"]
+maintainers = [
+    { name = "Syndemics Lab", email = "Benjamin.Linas@bmc.org" }
+]
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
+keywords = ["simulation", "Opioid Use Disorder", "markov", "Syndemics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Typing :: Stubs Only"
+]
 dependencies = [
     "numpy",
-    "polars>=1.37.1",
-    "setuptools-scm>=10.0.5",
+    "polars>=1.37.1"
 ]
 
 [project.urls]
-Homepage = "https://github.com/SyndemicsLab/respond"
+Homepage = "https://syndemicslab.org"
+Documentation = "https://syndemicslab.github.io/respond/"
+Repository = "https://github.com/SyndemicsLab/respond.git"
 Issues = "https://github.com/SyndemicsLab/respond/issues"
 
 [dependency-groups]
-dev = [
-    { include-group = "test" },
-    { include-group = "docs" },
-    "cibuildwheel>=2.15.0",
-]
 docs = [
     "ipython",
     "myst_parser>=0.13",
@@ -40,6 +50,8 @@ docs = [
     "sphinx>=4.0",
     "sphinx_copybutton",
 ]
+# hypothesis is slow on iOS, can fail health check
+# pytest-xdist has no processes on iOS
 test = [
     "cloudpickle",
     "pylint>=4.0.5",
@@ -47,19 +59,33 @@ test = [
     "pytest>=9.0.2",
     "pytest-benchmark",
     "nox>=2026.2.9",
-    "hypothesis>=6.0; sys_platform != 'ios'", # slow on iOS, can fail health check
-    "pytest-xdist; sys_platform != 'ios'",  # No processes on iOS
+    "hypothesis>=6.0; sys_platform != 'ios'", 
+    "pytest-xdist; sys_platform != 'ios'"
 ]
 github = [
   { include-group = "test" },
   "pytest-github-actions-annotate-failures"
 ]
+dev = [
+    { include-group = "test" },
+    { include-group = "docs" },
+    "cibuildwheel>=2.15.0",
+]
 
 [tool.scikit-build]
-minimum-version = "build-system.requires"
-metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-sdist.exclude = []
+build.verbose = true
 logging.level = "INFO"
+minimum-version = "build-system.requires"
+cmake.version = ">=3.27.0"
+ninja.version = ">=1.11"
+sdist.exclude = [
+    ".github/*",
+    "docs/*",
+    "benchmarks/*",
+]
+sdist.include = [
+    "src/respondpy/_version.py"
+]
 cmake.build-type = "Release"
 messages.after-success = "{green}Wheel successfully built"
 messages.after-failure = """
@@ -67,10 +93,11 @@ messages.after-failure = """
 """
 
 [[tool.scikit-build.generate]]
-path = "respondpy/version.py"
+path = "src/respondpy/_version.py"
 template = '''
-__version__ = version = "$version"
+__version__ = version = "${version}"
 '''
+location = "source"
 
 [[tool.uv.index]]
 name = "testpypi"
@@ -78,121 +105,60 @@ url = "https://test.pypi.org/simple/"
 publish-url = "https://test.pypi.org/legacy/"
 explicit = true
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-junit_family = "xuint2"
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["tests"]
 addopts = [
     "-ra",
-    "--strict-markers",
-    "--strict-config",
-    "--import-mode=importlib",
+    "--strict",
+    "--import-mode=importlib"
 ]
 filterwarnings = [
     "error",
     "default:could not create cache path:pytest.PytestCacheWarning",
 ]
-xfail_strict = true
-testpaths = ["tests"]
+log_level = "INFO"
+markers = ["smoke", "unit", "benchmark"]
 required_plugins = ["pytest-benchmark"]
-log_level = "DEBUG"
-markers = [
-    "smoke: Marks tests as smoke tests to respond import accuracy.",
-    "unit: Marks tests as unit tests to verify basic functionality.",
-    "benchmark: Marks benchmarks for end-to-end performance measurement."
-]
-
-[tool.mypy]
-python_version = 3.12
-files = ["src"]
-strict = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-disallow_untyped_calls = false
-
-[[tool.mypy.overrides]]
-module = ["typer"]
-ignore_missing_imports = true
-
-[tool.cibuildwheel]
-build-frontend = "build[uv]"
-test-groups = ["test"]
-test-command = "python -m pytest --benchmark-disable tests"
-test-sources = ["pyproject.toml", "tests"]
-test-skip = [
-  "cp31*-win32", # polars-runtime-32 fails on 32 bit Windows
-  "cp31*-musllinux_*", # Threading test crashes on musllinux
-  "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
-  "cp314*", # polars-runtime-32 has issues with abi3 on 3.13 and above
-  "pp*",  # polars-runtime-32 unsupported on PyPy 3.11 (pp73)
-  "cp314*-ios_*",  # No numpy wheels yet for ios on 3.14
-]
-enable = ["pypy"]
-environment-pass = ["SETUPTOOLS_SCM_PRETEND_VERSION"]
-environment.PIP_ONLY_BINARY = "numpy"
-environment.PIP_PREFER_BINARY = "1"
-environment.UV_ONLY_BINARY = "numpy"
-environment.UV_PREFER_BINARY = "1"
-environment.CMAKE_BUILD_PARALLEL_LEVEL = "3"
-
-[tool.cibuildwheel.pyodide]
-build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
-test-command = "pytest --benchmark-disable tests"
-
-[tool.cibuildwheel.ios]
-build-frontend = "build"
-xbuild-tools = ["cmake", "ninja"]
-test-command = "python -m pytest --benchmark-disable tests"
-
-[[tool.cibuildwheel.overrides]]
-select = "pp310-macosx_arm64"
-inherit.environment = "append"
-environment.MACOSX_DEPLOYMENT_TARGET = "14.0"
-
-[[tool.cibuildwheel.overrides]]
-select = ["cp3*-win_arm64"]
-inherit.environment = "append"
-test-command = "python -m pytest -n 1 --benchmark-disable tests"
-environment.OMP_NUM_THREADS = "1"
-environment.OPENBLAS_NUM_THREADS = "1"
-environment.MKL_NUM_THREADS = "1"
-environment.NUMEXPR_NUM_THREADS = "1"
-environment.POLARS_MAX_THREADS = "1"
-
-[[tool.cibuildwheel.overrides]]
-select = ["gp*"]
-inherit.environment = "append"
-environment.UV_INDEX = "https://www.graalvm.org/python/wheels/"
-environment.UV_INDEX_STRATEGY = "unsafe-best-match"
-test-command = "pytest --benchmark-disable tests"
 
 [tool.coverage.run]
-omit = [
-    "src/respondpy/test.py",
-    "tests/*"
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_also = [
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == '__main__'"
 ]
+ignore_errors = true
+
+# We only care about type checking the source code
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+warn_unreachable = true
+files = ["src/**/*.py", "src/**/*.pyi"]
+exclude = ["src/respondpy/_version.py"]
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.pylint]
 py-version = "3.12"
 # Shim added to make sure pylint can find our modules since the pybind11 is messing with uv virtual environments. This just adds the src directory to the path before pylint runs but shouldn't impact any distribution details.
 init-hook = "import os,sys; sys.path.insert(0, os.path.join(os.getcwd(), 'src'))"
 ignore-patterns = ['.*\.pyi']
-ignore = "version.py"
+ignore = "_version.py"
 extension-pkg-allow-list = ["respondpy._core"]
 reports.output-format = "colorized"
 similarities.ignore-imports = "yes"
 messages_control.disable = [
-  "cyclic-import", # TODO: move files out of _internal
+  "cyclic-import",
   "fixme",
   "invalid-name",
   "line-too-long",
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
-  "c-extension-no-member", # C extensions mess with this
+  "c-extension-no-member",
   "protected-access",
   "too-few-public-methods",
   "too-many-arguments",
@@ -240,25 +206,59 @@ ignore = [
   "PT011",          # pytest.raises too broad
   "PYI034",         # We are returning Self, just generic
 ]
-typing-modules = ["respondpy._compat.typing"]
+typing-modules = ["respondpy._core"]
 isort.required-imports = ["from __future__ import annotations"]
-exclude = ["extern/*"]
-
-[tool.ruff.lint.flake8-tidy-imports.banned-api]
-"typing.Self".msg = "Use respondpy._compat.typing.Self instead."
-"typing_extensions.Self".msg = "Use respondpy._compat.typing.Self instead."
+exclude = ["tests/*"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 13
 
 [tool.ruff.lint.per-file-ignores]
 "docs/*" = ["T20"]
-"examples/*" = ["T20"]
-"scripts/*" = ["T20"]
 "tests/*" = ["T20"]
-"notebooks/*" = ["T20"]
+"benchmarks/*" = ["T20"]
 "*.pyi" = ["F401", "TID251"]
-"docs/conf.py" = ["ARG001"]
-"src/respondpy/test.py" = ["PT"]
 "**.ipynb" = ["I002", "E731"]
-"src/respondpy/_compat/**.py" = ["TID251"]
+
+
+[tool.cibuildwheel]
+# Configuration Details
+## Note: We only build for Python 3.11 and above, and only for 64 bit architectures. We also skip PyPy, pyodide, android, iOS and graalPy builds.
+build = [
+    "cp311-*",
+    "cp312-*",
+    "cp313-*",
+    "cp314-*"
+]
+skip = [
+    "*-win32", 
+    "*-pyodide_*",
+    "*-android_*",
+    "*-ios_*",
+]
+archs = ["auto64"]
+# Build Step Details
+build-frontend = "build[uv]"
+# Test Step Details
+test-groups = ["test"]
+test-sources = ["pyproject.toml", "tests"]
+test-command = "python -m pytest tests"
+test-skip = [
+  "cp31*-musllinux_*", # Threading test crashes on musllinux
+  "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
+  "cp314*"  # polars-runtime-32 has issues with abi3 on 3.13 and above
+]
+environment.PIP_PREFER_BINARY = "1"
+environment.UV_PREFER_BINARY = "1"
+environment.CMAKE_BUILD_PARALLEL_LEVEL = "4"
+
+
+[[tool.cibuildwheel.overrides]]
+select = ["cp3*-win_arm64"]
+inherit.environment = "append"
+test-command = "python -m pytest -n 1 --benchmark-disable tests"
+environment.OMP_NUM_THREADS = "1"
+environment.OPENBLAS_NUM_THREADS = "1"
+environment.MKL_NUM_THREADS = "1"
+environment.NUMEXPR_NUM_THREADS = "1"
+environment.POLARS_MAX_THREADS = "1"
