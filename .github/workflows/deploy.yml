@@ -1,4 +1,4 @@
-name: Build and Deploy to TestPyPI
+name: Build and Deploy to PyPI
 
 on: workflow_dispatch
 
@@ -47,7 +47,7 @@ jobs:
                   version: "0.11.20"
 
             - name: Build sdist
-              run: uvx --from build pyproject-build
+              run: uvx build --sdist
             - uses: actions/upload-artifact@v4
               with:
                   name: cibw-sdist
@@ -58,7 +58,7 @@ jobs:
         needs: [build_wheels, build_sdist]
         runs-on: ubuntu-latest
         environment:
-            name: testpypi
+            name: pypi
         permissions:
             id-token: write
         steps:
@@ -72,6 +72,5 @@ jobs:
             - name: Publish distributions to PyPI with attestations
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
-                  repository-url: https://test.pypi.org/legacy/
                   packages-dir: dist
                   attestations: true

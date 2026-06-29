@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG dde215f20e921e0d52a9f749cd14e91c925b18ac
+    GIT_TAG e9a452e7082b785978e66907b17af4db8b9bed53 # v2.4.1
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)
@@ -159,19 +159,10 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/respondpy/version.py")
     # Pick out just the version
     string(REGEX MATCH [=[[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_STRING}")
 else()
-    pybind11_find_import(setuptools_scm REQUIRED)
-
-    execute_process(
-        COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version())"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        OUTPUT_VARIABLE VERSION_FULL_STRING
-        OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
-
-    string(REGEX MATCH [=[^[0-9]+\.[0-9]+\.[0-9]+]=] VERSION_STRING "${VERSION_FULL_STRING}")
-    string(REPLACE "-" "." VERSION_STRING "${VERSION_STRING}")
+    set(VERSION_STRING "0.0.0")
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/respondpy/version.py"
-        "version = '${VERSION_FULL_STRING}'")
-    message(STATUS "Full version output: ${VERSION_FULL_STRING}")
+        "version = ${VERSION_STRING}")
+    message(STATUS "Not built with scikit-build-core, defaulting version to 0.0.0")
 endif()
 
 if(NOT DEFINED SKBUILD)
