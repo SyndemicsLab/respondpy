@@ -59,7 +59,6 @@ jobs:
         runs-on: ubuntu-latest
         environment:
             name: testpypi
-            url: https://test.pypi.org/p/respondpy/
         permissions:
             id-token: write
         steps:
@@ -73,5 +72,6 @@ jobs:
             - name: Publish distributions to PyPI with attestations
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
+                  repository-url: https://test.pypi.org/legacy/
                   packages-dir: dist
                   attestations: true
