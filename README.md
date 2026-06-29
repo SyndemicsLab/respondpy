@@ -1,9 +1,9 @@
 # RESPONDPY
 
 [![Coverage](https://codecov.io/gh/SyndemicsLab/respondpy/branch/main/graph/badge.svg)](https://app.codecov.io/gh/SyndemicsLab/respondpy)
-[![Tests](https://github.com/SyndemicsLab/respondpy/actions/workflows/tests.yml/badge.svg)](https://github.com/SyndemicsLab/respondpy/actions/workflows/tests.yml)
+[![Smoke Testing, Unit Testing, and Code Coverage](https://github.com/SyndemicsLab/respondpy/actions/workflows/testing.yml/badge.svg)](https://github.com/SyndemicsLab/respondpy/actions/workflows/testing.yml)
 [![Nox Pylint](https://github.com/SyndemicsLab/respondpy/actions/workflows/nox-pylint.yml/badge.svg)](https://github.com/SyndemicsLab/respondpy/actions/workflows/nox-pylint.yml)
-[![PyPI Deploy](https://github.com/SyndemicsLab/respondpy/actions/workflows/buildwheels.yml/badge.svg)](https://github.com/SyndemicsLab/respondpy/actions/workflows/buildwheels.yml)
+[![Build and Deploy to PyPI](https://github.com/SyndemicsLab/respondpy/actions/workflows/deploy.yml/badge.svg)](https://github.com/SyndemicsLab/respondpy/actions/workflows/deploy.yml)
 
 :snake: Welcome to RESPOND for Python! :snake: This repository acts as a set of python bindings for the Syndemics Lab's RESPOND model. As such, it is simply a set of wrappers and helper functions for ease of use in various lab projects. Our project can be installed from PyPI or built locally.
 
