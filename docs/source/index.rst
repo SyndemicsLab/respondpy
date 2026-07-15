@@ -3,15 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-respondpy documentation
+Welcome to respondpy's documentation!
 =======================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+**respondpy** is a Python library for wrapping and interacting with the RESPOND C++ API. It provides a convenient and Pythonic interface for users to access the functionality of RESPOND, enabling seamless integration with Python applications.
 
+.. note::
+    This project is under active development, and the API may change in future releases. Users are encouraged to check the documentation for updates and refer to the source code for the latest features.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
-
+   
+   architecture
