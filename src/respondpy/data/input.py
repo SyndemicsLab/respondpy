@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-25                                                    #
+# Last Modified: 2026-07-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -228,7 +228,7 @@ class Input:
         param: Parameter,
         lf: pl.LazyFrame,
         *,
-        n: int = 64  # 16 interventions * 4 behaviors
+        n: int = 64
     ) -> Annotated[npt.NDArray[np.float64], "[m, 1] | [m, m]"]:
         """Convert extracted rows to a model-ready state vector or matrix.
 
@@ -239,7 +239,7 @@ class Input:
         lf : polars.LazyFrame
             LazyFrame containing extracted values.
         n : int, default=64
-            Number of states in the model.
+            Number of states in the model. (Default is 64 which corresponds to 16 interventions * 4 behaviors)
 
         Returns
         -------

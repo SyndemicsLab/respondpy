@@ -18,4 +18,4 @@ Welcome to respondpy's documentation!
    explanations/architecture
    how_to/data_loading
    references/wrapper_typing
-   tutorials/base_reposond
+   tutorials/base_respond

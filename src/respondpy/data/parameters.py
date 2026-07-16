@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-07-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -45,6 +45,18 @@ class Parameter():
         self.__parameter_type = parameter_type
 
     def __eq__(self, other) -> bool:
+        """Equal comparison operator comparing parameter types.
+
+        Parameters
+        ----------
+        other : Parameter
+            The other parameter to compare against.
+
+        Returns
+        -------
+        bool
+            True if the parameter types are equal, False otherwise.
+        """
         if isinstance(other, Parameter):
             return self.__parameter_type == other.get_parameter_type()
         if isinstance(other, ParameterType):
@@ -52,26 +64,57 @@ class Parameter():
         return False
 
     def __repr__(self) -> str:
+        """The string representation of the object.
+
+        Returns
+        -------
+        str
+            The string representation of the object, including the parameter type.
+        """
         return f"Parameter(parameter_type={self.__parameter_type})"
 
     def get_parameter_type(self) -> ParameterType:
-        """Return the wrapped parameter type."""
+        """Return the wrapped parameter type.
+
+        Returns
+        -------
+        ParameterType
+            The enumerated parameter family.
+        """
         return self.__parameter_type
 
     def is_time_varying(self) -> bool:
-        """Return whether this parameter is indexed by timestep."""
+        """Return whether this parameter is indexed by timestep.
+
+        Returns
+        -------
+        bool
+            True if the parameter is time-varying, False otherwise.
+        """
         if self.__parameter_type == ParameterType.INITIAL_COHORT:
             return False
         return True
 
     def is_transition_matrix_operation(self) -> bool:
-        """Return whether this parameter maps to transition-matrix data."""
+        """Return whether this parameter maps to transition-matrix data.
+
+        Returns
+        -------
+        bool
+            True if the parameter is a transition-matrix operation, False otherwise.
+        """
         if self.__parameter_type in [ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]:
             return True
         return False
 
     def is_state_vector_operation(self) -> bool:
-        """Return whether this parameter maps to state-vector data."""
+        """Return whether this parameter maps to state-vector data.
+
+        Returns
+        -------
+        bool
+            True if the parameter is a state-vector operation, False otherwise.
+        """
         return not self.is_transition_matrix_operation()
 
     def get_value_column_name(self) -> str:
