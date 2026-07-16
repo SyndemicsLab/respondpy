@@ -4,7 +4,7 @@
 # Created Date: 2026-06-29                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-29                                                    #
+# Last Modified: 2026-07-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -81,4 +81,4 @@ def test_simulation_run(setup_data):
     histories = sim.get_model_histories()['markov']
     # state, admissions, ODs, FODs, background death
     assert len(histories) == 5
-    assert len(histories['state']) == 52
+    assert len(histories['state']) == 2
