@@ -6,7 +6,8 @@
 Welcome to respondpy's documentation!
 =======================
 
-**respondpy** is a Python library for wrapping and interacting with the RESPOND C++ API. It provides a convenient and Pythonic interface for users to access the functionality of RESPOND, enabling seamless integration with Python applications.
+**respondpy** is a Python library for wrapping and interacting with the `RESPOND simulation model`_ C++ API. It provides a convenient and Pythonic interface for users to access the functionality of RESPOND, enabling seamless integration with Python applications.
+.. _RESPOND simulation model: https://github.com/SyndemicsLab/respond.git
 
 .. note::
     This project is under active development, and the API may change in future releases. Users are encouraged to check the documentation for updates and refer to the source code for the latest features.
