@@ -37,7 +37,10 @@ class Parameter():
     ) -> None:
         """Create a parameter descriptor.
 
-        :param parameter_type: Enumerated parameter family.
+        Parameters
+        ----------
+        parameter_type : ParameterType
+            Enumerated parameter family.
         """
         self.__parameter_type = parameter_type
 
@@ -74,8 +77,15 @@ class Parameter():
     def get_value_column_name(self) -> str:
         """Return the numeric value column name used for this parameter.
 
-        :returns: One of ``count``, ``probability``, or ``ratio``.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            One of ``count``, ``probability``, or ``ratio``.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.STANDARD_MORTALITY_RATIO:
@@ -92,7 +102,10 @@ class Parameter():
     def get_initial_state_column_name(self) -> str | None:
         """Return the origin-state column name for transition parameters.
 
-        :returns: Origin-state column name, or ``None`` for non-transition
+        Returns
+        -------
+        str or None
+            Origin-state column name, or ``None`` for non-transition
             parameters.
         """
         match self.__parameter_type:
@@ -106,7 +119,10 @@ class Parameter():
     def get_next_state_column_name(self) -> str | None:
         """Return the destination-state column name for transition parameters.
 
-        :returns: Destination-state column name, or ``None`` for non-transition
+        Returns
+        -------
+        str or None
+            Destination-state column name, or ``None`` for non-transition
             parameters.
         """
         match self.__parameter_type:
@@ -120,8 +136,15 @@ class Parameter():
     def get_cohort_column_name(self) -> str:
         """Return cohort-table sample column used by this parameter.
 
-        :returns: Column name in the ``cohort`` table.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            Column name in the ``cohort`` table.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
@@ -148,8 +171,15 @@ class Parameter():
     def get_insert_statement(self) -> str:
         """Return the INSERT SQL template for this parameter table.
 
-        :returns: Parameter-specific SQL INSERT statement.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            Parameter-specific SQL INSERT statement.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
@@ -178,10 +208,22 @@ class Parameter():
     ) -> str:
         """Return parameter-specific SELECT SQL with deterministic ordering.
 
-        :param interventions: Ordered intervention names used in ``ORDER BY``.
-        :param behaviors: Ordered behavior names used in ``ORDER BY``.
-        :returns: SQL query string for parameter extraction.
-        :raises ValueError: If SELECT generation is not implemented.
+        Parameters
+        ----------
+        interventions : list of str
+            Ordered intervention names used in ``ORDER BY``.
+        behaviors : list of str
+            Ordered behavior names used in ``ORDER BY``.
+
+        Returns
+        -------
+        str
+            SQL query string for parameter extraction.
+
+        Raises
+        ------
+        ValueError
+            If SELECT generation is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:

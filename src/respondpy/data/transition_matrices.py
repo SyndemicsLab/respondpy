@@ -13,6 +13,7 @@
 import polars as pl
 import numpy as np
 
+
 def _require_columns(
         frame: pl.LazyFrame | pl.DataFrame, columns: list[str]
 ) -> None:
@@ -93,13 +94,28 @@ def build_constant_transition(
 ) -> pl.LazyFrame:
     """Build a complete constant-valued transition matrix table.
 
-    :param interventions: Ordered intervention names.
-    :param behaviors: Ordered behavior names.
-    :param sample_id: Sample identifier written into output rows.
-    :param time: Timestep written into output rows.
-    :param constant: Constant probability assigned before normalization.
-    :returns: LazyFrame containing all from/to state combinations.
-    :raises ValueError: If the generated matrix is not square.
+    Parameters
+    ----------
+    interventions : list of str
+        Ordered intervention names.
+    behaviors : list of str
+        Ordered behavior names.
+    sample_id : int, default=1
+        Sample identifier written into output rows.
+    time : int, default=1
+        Timestep written into output rows.
+    constant : float, default=0.0
+        Constant probability assigned before normalization.
+
+    Returns
+    -------
+    polars.LazyFrame
+        LazyFrame containing all from/to state combinations.
+
+    Raises
+    ------
+    ValueError
+        If the generated matrix is not square.
     """
     init_behav = pl.LazyFrame({"initial_behavior": behaviors})
     new_behav = pl.LazyFrame({"new_behavior": behaviors})
@@ -149,11 +165,24 @@ def combine_dataframes(
     Values in ``raw_data_df`` take precedence over template values where keys
     match.
 
-    :param complete_df: Fully enumerated dataframe used as fallback.
-    :param raw_data_df: Observed values to merge into template.
-    :param value_col: Name of numeric value column to collapse.
-    :returns: Combined LazyFrame with a single ``value_col``.
-    :raises ValueError: If join key columns are incompatible.
+    Parameters
+    ----------
+    complete_df : polars.LazyFrame
+        Fully enumerated dataframe used as fallback.
+    raw_data_df : polars.LazyFrame
+        Observed values to merge into template.
+    value_col : str, default="probability"
+        Name of numeric value column to collapse.
+
+    Returns
+    -------
+    polars.LazyFrame
+        Combined LazyFrame with a single ``value_col``.
+
+    Raises
+    ------
+    ValueError
+        If join key columns are incompatible.
     """
     join_cols = raw_data_df.collect_schema().names()
     join_cols.remove(value_col)
@@ -194,17 +223,34 @@ def update_retention_probability(
     Retention rows are those where origin-state columns equal destination-state
     columns. Their values are replaced by ``1 - sum(non_retention)`` per group.
 
-    :param transition_matrix: Transition rows to normalize.
-    :param transition_columns: Origin-state column(s).
-    :param new_columns: Destination-state column(s).
-    :param probability_column: Probability column to update.
-    :param group_columns: Grouping keys defining one origin state/time/sample.
-    :param unique_key_columns: Columns expected to uniquely identify rows.
-    :param tolerance: Floating-point tolerance for validation checks.
-    :param forbid_negative_retention: If ``True``, reject negative retention.
-    :returns: Transition dataframe with updated retention probabilities.
-    :raises ValueError: If schema validation fails or probabilities cannot be
-        normalized.
+    Parameters
+    ----------
+    transition_matrix : polars.LazyFrame or polars.DataFrame
+        Transition rows to normalize.
+    transition_columns : str or list of str
+        Origin-state column(s).
+    new_columns : str or list of str
+        Destination-state column(s).
+    probability_column : str, default="probability"
+        Probability column to update.
+    group_columns : list of str, optional
+        Grouping keys defining one origin state/time/sample.
+    unique_key_columns : list of str, optional
+        Columns expected to uniquely identify rows.
+    tolerance : float, default=1e-12
+        Floating-point tolerance for validation checks.
+    forbid_negative_retention : bool, default=True
+        If ``True``, reject negative retention.
+
+    Returns
+    -------
+    polars.DataFrame
+        Transition dataframe with updated retention probabilities.
+
+    Raises
+    ------
+    ValueError
+        If schema validation fails or probabilities cannot be normalized.
     """
     if group_columns is None or unique_key_columns is None:
         group_cols, from_cols, to_cols, constraints = _default_transition_shape(
@@ -334,15 +380,25 @@ def verify_transition_probability(
 ) -> bool:
     """Check that transition probabilities sum to one within each group.
 
-    :param transition_matrix: Transition rows to verify.
-    :param transition_columns: Origin-state column(s), used with grouping.
-    :param probability_column: Probability column to sum.
-    :param group_columns: Explicit grouping keys. If omitted, defaults are
-        inferred.
-    :param unique_key_columns: Explicit unique-key columns. If omitted,
-        defaults are inferred.
-    :param tolerance: Absolute tolerance for checking sums against ``1.0``.
-    :returns: ``True`` when all transition groups sum to one.
+    Parameters
+    ----------
+    transition_matrix : polars.DataFrame
+        Transition rows to verify.
+    transition_columns : str or list of str
+        Origin-state column(s), used with grouping.
+    probability_column : str, default="probability"
+        Probability column to sum.
+    group_columns : list of str, optional
+        Explicit grouping keys. If omitted, defaults are inferred.
+    unique_key_columns : list of str, optional
+        Explicit unique-key columns. If omitted, defaults are inferred.
+    tolerance : float, default=1e-12
+        Absolute tolerance for checking sums against ``1.0``.
+
+    Returns
+    -------
+    bool
+        ``True`` when all transition groups sum to one.
     """
     if group_columns is None or unique_key_columns is None:
         group_cols, _, _, constraints = _default_transition_shape(

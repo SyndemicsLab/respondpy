@@ -24,14 +24,25 @@ def build_constant_state_vector(
 ) -> pl.DataFrame:
     """Build a fully populated constant-valued state vector table.
 
-    :param interventions: Ordered intervention names.
-    :param behaviors: Ordered behavior names.
-    :param sample_id: Sample identifier written into output rows.
-    :param time: Timestep written into output rows.
-    :param value_column: Name of the generated value column.
-    :param constant: Constant value assigned to every state row.
-    :returns: Cross-product dataframe with one row per intervention-behavior
-        state.
+    Parameters
+    ----------
+    interventions : list
+        Ordered intervention names.
+    behaviors : list
+        Ordered behavior names.
+    sample_id : int, default=1
+        Sample identifier written into output rows.
+    time : int, default=1
+        Timestep written into output rows.
+    value_column : str, default="count"
+        Name of the generated value column.
+    constant : float, default=0.0
+        Constant value assigned to every state row.
+
+    Returns
+    -------
+    polars.DataFrame
+        Cross-product dataframe with one row per intervention-behavior state.
     """
     inter = pl.DataFrame({"intervention": interventions})
 
