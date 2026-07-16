@@ -45,7 +45,7 @@ Issues = "https://github.com/SyndemicsLab/respond/issues"
 [dependency-groups]
 docs = [
     "ipython",
-    "myst_parser>=0.13",
+    "myst-parser>=0.13",
     "nbsphinx",
     "sphinx-book-theme>=0.0.33",
     "sphinx>=4.0",
@@ -78,6 +78,7 @@ build.verbose = true
 logging.level = "INFO"
 minimum-version = "build-system.requires"
 cmake.version = ">=3.27.0"
+cmake.build-type = "Release"
 ninja.version = ">=1.11"
 sdist.exclude = [
     ".github/*",
@@ -87,7 +88,6 @@ sdist.exclude = [
 sdist.include = [
     "src/respondpy/_version.py"
 ]
-cmake.build-type = "Release"
 messages.after-success = "{green}Wheel successfully built"
 messages.after-failure = """
 {bold.red}Sorry{normal}, build failed. Your platform is {platform.platform}.
@@ -119,11 +119,11 @@ filterwarnings = [
     "default:could not create cache path:pytest.PytestCacheWarning",
 ]
 log_level = "INFO"
-markers = ["smoke", "unit", "benchmark"]
+markers = ["smoke", "unit", "integration", "benchmark"]
 required_plugins = ["pytest-benchmark"]
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = ["tests/*", "docs/*", "benchmarks/*", "src/respondpy/_version.py"]
 
 [tool.coverage.report]
 exclude_also = [

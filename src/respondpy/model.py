@@ -33,11 +33,21 @@ def build_model(
 ) -> Model:
     """Build a Model with initialized state and configured transitions.
 
-    :param input_data: Loaded input data and simulation configuration.
-    :param cohort_id: Cohort identifier used to resolve sampled parameters.
-    :param name: Model name passed to the core model constructor.
-    :param log_name: Logger name used by the underlying core model.
-    :returns: A model ready to be added to a simulation.
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int, default=1
+        Cohort identifier used to resolve sampled parameters.
+    name : str, default="markov"
+        Model name passed to the core model constructor.
+    log_name : str, default="console"
+        Logger name used by the underlying core model.
+
+    Returns
+    -------
+    Model
+        A model ready to be added to a simulation.
     """
     m = Model(name, log_name)
     init_pop = input_data.select_parameter(
@@ -58,10 +68,19 @@ def build_model_transitions(
     transition blocks are either copied or rebuilt at configured
     ``parameter_change_times`` values.
 
-    :param model: Model instance to mutate.
-    :param input_data: Loaded input data and simulation configuration.
-    :param cohort_id: Cohort identifier used to resolve sampled parameters.
-    :returns: The same model instance, with transitions appended.
+    Parameters
+    ----------
+    model : Model
+        Model instance to mutate.
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int
+        Cohort identifier used to resolve sampled parameters.
+
+    Returns
+    -------
+    Model
+        The same model instance, with transitions appended.
     """
     # Add the first timestep
     ct_val = 1
@@ -91,9 +110,17 @@ def add_transitions_to_model(
 ) -> Model:
     """Append one timestep's transitions to a model.
 
-    :param model: Model to update.
-    :param t_transition: Transition objects for one simulation timestep.
-    :returns: The same model instance, for chaining.
+    Parameters
+    ----------
+    model : Model
+        Model to update.
+    t_transition : list of Transition
+        Transition objects for one simulation timestep.
+
+    Returns
+    -------
+    Model
+        The same model instance, for chaining.
     """
     for t in t_transition:
         model.add_transition(t)

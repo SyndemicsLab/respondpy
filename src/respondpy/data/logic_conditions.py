@@ -24,11 +24,21 @@ def verify_no_nulls(
 ) -> None:
     """Validate that a required value column contains no null values.
 
-    :param df: Data to validate.
-    :param sample_id: Sample id used only for error context.
-    :param p: Parameter type used only for error context.
-    :param col_to_check: Column expected to be fully populated.
-    :raises ValueError: If any null value is found.
+    Parameters
+    ----------
+    df : polars.DataFrame
+        Data to validate.
+    sample_id : int
+        Sample id used only for error context.
+    p : ParameterType
+        Parameter type used only for error context.
+    col_to_check : str, default="probability"
+        Column expected to be fully populated.
+
+    Raises
+    ------
+    ValueError
+        If any null value is found.
     """
     if df.select(pl.col(col_to_check).is_null().any()).item():
         raise ValueError(
@@ -44,11 +54,21 @@ def verify_no_duplicates(
 ) -> None:
     """Validate that key columns uniquely identify transition rows.
 
-    :param df: Data to validate.
-    :param key_columns: Columns that must uniquely identify each row.
-    :param sample_id: Sample id used only for error context.
-    :param p: Parameter type used only for error context.
-    :raises ValueError: If duplicated keys are found.
+    Parameters
+    ----------
+    df : polars.DataFrame
+        Data to validate.
+    key_columns : list of str
+        Columns that must uniquely identify each row.
+    sample_id : int
+        Sample id used only for error context.
+    p : ParameterType
+        Parameter type used only for error context.
+
+    Raises
+    ------
+    ValueError
+        If duplicated keys are found.
     """
     if df.select(
         pl.struct(key_columns).is_duplicated().any()
@@ -64,10 +84,20 @@ def validate_time_list(ct_list: list[int]) -> list[int]:
     The value ``1`` is removed because timestep 1 is always explicitly built in
     model construction.
 
-    :param ct_list: Parsed integer values from
-        ``simulation.parameter_change_times``.
-    :returns: Validated and ascending change-time list.
-    :raises ValueError: If any value is less than or equal to zero.
+    Parameters
+    ----------
+    ct_list : list of int
+        Parsed integer values from ``simulation.parameter_change_times``.
+
+    Returns
+    -------
+    list of int
+        Validated and ascending change-time list.
+
+    Raises
+    ------
+    ValueError
+        If any value is less than or equal to zero.
     """
     if any(num <= 0 for num in ct_list):
         raise ValueError(

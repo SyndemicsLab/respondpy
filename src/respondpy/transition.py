@@ -31,10 +31,19 @@ def transition_factory(
 ) -> Transition:
     """Create a transition and load its ordered transition matrices.
 
-    :param name: Transition name used by the core model.
-    :param tran_matrices: Matrix/vector operands consumed in execution order.
-    :param log_name: Logger name used by the underlying core transition.
-    :returns: A transition ready to be attached to a model.
+    Parameters
+    ----------
+    name : str
+        Transition name used by the core model.
+    tran_matrices : list of numpy.ndarray
+        Matrix/vector operands consumed in execution order.
+    log_name : str, default="console"
+        Logger name used by the underlying core transition.
+
+    Returns
+    -------
+    Transition
+        A transition ready to be attached to a model.
     """
     t = Transition(name, log_name)
     for tm in tran_matrices:
@@ -52,10 +61,19 @@ def build_timestep_transition(
     The returned transitions are: migration, intervention change, behavior
     change, overdose, and background mortality.
 
-    :param timestep: Simulation timestep to sample.
-    :param input_data: Loaded input data and simulation configuration.
-    :param cohort_id: Cohort identifier used to resolve sampled parameters.
-    :returns: Transition list for exactly one model timestep.
+    Parameters
+    ----------
+    timestep : int
+        Simulation timestep to sample.
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int
+        Cohort identifier used to resolve sampled parameters.
+
+    Returns
+    -------
+    list of Transition
+        Transition list for exactly one model timestep.
     """
 
     migration = transition_factory(

@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-25                                                    #
+# Last Modified: 2026-07-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -44,13 +44,25 @@ class Input:
     ) -> None:
         """Create an Input data source from a base path or explicit files.
 
-        :param path: Directory containing both database and config files.
-        :param db_name: Database filename used when ``path`` is provided.
-        :param conf_name: Config filename used when ``path`` is provided.
-        :param db_path: Explicit database file path.
-        :param conf_path: Explicit config file path.
-        :raises ValueError: If required path arguments are incomplete.
-        :raises FileNotFoundError: If database or config files do not exist.
+        Parameters
+        ----------
+        path : str or pathlib.Path, optional
+            Directory containing both database and config files.
+        db_name : str, default="input.db"
+            Database filename used when ``path`` is provided.
+        conf_name : str, default="sim.conf"
+            Config filename used when ``path`` is provided.
+        db_path : str or pathlib.Path, optional
+            Explicit database file path.
+        conf_path : str or pathlib.Path, optional
+            Explicit config file path.
+
+        Raises
+        ------
+        ValueError
+            If required path arguments are incomplete.
+        FileNotFoundError
+            If database or config files do not exist.
         """
         if path is not None:
             if isinstance(path, str):
@@ -216,15 +228,28 @@ class Input:
         param: Parameter,
         lf: pl.LazyFrame,
         *,
-        n: int = 64  # 16 interventions * 4 behaviors
+        n: int = 64
     ) -> Annotated[npt.NDArray[np.float64], "[m, 1] | [m, m]"]:
         """Convert extracted rows to a model-ready state vector or matrix.
 
-        :param param: Parameter descriptor controlling output shape.
-        :param lf: LazyFrame containing extracted values.
-        :param n: Number of states in the model.
-        :returns: ``(n, 1)`` state vector or ``(n, n)`` transition matrix.
-        :raises ValueError: If ``param`` cannot be mapped to either shape.
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor controlling output shape.
+        lf : polars.LazyFrame
+            LazyFrame containing extracted values.
+        n : int, default=64
+            Number of states in the model. (Default is 64 which corresponds to 16 interventions * 4 behaviors)
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.float64]
+            ``(n, 1)`` state vector or ``(n, n)`` transition matrix.
+
+        Raises
+        ------
+        ValueError
+            If ``param`` cannot be mapped to either shape.
         """
         val_col_name = param.get_value_column_name()
         if param.is_state_vector_operation():
@@ -247,9 +272,17 @@ class Input:
         For intervention transitions, behavior changes are invalid. For behavior
         transitions, intervention changes are invalid.
 
-        :param param: Parameter descriptor identifying transition type.
-        :param transition_matrix: Transition rows to sanitize.
-        :returns: Transition dataframe with invalid rows forced to zero.
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor identifying transition type.
+        transition_matrix : polars.DataFrame
+            Transition rows to sanitize.
+
+        Returns
+        -------
+        polars.DataFrame
+            Transition dataframe with invalid rows forced to zero.
         """
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
             m = transition_matrix.with_columns(
@@ -288,11 +321,24 @@ class Input:
         Transition parameters are completed from a constant transition matrix,
         then normalized for retention probabilities.
 
-        :param param: Parameter descriptor to extract.
-        :param sample_id: Sample id selected from the cohort table.
-        :param time: Timestep used for time-varying parameters.
-        :returns: Complete and consistently ordered parameter rows.
-        :raises ValueError: If required transition state columns are missing.
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor to extract.
+        sample_id : int, default=1
+            Sample id selected from the cohort table.
+        time : int, default=1
+            Timestep used for time-varying parameters.
+
+        Returns
+        -------
+        polars.LazyFrame
+            Complete and consistently ordered parameter rows.
+
+        Raises
+        ------
+        ValueError
+            If required transition state columns are missing.
         """
         lf = self._select_parameter_raw(param, sample_id, time)
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
@@ -390,7 +436,10 @@ class Input:
     def get_state_names(self) -> list[tuple[str, str]]:
         """Return ordered state-name tuples as ``(intervention, behavior)``.
 
-        :returns: State label pairs sorted by intervention id then behavior id.
+        Returns
+        -------
+        list of tuple of str
+            State label pairs sorted by intervention id then behavior id.
         """
         if "combination" in self.states:
             return self.states["combination"]
@@ -409,7 +458,10 @@ class Input:
     def get_cohorts(self) -> tuple[list[str], list]:
         """Return raw cohort table data.
 
-        :returns: Tuple of column names and row tuples from ``cohort``.
+        Returns
+        -------
+        tuple of (list of str, list)
+            Tuple of column names and row tuples from ``cohort``.
         """
         stmt = "SELECT * FROM cohort;"
         col_names, results = self._connect_and_fetchall(stmt)
@@ -424,7 +476,10 @@ class Input:
     def insert_cohorts(self, data: list) -> None:
         """Insert cohort rows into the cohort table.
 
-        :param data: Row tuples matching cohort insert statement order.
+        Parameters
+        ----------
+        data : list
+            Row tuples matching cohort insert statement order.
         """
         sql_stmt = """
         INSERT INTO cohort(description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -440,11 +495,21 @@ class Input:
     ) -> np.ndarray:
         """Select parameter data for a cohort and optional timestep.
 
-        :param param: Parameter descriptor to extract.
-        :param cohort_id: Cohort id used to resolve sample ids.
-        :param time: Timestep for time-varying parameters.
-        :param raw: When ``True``, return raw table rows as numpy values.
-        :returns: Raw rows or model-ready shaped numpy array.
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor to extract.
+        cohort_id : int, default=1
+            Cohort id used to resolve sample ids.
+        time : int, default=1
+            Timestep for time-varying parameters.
+        raw : bool, default=False
+            When ``True``, return raw table rows as numpy values.
+
+        Returns
+        -------
+        numpy.ndarray
+            Raw rows or model-ready shaped numpy array.
         """
         sample_id = self._get_sample_id_for_parameter(param, cohort_id)
         if raw:
@@ -464,7 +529,11 @@ class Input:
     ) -> None:
         """Insert parameter rows using parameter-specific SQL.
 
-        :param param: Parameter descriptor choosing target table and schema.
-        :param data: Row tuples matching ``param`` insert statement order.
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor choosing target table and schema.
+        data : list
+            Row tuples matching ``param`` insert statement order.
         """
         return self._connect_and_executemany(data, param.get_insert_statement())

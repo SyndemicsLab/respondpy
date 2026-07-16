@@ -17,9 +17,21 @@ def str_to_int_list(config_string: str, *, delimiter: str = ',') -> list[int]:
 
     Whitespace around each token is stripped before conversion.
 
-    :param config_string: Delimited string of integer-like values.
-    :param delimiter: Token delimiter used to split ``config_string``.
-    :returns: Parsed integers in input order.
-    :raises ValueError: If any token cannot be converted to ``int``.
+    Parameters
+    ----------
+    config_string : str
+        Delimited string of integer-like values.
+    delimiter : str, default=","
+        Token delimiter used to split ``config_string``.
+
+    Returns
+    -------
+    list of int
+        Parsed integers in input order.
+
+    Raises
+    ------
+    ValueError
+        If any token cannot be converted to ``int``.
     """
     return [int(x.strip()) for x in config_string.split(delimiter)]

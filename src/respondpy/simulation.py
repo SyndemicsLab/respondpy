@@ -28,10 +28,24 @@ def build_simulation(
 ) -> Simulation:
     """Build a simulation containing one model per cohort id.
 
-    :param cohort_ids: Cohort identifiers to include in the simulation.
-    :param input_data: Loaded input data and simulation configuration.
-    :param log_name: Logger name used by the underlying core simulation/model.
-    :returns: A simulation object populated with cohort-specific models.
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_ids : Sequence of int, optional
+        Cohort identifiers to include in the simulation.
+    log_name : str, default="console"
+        Logger name used by the underlying core simulation/model.
+
+    Returns
+    -------
+    Simulation
+        A simulation object populated with cohort-specific models.
+
+    Raises
+    ------
+    ValueError
+        If any requested cohort id is not present in ``input_data``.
     """
     input_cohort_ids = input_data.get_cohort_ids()
     if cohort_ids is None:

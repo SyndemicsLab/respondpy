@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-07-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -37,11 +37,26 @@ class Parameter():
     ) -> None:
         """Create a parameter descriptor.
 
-        :param parameter_type: Enumerated parameter family.
+        Parameters
+        ----------
+        parameter_type : ParameterType
+            Enumerated parameter family.
         """
         self.__parameter_type = parameter_type
 
     def __eq__(self, other) -> bool:
+        """Equal comparison operator comparing parameter types.
+
+        Parameters
+        ----------
+        other : Parameter
+            The other parameter to compare against.
+
+        Returns
+        -------
+        bool
+            True if the parameter types are equal, False otherwise.
+        """
         if isinstance(other, Parameter):
             return self.__parameter_type == other.get_parameter_type()
         if isinstance(other, ParameterType):
@@ -49,33 +64,71 @@ class Parameter():
         return False
 
     def __repr__(self) -> str:
+        """The string representation of the object.
+
+        Returns
+        -------
+        str
+            The string representation of the object, including the parameter type.
+        """
         return f"Parameter(parameter_type={self.__parameter_type})"
 
     def get_parameter_type(self) -> ParameterType:
-        """Return the wrapped parameter type."""
+        """Return the wrapped parameter type.
+
+        Returns
+        -------
+        ParameterType
+            The enumerated parameter family.
+        """
         return self.__parameter_type
 
     def is_time_varying(self) -> bool:
-        """Return whether this parameter is indexed by timestep."""
+        """Return whether this parameter is indexed by timestep.
+
+        Returns
+        -------
+        bool
+            True if the parameter is time-varying, False otherwise.
+        """
         if self.__parameter_type == ParameterType.INITIAL_COHORT:
             return False
         return True
 
     def is_transition_matrix_operation(self) -> bool:
-        """Return whether this parameter maps to transition-matrix data."""
+        """Return whether this parameter maps to transition-matrix data.
+
+        Returns
+        -------
+        bool
+            True if the parameter is a transition-matrix operation, False otherwise.
+        """
         if self.__parameter_type in [ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]:
             return True
         return False
 
     def is_state_vector_operation(self) -> bool:
-        """Return whether this parameter maps to state-vector data."""
+        """Return whether this parameter maps to state-vector data.
+
+        Returns
+        -------
+        bool
+            True if the parameter is a state-vector operation, False otherwise.
+        """
         return not self.is_transition_matrix_operation()
 
     def get_value_column_name(self) -> str:
         """Return the numeric value column name used for this parameter.
 
-        :returns: One of ``count``, ``probability``, or ``ratio``.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            One of ``count``, ``probability``, or ``ratio``.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.STANDARD_MORTALITY_RATIO:
@@ -92,7 +145,10 @@ class Parameter():
     def get_initial_state_column_name(self) -> str | None:
         """Return the origin-state column name for transition parameters.
 
-        :returns: Origin-state column name, or ``None`` for non-transition
+        Returns
+        -------
+        str or None
+            Origin-state column name, or ``None`` for non-transition
             parameters.
         """
         match self.__parameter_type:
@@ -106,7 +162,10 @@ class Parameter():
     def get_next_state_column_name(self) -> str | None:
         """Return the destination-state column name for transition parameters.
 
-        :returns: Destination-state column name, or ``None`` for non-transition
+        Returns
+        -------
+        str or None
+            Destination-state column name, or ``None`` for non-transition
             parameters.
         """
         match self.__parameter_type:
@@ -120,8 +179,15 @@ class Parameter():
     def get_cohort_column_name(self) -> str:
         """Return cohort-table sample column used by this parameter.
 
-        :returns: Column name in the ``cohort`` table.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            Column name in the ``cohort`` table.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
@@ -148,8 +214,15 @@ class Parameter():
     def get_insert_statement(self) -> str:
         """Return the INSERT SQL template for this parameter table.
 
-        :returns: Parameter-specific SQL INSERT statement.
-        :raises ValueError: If the parameter type is not implemented.
+        Returns
+        -------
+        str
+            Parameter-specific SQL INSERT statement.
+
+        Raises
+        ------
+        ValueError
+            If the parameter type is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
@@ -178,10 +251,22 @@ class Parameter():
     ) -> str:
         """Return parameter-specific SELECT SQL with deterministic ordering.
 
-        :param interventions: Ordered intervention names used in ``ORDER BY``.
-        :param behaviors: Ordered behavior names used in ``ORDER BY``.
-        :returns: SQL query string for parameter extraction.
-        :raises ValueError: If SELECT generation is not implemented.
+        Parameters
+        ----------
+        interventions : list of str
+            Ordered intervention names used in ``ORDER BY``.
+        behaviors : list of str
+            Ordered behavior names used in ``ORDER BY``.
+
+        Returns
+        -------
+        str
+            SQL query string for parameter extraction.
+
+        Raises
+        ------
+        ValueError
+            If SELECT generation is not implemented.
         """
         match self.__parameter_type:
             case ParameterType.INITIAL_COHORT:
