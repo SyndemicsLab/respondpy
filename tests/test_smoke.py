@@ -71,9 +71,9 @@ def test_one_step() -> None:
     model.set_state(state)
 
     timestep = rpy.Timestep("console")
+    timestep.create_transition("migration")
+    timestep.add_matrix_to_transition("migration", migra)
 
-    migr = timestep.create_transition("migration")
-    migr.add_transition_matrix(migra)
     model.add_timestep(timestep)
     model.run_timesteps()
 

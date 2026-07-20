@@ -21,6 +21,15 @@ __all__: list[str] = ['Timestep']
 
 
 class Timestep:
+    @typing.overload
+    def __init__(self) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, log_name: str) -> None:
+        ...
+
+    @typing.overload
     def __init__(self, log_name: str, log_file: str) -> None:
         ...
 
@@ -36,14 +45,28 @@ class Timestep:
     def remove_transition(self, idx: typing.SupportsInt) -> Transition:
         ...
 
+    @typing.overload
     def add_matrix_to_transition(
-            self,
-            idx: typing.SupportsInt | str,
-            mat: StateVector | TransitionMatrix
+        self,
+        idx: typing.SupportsInt,
+        mat: StateVector | TransitionMatrix
     ) -> None:
         ...
 
-    def get_transition(self, idx: typing.SupportsInt | str) -> Transition:
+    @typing.overload
+    def add_matrix_to_transition(
+        self,
+        transition_name: str,
+        mat: StateVector | TransitionMatrix
+    ) -> None:
+        ...
+
+    @typing.overload
+    def get_transition(self, idx: typing.SupportsInt) -> Transition:
+        ...
+
+    @typing.overload
+    def get_transition(self, transition_name: str) -> Transition:
         ...
 
     def get_transitions(self) -> typing.Sequence[Transition]:

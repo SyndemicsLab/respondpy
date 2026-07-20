@@ -80,11 +80,40 @@ def get_default_history_mode(name: str) -> HistoryMode:
 
 
 class History:
+    @typing.overload
+    def __init__(self) -> None:
+        ...
+
+    @typing.overload
     def __init__(
             self,
-            name: str = 'state',
-            mode: HistoryMode = HistoryMode.kAccumulated,
-            log_name: str = 'respond'
+            name: str
+    ) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, mode: HistoryMode) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, mode: HistoryMode, log_name: str) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, log_name: str) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, log_name: str, log_file: str) -> None:
+        ...
+
+    @typing.overload
+    def __init__(
+            self,
+            name: str,
+            mode: HistoryMode,
+            log_name: str,
+            log_file: str
     ) -> None:
         ...
 
