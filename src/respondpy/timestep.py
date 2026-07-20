@@ -1,7 +1,7 @@
 ################################################################################
-# File: transition.py                                                          #
+# File: timestep.py                                                            #
 # Project: respondpy                                                           #
-# Created Date: 2026-06-05                                                     #
+# Created Date: 2026-07-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
 # Last Modified: 2026-07-20                                                    #
@@ -12,6 +12,6 @@
 
 from __future__ import annotations
 
-from ._core.transition import Transition  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+from ._core.timestep import Timestep  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
-__all__: list[str] = ['Transition']
+__all__: list[str] = ['Timestep']

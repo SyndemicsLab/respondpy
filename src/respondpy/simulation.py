@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-11                                                    #
+# Last Modified: 2026-07-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,7 +13,7 @@
 from __future__ import annotations
 from collections.abc import Sequence
 
-from .model import build_model
+from .model import Model
 from .data import Input
 from ._core.simulation import Simulation  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
@@ -24,7 +24,8 @@ def build_simulation(
         input_data: Input,
         *,
         cohort_ids: Sequence[int] | None = None,
-        log_name: str = "console"
+        log_name: str = "respond",
+        log_file: str = "respond.log"
 ) -> Simulation:
     """Build a simulation containing one model per cohort id.
 
@@ -58,6 +59,15 @@ def build_simulation(
             )
     s = Simulation(log_name)
     for cohort_id in cohort_ids:
-        s.add_model(build_model(input_data, cohort_id, log_name=log_name))
+        s.create_new_model("markov")
+        _fill_model(s.get_model(cohort_id), input_data, cohort_id)
 
     return s
+
+
+def _fill_model(
+        model: Model,
+        input_data: Input,
+        cohort_id: int,
+) -> None:
+    pass

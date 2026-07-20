@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-26                                                    #
+# Last Modified: 2026-07-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -21,17 +21,15 @@ from .cost_effectiveness import (
 )
 from .history import History
 
-from .model import (
-    Model, build_model, add_transitions_to_model, build_model_transitions
-)
+from .model import Model
 
 from .simulation import (
     Simulation, build_simulation
 )
 
-from .transition import (
-    Transition, transition_factory, build_timestep_transition
-)
+from .timestep import Timestep
+
+from .transition import Transition
 
 __all__ = [
     "data",
@@ -41,14 +39,10 @@ __all__ = [
     "calculate_life_years",
     "History",
     "Model",
-    "build_model",
-    "add_transitions_to_model",
-    "build_model_transitions",
     "Simulation",
     "build_simulation",
+    "Timestep",
     "Transition",
-    "transition_factory",
-    "build_timestep_transition"
 ]
 
 

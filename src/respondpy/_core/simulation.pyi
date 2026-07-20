@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-29                                                    #
+# Last Modified: 2026-07-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -12,20 +12,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
-import numpy
-import numpy.typing
-import respondpy._core.model
 import typing
+
+from .model import Model
+from .history import History
 
 __all__: list[str] = ['Simulation']
 
 
 class Simulation:
-    def __copy__(self) -> Simulation:
-        ...
-
     @typing.overload
     def __init__(self) -> None:
         ...
@@ -34,32 +29,57 @@ class Simulation:
     def __init__(self, log_name: str) -> None:
         ...
 
-    def __repr__(self) -> str:
+    @typing.overload
+    def __init__(self, log_name: str, log_file: str) -> None:
         ...
 
-    def add_model(self, model: respondpy._core.model.Model) -> None:
+    def __copy__(self) -> Simulation:
+        ...
+
+    def __deepcopy__(self, arg0: dict) -> Simulation:
+        ...
+
+    def create_new_model(self, model_name: str) -> str:
         ...
 
     def clear_models(self) -> None:
         ...
 
-    def get_log_name(self) -> str:
+    def add_model(self, model: Model) -> None:
         ...
 
-    def get_model_histories(self) -> dict[str, dict[str, Sequence[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]]]:
+    def run(self, duration: typing.SupportsInt = -1) -> None:
         ...
 
-    def get_model_sparse_histories(self) -> dict[str, dict[str, typing.Any]]:
+    def get_models(self) -> list[Model]:
         ...
 
-    def get_model_history_names(self) -> Sequence[tuple[str, str]]:
+    @typing.overload
+    def get_model(self, idx: typing.SupportsInt) -> Model:
         ...
 
-    def get_model_names(self) -> Sequence[str]:
+    @typing.overload
+    def get_model(self, model_name: str) -> Model:
         ...
 
-    def get_models(self) -> Sequence[respondpy._core.model.Model]:
+    def get_model_names(self) -> list[str]:
         ...
 
-    def run(self) -> None:
+    @typing.overload
+    def get_model_history(self, idx: typing.SupportsInt) -> typing.Mapping[str, History]:
+        ...
+
+    @typing.overload
+    def get_model_history(self, model_name: str) -> typing.Mapping[str, History]:
+        ...
+
+    @typing.overload
+    def get_model_history_names(self, idx: typing.SupportsInt) -> list[str]:
+        ...
+
+    @typing.overload
+    def get_model_history_names(self, model_name: str) -> list[str]:
+        ...
+
+    def set_duration(self, duration: typing.SupportsInt) -> None:
         ...

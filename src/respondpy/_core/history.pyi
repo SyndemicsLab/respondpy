@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-10                                                    #
+# Last Modified: 2026-07-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -12,58 +12,140 @@
 
 from __future__ import annotations
 
-import numpy
-import numpy.typing
 import typing
 
-__all__: list[str] = ['History']
+from .types import StateVector
+
+__all__: list[str] = ['HistoryMode', 'get_default_history_mode', 'History']
+
+
+class HistoryMode:
+    """
+    Members:
+
+      kSnapshot
+
+      kAccumulated
+    """
+    __members__: typing.ClassVar[
+        dict[str, HistoryMode]
+        # value = {'kError': <HistoryMode.kSnapshot: 0>, 'kSuccess': <HistoryMode.kAccumulated: 1>}
+    ]
+    # value = <HistoryMode.kSnapshot: 0>
+    kSnapshot: typing.ClassVar[HistoryMode]
+    # value = <HistoryMode.kAccumulated: 1>
+    kAccumulated: typing.ClassVar[HistoryMode]
+
+    def __eq__(self, other: typing.Any) -> bool:
+        ...
+
+    def __getstate__(self) -> int:
+        ...
+
+    def __hash__(self) -> int:
+        ...
+
+    def __index__(self) -> int:
+        ...
+
+    def __init__(self, value: typing.SupportsInt) -> None:
+        ...
+
+    def __int__(self) -> int:
+        ...
+
+    def __ne__(self, other: typing.Any) -> bool:
+        ...
+
+    def __repr__(self) -> str:
+        ...
+
+    def __setstate__(self, state: typing.SupportsInt) -> None:
+        ...
+
+    def __str__(self) -> str:
+        ...
+
+    @property
+    def name(self) -> str:
+        ...
+
+    @property
+    def value(self) -> int:
+        ...
+
+
+def get_default_history_mode(name: str) -> HistoryMode:
+    ...
 
 
 class History:
-    __hash__: typing.ClassVar[None] = None
+    def __init__(
+            self,
+            name: str = 'state',
+            mode: HistoryMode = HistoryMode.kAccumulated,
+            log_name: str = 'respond'
+    ) -> None:
+        ...
 
     def __copy__(self) -> History:
         ...
 
-    def __eq__(self, arg0: History) -> bool:
-        """
-        Check equality of History objects (name, log_name, and state).
-        """
-
-    def __init__(self, name: str = 'state', log_name: str = 'console') -> None:
+    def __deepcopy__(self, arg0: dict) -> History:
         ...
 
-    def __ne__(self, arg0: History) -> bool:
-        """
-        Check inequality of History objects.
-        """
+    def add_state(
+            self,
+            state: StateVector,
+            timestep: typing.SupportsInt = -1
+    ) -> None:
+        ...
 
-    def add_state(self, state: typing.Annotated[numpy.typing.ArrayLike, numpy.float64, "[m, 1]"], timestep: typing.SupportsInt = -1) -> None:
-        """
-        Add a state vector at a given timestep (-1 for auto-increment).
-        """
+    def accumulate_state(self, state: StateVector) -> None:
+        ...
+
+    def flush_pending_state(
+        self,
+        timestep: typing.SupportsInt,
+        state_size: typing.SupportsInt
+    ) -> None:
+        ...
 
     def clear(self) -> None:
-        """
-        Clear all stored state history.
-        """
+        ...
 
-    def get_history_name(self) -> str:
-        """
-        Get the name of the history object.
-        """
+    def has_pending_state(self) -> bool:
+        ...
 
-    def get_log_name(self) -> str:
-        """
-        Get the log name used for logging.
-        """
+    def get_state_map(self) -> typing.Mapping[int, StateVector]:
+        ...
 
-    def get_state_as_vector(self) -> list[typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]:
-        """
-        Get the state as a vector, padding missing timesteps with zero vectors.
-        """
+    def get_recorded_timesteps(self) -> typing.Sequence[int]:
+        ...
 
-    def get_state_map(self) -> dict[int, typing.Annotated[numpy.typing.NDArray[numpy.float64], "[m, 1]"]]:
-        """
-        Get the state map (timestep -> state vector).
-        """
+    def get_recorded_states(self) -> typing.Sequence[StateVector]:
+        ...
+
+    def get_history_mode(self) -> HistoryMode:
+        ...
+
+    def get_pending_state(self) -> StateVector:
+        ...
+
+    def get_latest_recorded_timestep(self) -> typing.SupportsInt:
+        ...
+
+    def get_name(self) -> str:
+        ...
+
+    def get_state_as_vector(self) -> typing.Sequence[StateVector]:
+        ...
+
+    def __eq__(self, other: object) -> bool:
+        ...
+
+    def __ne__(self, other: object) -> bool:
+        ...
+
+    def __repr__(self) -> str:
+        ...

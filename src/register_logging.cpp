@@ -4,7 +4,7 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-05-06                                                  //
+// Last Modified: 2026-07-16                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -38,6 +38,7 @@ void register_logging(py::module &m) {
         .export_values();
 
     m.def("create_file_logger", &respond::CreateFileLogger,
+          py::arg("logger_name"), py::arg("filepath"),
           "Creates a File Logger for use with RESPOND.");
     m.def("create_shared_file_sink", &respond::CreateSharedFileSink,
           py::arg("filepath"),
@@ -49,14 +50,12 @@ void register_logging(py::module &m) {
           "Create a logger that writes to the shared file sink. Requires "
           "create_shared_file_sink() to be called first.");
 
-    m.def("set_log_pattern", &respond::SetLogPattern,
-          py::arg("pattern"),
+    m.def("set_log_pattern", &respond::SetLogPattern, py::arg("pattern"),
           "Set the logging pattern template for all subsequent logger "
           "creations.");
     m.def("get_log_pattern", &respond::GetLogPattern,
           "Get the current logging pattern template.");
-    m.def("set_flush_interval", &respond::SetFlushInterval,
-          py::arg("seconds"),
+    m.def("set_flush_interval", &respond::SetFlushInterval, py::arg("seconds"),
           "Set the global flush interval in seconds (0 to disable "
           "auto-flush).");
     m.def("flush_all_loggers", &respond::FlushAllLoggers,
@@ -66,18 +65,20 @@ void register_logging(py::module &m) {
           py::arg("logger_name"),
           "Check if a logger with the given name exists. Returns "
           "CreationStatus.kExists or kNotCreated.");
-    m.def("get_logger_info", &respond::GetLoggerInfo,
-          py::arg("logger_name"),
+    m.def("get_logger_info", &respond::GetLoggerInfo, py::arg("logger_name"),
           "Retrieve a string with details about a logger (name, file path, "
           "level, thread info).");
-    m.def("set_logger_level", &respond::SetLoggerLevel,
-          py::arg("logger_name"), py::arg("level"),
+    m.def("set_logger_level", &respond::SetLoggerLevel, py::arg("logger_name"),
+          py::arg("level"),
           "Set the logging level for a specific logger. level: 0=trace, "
           "1=debug, 2=info, 3=warn, 4=error, 5=critical.");
 
-    m.def("log_info", &respond::LogInfo, "Logs an info message to the log.");
-    m.def("log_warning", &respond::LogWarning,
-          "Logs a warning message to the log.");
-    m.def("log_error", &respond::LogError, "Logs an error message to the log.");
-    m.def("log_debug", &respond::LogDebug, "Logs a debug message to the log.");
+    m.def("log_info", &respond::LogInfo, py::arg("logger_name"),
+          py::arg("message"), "Logs an info message to the log.");
+    m.def("log_warning", &respond::LogWarning, py::arg("logger_name"),
+          py::arg("message"), "Logs a warning message to the log.");
+    m.def("log_error", &respond::LogError, py::arg("logger_name"),
+          py::arg("message"), "Logs an error message to the log.");
+    m.def("log_debug", &respond::LogDebug, py::arg("logger_name"),
+          py::arg("message"), "Logs a debug message to the log.");
 }
