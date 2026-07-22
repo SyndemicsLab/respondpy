@@ -55,11 +55,11 @@ transition = rpy.Transition("migration")
 transition.add_matrix(np.zeros((3, 1)))
 next_state, history_map = transition.execute(state, {})
 
-model_name: str = rpy.Simulation().create_new_model("markov")
+created_model: rpy.Model = rpy.Simulation().create_new_model("markov")
 mode: HistoryMode = HistoryMode.kSnapshot
 latest_timestep: int = int(rpy.History("state").get_latest_recorded_timestep())
 
-assert isinstance(model_name, str)
+assert isinstance(created_model, rpy.Model)
 assert latest_timestep >= -1
 assert next_state.shape == state.shape
 assert isinstance(history_map, dict)
@@ -86,7 +86,7 @@ def test_mypy_smoke_negative_stub_misuse(tmp_path: Path) -> None:
 import numpy as np
 import respondpy as rpy
 
-bad_name: int = rpy.Simulation().create_new_model("markov")
+bad_model: int = rpy.Simulation().create_new_model("markov")
 state = np.array([1.0, 2.0, 3.0], dtype=float)
 transition = rpy.Transition("migration")
 transition.add_matrix(np.zeros((3, 1)))

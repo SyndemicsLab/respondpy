@@ -92,7 +92,7 @@ def test_simulation_sparse_histories() -> None:
     sim.add_model(model)
     sim.run()
 
-    model_histories = sim.get_model_history("markov")
+    model_histories = sim.get_model_history(0)
     assert isinstance(
         model_histories, dict), "Expected dict keyed by history name"
 

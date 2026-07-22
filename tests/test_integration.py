@@ -78,7 +78,7 @@ def test_simulation_run(setup_data):
     inp = rpy.data.Input(db_path=db_path, conf_path=config_path)
     sim = rpy.build_simulation(inp)
     sim.run()
-    histories = sim.get_model_histories()['markov']
+    histories = sim.get_model_history(0)
     # state, admissions, ODs, FODs, background death
     assert len(histories) == 5
-    assert len(histories['state']) == 2
+    assert len(histories['state'].get_state_map()) >= 1

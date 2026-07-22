@@ -37,56 +37,73 @@ void register_simulation(py::module &m) {
         .def("create_new_model", &Simulation::CreateNewModel,
              py::arg("model_name"),
              "Create a new model instance and add it to the simulation. "
-             "Initializes logging for the model and returns a string. Throws "
-             "an exception if the model name is "
-             "unsupported.")
+             "Initializes logging for the model and returns a cloned model. "
+             "Throws an exception if the model name is unsupported.")
         .def("clear_models", &Simulation::ClearModels,
              "Clear all models from the simulation.")
-        .def("add_model", &Simulation::AddModel, py::arg("model"),
-             "Add an existing model instance to the simulation. The simulation "
-             "takes ownership of the model.")
+        .def(
+            "add_model",
+            [](Simulation &self, const Model &model) {
+                const auto cloned_model = model.clone();
+                self.AddModel(cloned_model);
+            },
+            py::arg("model"),
+            "Add an existing model instance to the simulation. The simulation "
+            "takes ownership of the model.")
         .def("run", &Simulation::Run, py::arg("duration") = -1,
              "Run the simulation for a specified duration. Executes all "
              "registered timesteps for each model in sequence.")
         .def("get_models", &Simulation::GetModels,
              "Get the list of models in the simulation.")
-        .def("get_model",
-             py::overload_cast<size_t>(&Simulation::GetModel, py::const_),
-             py::arg("model_index"),
-             "Get a model instance by its index in the simulation. Throws an "
-             "exception if the index is out of bounds.")
-        .def("get_model",
-             py::overload_cast<const std::string &>(&Simulation::GetModel,
-                                                    py::const_),
-             py::arg("model_name"),
-             "Get a model instance by its name. Throws an exception if the "
-             "model name is not found.")
+        .def(
+            "get_model",
+            [](Simulation &self, size_t model_index) -> Model & {
+                return self[model_index];
+            },
+            py::arg("model_index"), py::return_value_policy::reference_internal,
+            "Get a model instance by its index in the simulation. Throws an "
+            "exception if the index is out of bounds.")
+        .def(
+            "set_model",
+            [](Simulation &self, size_t model_index,
+               const Model &replacement_model) {
+                self[model_index] = replacement_model;
+            },
+            py::arg("model_index"), py::arg("model"),
+            "Replace a model instance by index with a cloned copy of the "
+            "provided model. Throws an exception if the index is out of "
+            "bounds.")
+        .def(
+            "__getitem__",
+            [](Simulation &self, size_t model_index) -> Model & {
+                return self[model_index];
+            },
+            py::arg("model_index"), py::return_value_policy::reference_internal,
+            "Get a model using index access semantics.")
+        .def(
+            "__setitem__",
+            [](Simulation &self, size_t model_index,
+               const Model &replacement_model) {
+                self[model_index] = replacement_model;
+            },
+            py::arg("model_index"), py::arg("model"),
+            "Set a model using index access semantics.")
         .def("get_model_names", &Simulation::GetModelNames,
              "Get the list of model names in the simulation.")
+        .def("get_model_index_name_map", &Simulation::GetModelIndexNameMap,
+             "Get a mapping from model indices to model names.")
         .def(
             "get_model_history",
             py::overload_cast<size_t>(&Simulation::GetModelHistory, py::const_),
             py::arg("idx"),
             "Get the history of a model by its index in the simulation. Throws "
             "an exception if the index is out of bounds.")
-        .def("get_model_history",
-             py::overload_cast<const std::string &>(
-                 &Simulation::GetModelHistory, py::const_),
-             py::arg("model_name"),
-             "Get the history of a model by its name. Throws an exception if "
-             "the model name is not found.")
         .def("get_model_history_names",
              py::overload_cast<size_t>(&Simulation::GetModelHistoryNames,
                                        py::const_),
              py::arg("idx"),
              "Get the list of history names for a model by its index in the "
              "simulation. Throws an exception if the index is out of bounds.")
-        .def("get_model_history_names",
-             py::overload_cast<const std::string &>(
-                 &Simulation::GetModelHistoryNames, py::const_),
-             py::arg("model_name"),
-             "Get the list of history names for a model by its name. Throws an "
-             "exception if the model name is not found.")
         .def("set_duration", &Simulation::SetDuration, py::arg("duration"),
              "Set the duration for which the simulation should run.")
         .def("__repr__", [](const Simulation &m) {

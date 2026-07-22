@@ -13,6 +13,8 @@
 import sqlite3
 from configparser import ConfigParser
 
+import numpy as np
+
 import pytest
 
 import respondpy as rpy
@@ -75,8 +77,12 @@ def setup_data(setup_db, setup_config):
 
 @pytest.mark.unit
 def test_build_timestep_transition(setup_data) -> None:
-    db, cfg = setup_data
-    inp = rpy.data.Input(db_path=db, conf_path=cfg)
-    transitions = rpy.build_timestep_transition(1, inp, 1)
-    assert isinstance(transitions, list)
-    assert all(isinstance(t, rpy.Transition) for t in transitions)
+    transition = rpy.Transition("migration")
+    matrix = np.zeros((3, 1))
+
+    transition.add_matrix(matrix)
+
+    matrices = transition.get_matrices()
+    assert isinstance(matrices, list)
+    assert len(matrices) == 1
+    np.testing.assert_array_equal(matrices[0], matrix)

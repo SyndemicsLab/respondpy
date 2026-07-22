@@ -68,22 +68,77 @@ def test_history_mode_members_and_latest_timestep_method_are_exposed() -> None:
 
 
 @pytest.mark.smoke
-def test_simulation_create_new_model_returns_name_and_registers_model() -> None:
-    """Simulation.create_new_model should return the model name string."""
+def test_simulation_create_new_model_returns_model_and_registers_model() -> None:
+    """Simulation.create_new_model should return a cloned Model instance."""
     simulation = rpy.Simulation()
-    model_name = simulation.create_new_model("markov")
+    created_model = simulation.create_new_model("markov")
 
-    assert isinstance(model_name, str), (
-        "Expected Simulation.create_new_model to return a string model name."
+    assert isinstance(created_model, rpy.Model), (
+        "Expected Simulation.create_new_model to return a Model instance."
     )
-    assert "markov" in model_name, (
-        "Expected returned model name to include the requested model type."
+    assert created_model.get_name() == "markov", (
+        "Expected returned model to use the requested model type name."
     )
     assert simulation.get_model_names() == ["markov"], (
         "Expected simulation to register one canonical model name: 'markov'."
     )
     assert isinstance(simulation.get_model(0), rpy.Model), (
         "Expected get_model(0) to return a Model instance after creation."
+    )
+
+
+@pytest.mark.smoke
+def test_simulation_get_model_returns_live_mutable_model_reference() -> None:
+    """Mutating a model from get_model should update the simulation-owned model."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("markov")
+
+    expected_state = np.array([3.0, 2.0, 1.0])
+    model = simulation.get_model(0)
+    model.set_state(expected_state)
+
+    np.testing.assert_array_equal(
+        simulation.get_model(0).get_state(),
+        expected_state,
+        err_msg="Expected get_model to expose a live simulation-owned model.",
+    )
+
+
+@pytest.mark.smoke
+def test_simulation_set_model_replaces_model_by_index() -> None:
+    """set_model(index, model) should replace the stored model state."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("markov")
+
+    replacement = rpy.Model("markov")
+    replacement_state = np.array([7.0, 8.0, 9.0])
+    replacement.set_state(replacement_state)
+
+    simulation.set_model(0, replacement)
+
+    np.testing.assert_array_equal(
+        simulation.get_model(0).get_state(),
+        replacement_state,
+        err_msg="Expected set_model to replace the simulation model at index.",
+    )
+
+
+@pytest.mark.smoke
+def test_simulation_index_setitem_replaces_model_by_index() -> None:
+    """Simulation[index] assignment should replace the stored model."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("markov")
+
+    replacement = rpy.Model("markov")
+    replacement_state = np.array([4.0, 5.0, 6.0])
+    replacement.set_state(replacement_state)
+
+    simulation[0] = replacement
+
+    np.testing.assert_array_equal(
+        simulation[0].get_state(),
+        replacement_state,
+        err_msg="Expected __setitem__ to replace the simulation model at index.",
     )
 
 

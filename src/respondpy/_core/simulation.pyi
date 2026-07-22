@@ -39,7 +39,7 @@ class Simulation:
     def __deepcopy__(self, arg0: dict) -> Simulation:
         ...
 
-    def create_new_model(self, model_name: str) -> str:
+    def create_new_model(self, model_name: str) -> Model:
         ...
 
     def clear_models(self) -> None:
@@ -54,31 +54,28 @@ class Simulation:
     def get_models(self) -> list[Model]:
         ...
 
-    @typing.overload
     def get_model(self, idx: typing.SupportsInt) -> Model:
         ...
 
-    @typing.overload
-    def get_model(self, model_name: str) -> Model:
+    def set_model(self, idx: typing.SupportsInt, model: Model) -> None:
+        ...
+
+    def __getitem__(self, idx: typing.SupportsInt) -> Model:
+        ...
+
+    def __setitem__(self, idx: typing.SupportsInt, model: Model) -> None:
         ...
 
     def get_model_names(self) -> list[str]:
         ...
 
-    @typing.overload
+    def get_model_index_name_map(self) -> dict[int, str]:
+        ...
+
     def get_model_history(self, idx: typing.SupportsInt) -> typing.Mapping[str, History]:
         ...
 
-    @typing.overload
-    def get_model_history(self, model_name: str) -> typing.Mapping[str, History]:
-        ...
-
-    @typing.overload
     def get_model_history_names(self, idx: typing.SupportsInt) -> list[str]:
-        ...
-
-    @typing.overload
-    def get_model_history_names(self, model_name: str) -> list[str]:
         ...
 
     def set_duration(self, duration: typing.SupportsInt) -> None:
