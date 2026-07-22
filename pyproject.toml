@@ -55,6 +55,7 @@ docs = [
 # pytest-xdist has no processes on iOS
 test = [
     "cloudpickle",
+    "mypy>=1.17.1",
     "pylint>=4.0.5",
     "pytest-cov>=7.0.0",
     "pytest>=9.0.2",

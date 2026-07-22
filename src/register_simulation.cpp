@@ -4,7 +4,7 @@
 // Created Date: 2026-02-09                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-16                                                  //
+// Last Modified: 2026-07-22                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -37,8 +37,8 @@ void register_simulation(py::module &m) {
         .def("create_new_model", &Simulation::CreateNewModel,
              py::arg("model_name"),
              "Create a new model instance and add it to the simulation. "
-             "Initializes logging for the model and returns a unique_ptr to "
-             "the created instance. Throws an exception if the model name is "
+             "Initializes logging for the model and returns a string. Throws "
+             "an exception if the model name is "
              "unsupported.")
         .def("clear_models", &Simulation::ClearModels,
              "Clear all models from the simulation.")
@@ -65,26 +65,25 @@ void register_simulation(py::module &m) {
              "Get the list of model names in the simulation.")
         .def(
             "get_model_history",
-               py::overload_cast<size_t>(&Simulation::GetModelHistory,
-                                               py::const_),
+            py::overload_cast<size_t>(&Simulation::GetModelHistory, py::const_),
             py::arg("idx"),
             "Get the history of a model by its index in the simulation. Throws "
             "an exception if the index is out of bounds.")
         .def("get_model_history",
              py::overload_cast<const std::string &>(
-                     &Simulation::GetModelHistory, py::const_),
+                 &Simulation::GetModelHistory, py::const_),
              py::arg("model_name"),
              "Get the history of a model by its name. Throws an exception if "
              "the model name is not found.")
         .def("get_model_history_names",
-                py::overload_cast<size_t>(&Simulation::GetModelHistoryNames,
-                                                py::const_),
+             py::overload_cast<size_t>(&Simulation::GetModelHistoryNames,
+                                       py::const_),
              py::arg("idx"),
              "Get the list of history names for a model by its index in the "
              "simulation. Throws an exception if the index is out of bounds.")
         .def("get_model_history_names",
              py::overload_cast<const std::string &>(
-                     &Simulation::GetModelHistoryNames, py::const_),
+                 &Simulation::GetModelHistoryNames, py::const_),
              py::arg("model_name"),
              "Get the list of history names for a model by its name. Throws an "
              "exception if the model name is not found.")

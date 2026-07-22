@@ -4,7 +4,7 @@
 // Created Date: 2026-02-09                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-16                                                  //
+// Last Modified: 2026-07-22                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -22,8 +22,8 @@ using namespace respond;
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_history(py::module &m) {
     py::enum_<HistoryMode>(m, "HistoryMode")
-        .value("Snapshot", HistoryMode::kSnapshot)
-        .value("Accumulated", HistoryMode::kAccumulated)
+        .value("kSnapshot", HistoryMode::kSnapshot)
+        .value("kAccumulated", HistoryMode::kAccumulated)
         .export_values();
 
     m.def("get_default_history_mode", &GetDefaultHistoryMode, py::arg("name"),
@@ -84,7 +84,7 @@ void register_history(py::module &m) {
         .def("get_pending_state", &History::GetPendingState,
              "Get the pending accumulated state vector, or an empty vector if "
              "none exists.")
-        .def("get_patest_recorded_timestep",
+        .def("get_latest_recorded_timestep",
              &History::GetLatestRecordedTimestep,
              "Get the largest recorded timestep, or -1 if history is empty.")
         .def("get_name", &History::GetName,

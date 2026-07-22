@@ -26,7 +26,11 @@ class Transition:
     ) -> None:
         ...
 
-    def execute(self, state: StateVector, history: typing.Mapping[str, History]) -> StateVector:
+    def execute(
+            self,
+            state: StateVector,
+            history: typing.Mapping[str, History] | None = None
+    ) -> tuple[StateVector, dict[str, History]]:
         ...
 
     def add_matrix(self, mat: TransitionMatrix) -> None:
