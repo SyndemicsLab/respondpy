@@ -38,16 +38,16 @@ We are currently working on supporting as many OSes as possible. As these are bi
 Use this checklist when updating bindings, stubs, or API docs.
 
 - Run smoke tests: `uv run pytest -m smoke`
-- Runtime vs stubs parity:
-	- Confirm pybind runtime signatures and return shapes match `.pyi` annotations.
-	- Confirm enum members and bound method names match stub names exactly.
-	- Confirm overload behavior matches typed expectations.
-- Runtime vs docs parity:
-	- Confirm binding docstrings describe actual runtime return types and side effects.
-	- Confirm parameter defaults in docs match bound defaults.
-- Expected-failure messaging parity:
-	- Confirm incorrect arguments raise errors with stable, informative message patterns.
-	- Prefer regex pattern assertions in tests over exact full-message equality.
-- Smoke coverage scope:
-	- Runtime binding smoke lives in `tests/test_smoke_bindings_runtime.py`.
-	- Stub smoke via `mypy` in pytest lives in `tests/test_smoke_stubs_mypy.py`.
+- [ ] Runtime vs stubs parity:
+	- [ ] Confirm pybind runtime signatures and return shapes match `.pyi` annotations.
+	- [ ] Confirm enum members and bound method names match stub names exactly.
+	- [ ] Confirm overload behavior matches typed expectations.
+- [ ] Runtime vs docs parity:
+	- [ ] Confirm binding docstrings describe actual runtime return types and side effects.
+	- [ ] Confirm parameter defaults in docs match bound defaults.
+- [ ] Expected-failure messaging parity:
+	- [ ] Confirm incorrect arguments raise errors with stable, informative message patterns.
+	- [ ] Prefer regex pattern assertions in tests over exact full-message equality.
+- [ ] Smoke coverage scope:
+	- [ ] Runtime binding smoke lives in `tests/test_smoke_bindings_runtime.py`.
+	- [ ] Stub smoke via `mypy` in pytest lives in `tests/test_smoke_stubs_mypy.py`.
