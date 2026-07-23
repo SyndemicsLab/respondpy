@@ -1,10 +1,10 @@
 ################################################################################
-# File: test_smoke.py                                                          #
+# File: test_smoke_basic_functionality.py                                      #
 # Project: respondpy                                                           #
 # Created Date: 2026-01-08                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-07-22                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -92,7 +92,7 @@ def test_simulation_sparse_histories() -> None:
     sim.add_model(model)
     sim.run()
 
-    model_histories = sim.get_model_history("markov")
+    model_histories = sim.get_model_history(0)
     assert isinstance(
         model_histories, dict), "Expected dict keyed by history name"
 

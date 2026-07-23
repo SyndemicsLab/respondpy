@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-07-22                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,7 +13,6 @@
 from __future__ import annotations
 from collections.abc import Sequence
 
-from .model import Model
 from .data import Input
 from ._core.simulation import Simulation  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
@@ -57,17 +56,16 @@ def build_simulation(
             raise ValueError(
                 f"Cohort IDs {missing_cohorts} not found in input data."
             )
-    s = Simulation(log_name)
+    s = Simulation(log_name, log_file)
     for cohort_id in cohort_ids:
-        s.create_new_model("markov")
-        _fill_model(s.get_model(cohort_id), input_data, cohort_id)
+        _fill_model(s, input_data, cohort_id)
 
     return s
 
 
 def _fill_model(
-        model: Model,
+        sim: Simulation,
         input_data: Input,
         cohort_id: int,
 ) -> None:
-    pass
+    sim.create_new_model("markov")
