@@ -42,6 +42,15 @@ void register_timestep(py::module &m) {
             py::return_value_policy::reference_internal,
             "Create a new transition instance and add it to the timestep. "
             "Returns a reference to the created transition.")
+        .def(
+            "add_transition",
+            [](Timestep &self, const Transition &transition) {
+                const auto cloned_transition = transition.clone();
+                self.AddTransition(cloned_transition);
+            },
+            py::arg("transition"),
+            "Add a transition by cloning the provided transition instance "
+            "into this timestep.")
         .def("remove_transition", &Timestep::RemoveTransition, py::arg("idx"),
              "Remove a transition from the timestep by its idx. Throws an "
              "exception if the idx is out of bounds.")
@@ -82,6 +91,19 @@ void register_timestep(py::module &m) {
              "Get the list of transitions in the timestep.")
         .def("get_transition_names", &Timestep::GetTransitionNames,
              "Get the list of transition names in the timestep.")
+        .def(
+            "__getitem__",
+            [](Timestep &self, size_t idx) -> Transition & { return self[idx]; },
+            py::arg("idx"), py::return_value_policy::reference_internal,
+            "Get a transition using index access semantics.")
+        .def(
+            "__setitem__",
+            [](Timestep &self, size_t idx, const Transition &transition) {
+                self[idx] = transition;
+            },
+            py::arg("idx"), py::arg("transition"),
+            "Replace a transition slot by index with a clone of the provided "
+            "transition.")
         .def("__repr__",
              [](const Timestep &t) {
                  std::stringstream ss;

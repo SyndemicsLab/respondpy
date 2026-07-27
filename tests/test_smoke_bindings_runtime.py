@@ -157,3 +157,43 @@ def test_binding_failure_messages_follow_expected_patterns() -> None:
 
     with pytest.raises(TypeError, match=r"(?i)incompatible constructor arguments"):
         _ = rpy.Simulation(1)  # type: ignore[arg-type]
+
+
+@pytest.mark.smoke
+def test_timestep_add_transition_clones_input_transition() -> None:
+    """Timestep.add_transition should clone, not alias, the input transition."""
+    timestep = rpy.Timestep()
+    source_transition = rpy.Transition("migration")
+    first_matrix = np.array([[0.5], [0.5], [0.0]])
+    source_transition.add_matrix(first_matrix)
+
+    timestep.add_transition(source_transition)
+
+    second_matrix = np.array([[0.2], [0.3], [0.5]])
+    source_transition.add_matrix(second_matrix)
+
+    stored_transition = timestep.get_transition(0)
+    stored_matrices = stored_transition.get_matrices()
+    assert len(stored_matrices) == 1, (
+        "Expected timestep-owned transition to remain independent after "
+        "mutating the caller-owned transition."
+    )
+    np.testing.assert_allclose(stored_matrices[0], first_matrix)
+
+
+@pytest.mark.smoke
+def test_timestep_index_access_supports_get_and_set() -> None:
+    """Timestep index operators should expose mutable get/set semantics."""
+    timestep = rpy.Timestep()
+    timestep.create_transition("migration")
+    timestep.create_transition("behavior")
+
+    replacement = rpy.Transition("overdose", "overdose")
+    timestep[1] = replacement
+
+    assert timestep[0].get_name() == "migration", (
+        "Expected __getitem__ to return transition by index."
+    )
+    assert timestep[1].get_name() == replacement.get_name(), (
+        "Expected __setitem__ to replace transition slot by index."
+    )

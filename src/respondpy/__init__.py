@@ -23,9 +23,8 @@ from .history import History
 
 from .model import Model
 
-from .simulation import (
-    Simulation, build_simulation
-)
+from .simulation import Simulation
+from .build import build_simulation
 
 from .timestep import Timestep
 
