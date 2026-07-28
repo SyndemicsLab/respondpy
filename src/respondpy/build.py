@@ -4,7 +4,7 @@
 # Created Date: 2026-07-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-27                                                    #
+# Last Modified: 2026-07-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -28,16 +28,19 @@ def build_simulation(
         log_name: str = "respond",
         log_file: str = "respond.log"
 ) -> Simulation:
-    """Build a simulation containing one model per cohort id.
+    """Build a simulation populated with one model per cohort.
 
     Parameters
     ----------
     input_data : Input
         Loaded input data and simulation configuration.
     cohort_ids : Sequence of int, optional
-        Cohort identifiers to include in the simulation.
-    log_name : str, default="console"
-        Logger name used by the underlying core simulation/model.
+        Cohort identifiers to include in the simulation. When omitted, all
+        cohort identifiers present in ``input_data`` are used.
+    log_name : str, default="respond"
+        Logger name used by the underlying simulation objects.
+    log_file : str, default="respond.log"
+        File name used by the underlying simulation objects for logging.
 
     Returns
     -------
@@ -74,6 +77,26 @@ def build_model(
     log_name: str = "respond",
     log_file: str = "respond.log"
 ) -> Model:
+    """Build a model for a single cohort.
+
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int
+        Cohort identifier used to select the initial state and parameter
+        values.
+    log_name : str, default="respond"
+        Logger name used by the underlying model.
+    log_file : str, default="respond.log"
+        File name used by the underlying model for logging.
+
+    Returns
+    -------
+    Model
+        A model configured with the cohort initial state and timestep
+        transitions.
+    """
     model = Model("markov", log_name, log_file)
     initial_state = input_data.select_parameter(
         Parameter(ParameterType.INITIAL_COHORT),
@@ -85,7 +108,8 @@ def build_model(
         list(
             map(
                 int,
-                input_data.config.get("simulation", "parameter_change_times").split(),
+                input_data.config.get(
+                    "simulation", "parameter_change_times").split(),
             )
         )
     )
@@ -113,6 +137,26 @@ def build_timestep(
     log_name: str = "respond",
     log_file: str = "respond.log"
 ) -> Timestep:
+    """Build a timestep containing the cohort transitions for a time point.
+
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int
+        Cohort identifier used to select timestep-specific parameters.
+    tstep : int, default=1
+        Simulation time point represented by the timestep.
+    log_name : str, default="respond"
+        Logger name used by the underlying timestep.
+    log_file : str, default="respond.log"
+        File name used by the underlying timestep for logging.
+
+    Returns
+    -------
+    Timestep
+        A timestep populated with the default transitions for ``tstep``.
+    """
     timestep = Timestep(log_name, log_file)
 
     transitions = build_default_transitions(
@@ -124,6 +168,80 @@ def build_timestep(
     return timestep
 
 
+def build_transition(
+    input_data: Input,
+    cohort_id: int,
+    param: Parameter,
+    *,
+    time: int = 1,
+    log_name: str = "respond",
+    log_file: str = "respond.log"
+) -> Transition:
+    """Build a transition for a single parameter and cohort.
+
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data containing the parameter matrix.
+    cohort_id : int
+        Cohort identifier used to select the parameter values.
+    param : Parameter
+        Parameter descriptor used to identify the transition and look up the
+        corresponding data.
+    time : int, default=1
+        Time point used when selecting the parameter values.
+    log_name : str, default="respond"
+        Logger name used by the underlying transition.
+    log_file : str, default="respond.log"
+        File name used by the underlying transition for logging.
+
+    Returns
+    -------
+    Transition
+        A transition containing the selected parameter matrix.
+    """
+    transition = Transition(
+        param.get_parameter_name(),
+        param.get_parameter_name(),
+        log_name,
+        log_file
+    )
+    transition.add_matrix(input_data.select_parameter(param, cohort_id, time))
+    return transition
+
+
+def add_matrix_to_transition(
+        transition: Transition,
+        input_data: Input,
+        cohort_id: int,
+        param: Parameter,
+        *,
+        time: int = 1
+) -> Transition:
+    """Add another parameter matrix to an existing transition.
+
+    Parameters
+    ----------
+    transition : Transition
+        Transition to update in place.
+    input_data : Input
+        Loaded input data containing the parameter matrix.
+    cohort_id : int
+        Cohort identifier used to select the parameter values.
+    param : Parameter
+        Parameter descriptor used to look up the additional matrix.
+    time : int, default=1
+        Time point used when selecting the parameter values.
+
+    Returns
+    -------
+    Transition
+        The same transition instance after the matrix has been added.
+    """
+    transition.add_matrix(input_data.select_parameter(param, cohort_id, time))
+    return transition
+
+
 def build_default_transitions(
     input_data: Input,
     cohort_id: int,
@@ -132,22 +250,49 @@ def build_default_transitions(
     log_name: str = "respond",
     log_file: str = "respond.log"
 ) -> list[Transition]:
-    m = Transition("migration", "migration", log_name, log_file)
-    m.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.MIGRATION_COHORT), cohort_id, time))
-    b = Transition("behavior", "behavior", log_name, log_file)
-    b.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.BEHAVIOR_TRANSITION_PROBABILITY), cohort_id, time))
-    i = Transition("intervention", "intervention", log_name, log_file)
-    i.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.INTERVENTION_TRANSITION_PROBABILITY), cohort_id, time))
-    o = Transition("overdose", "overdose", log_name, log_file)
-    o.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.OVERDOSE_PROBABILITY), cohort_id, time))
-    o.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.OVERDOSE_FATALITY_PROBABILITY), cohort_id, time))
-    d = Transition("background_death", "background_death", log_name, log_file)
-    d.add_matrix(input_data.select_parameter(
-        Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY), cohort_id, time))
+    """Build the default transitions used by each timestep.
+
+    Parameters
+    ----------
+    input_data : Input
+        Loaded input data and simulation configuration.
+    cohort_id : int
+        Cohort identifier used to select transition matrices.
+    time : int, default=1
+        Time point used when selecting parameter values.
+    log_name : str, default="respond"
+        Logger name used by the underlying transitions.
+    log_file : str, default="respond.log"
+        File name used by the underlying transitions for logging.
+
+    Returns
+    -------
+    list[Transition]
+        The default transition set for a timestep, in model order.
+    """
+    m = build_transition(
+        input_data, cohort_id, Parameter(ParameterType.MIGRATION_COHORT), time=time, log_name=log_name, log_file=log_file
+    )
+
+    b = build_transition(
+        input_data, cohort_id, Parameter(ParameterType.BEHAVIOR_TRANSITION_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+    )
+
+    i = build_transition(
+        input_data, cohort_id, Parameter(ParameterType.INTERVENTION_TRANSITION_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+    )
+
+    o = build_transition(
+        input_data, cohort_id, Parameter(ParameterType.OVERDOSE_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+    )
+    o = add_matrix_to_transition(o, input_data, cohort_id, Parameter(
+        ParameterType.OVERDOSE_FATALITY_PROBABILITY), time=time)
+
+    d = build_transition(
+        input_data, cohort_id, Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+    )
+
+    d = add_matrix_to_transition(d, input_data, cohort_id, Parameter(
+        ParameterType.STANDARD_MORTALITY_RATIO), time=time)
 
     return [m, b, i, o, d]
