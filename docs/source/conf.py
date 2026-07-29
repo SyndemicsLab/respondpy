@@ -22,11 +22,14 @@ author = 'Matthew Carroll, Dimitri Baptiste'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'myst_parser'
+    'myst_parser',
+    'sphinxcontrib.mermaid'
 ]
 
 templates_path = ['_templates']
 exclude_patterns = []
+source_suffix = {".md": "markdown", ".rst": "restructuredtext"}
+myst_fence_as_directive = ["mermaid"]
 
 
 # -- Options for HTML output -------------------------------------------------

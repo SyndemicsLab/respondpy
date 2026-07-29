@@ -1,7 +1,7 @@
 ################################################################################
-# File: transition.py                                                          #
+# File: types.pyi                                                              #
 # Project: respondpy                                                           #
-# Created Date: 2026-06-05                                                     #
+# Created Date: 2026-07-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
 # Last Modified: 2026-07-20                                                    #
@@ -12,6 +12,9 @@
 
 from __future__ import annotations
 
-from ._core.transition import Transition  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+import numpy as np
+import numpy.typing as npt
+import typing
 
-__all__: list[str] = ['Transition']
+StateVector = typing.Annotated[npt.NDArray[np.float64], "[m, 1]"]
+TransitionMatrix = typing.Annotated[npt.NDArray[np.float64], "[m, m]"]

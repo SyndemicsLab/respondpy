@@ -4,7 +4,7 @@
 # Created Date: 2026-01-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-16                                                    #
+# Last Modified: 2026-07-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -72,6 +72,36 @@ class Parameter():
             The string representation of the object, including the parameter type.
         """
         return f"Parameter(parameter_type={self.__parameter_type})"
+
+    def get_parameter_name(self) -> str:
+        """Return the parameter type name.
+
+        Returns
+        -------
+        str
+            The parameter type name.
+        """
+        match self.__parameter_type:
+            case ParameterType.INITIAL_COHORT:
+                return "initial_cohort"
+            case ParameterType.MIGRATION_COHORT:
+                return "migration"
+            case ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
+                return "intervention"
+            case ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+                return "behavior"
+            case ParameterType.OVERDOSE_PROBABILITY:
+                return "overdose"
+            case ParameterType.OVERDOSE_FATALITY_PROBABILITY:
+                return "fatal_overdose"
+            case ParameterType.BACKGROUND_DEATH_PROBABILITY:
+                return "background_death"
+            case ParameterType.STANDARD_MORTALITY_RATIO:
+                return "smr"
+            case _:
+                raise ValueError(
+                    f"ParameterType value has a non-standard name! ParameterType: {self.__parameter_type}."
+                )
 
     def get_parameter_type(self) -> ParameterType:
         """Return the wrapped parameter type.

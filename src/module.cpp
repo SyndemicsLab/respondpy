@@ -4,7 +4,7 @@
 // Created Date: 2025-08-01                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-02-09                                                  //
+// Last Modified: 2026-07-16                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center             //
@@ -20,6 +20,7 @@ void register_logging(py::module &m);
 void register_model(py::module &m);
 void register_simulation(py::module &m);
 void register_transition(py::module &m);
+void register_timestep(py::module &m);
 
 PYBIND11_MODULE(_core, m, py::mod_gil_not_used()) {
     py::module history_mod = m.def_submodule("history");
@@ -36,6 +37,9 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used()) {
 
     py::module sim_mod = m.def_submodule("simulation");
     register_simulation(sim_mod);
+
+    py::module timestep_mod = m.def_submodule("timestep");
+    register_timestep(timestep_mod);
 
     py::module t_mod = m.def_submodule("transition");
     register_transition(t_mod);
