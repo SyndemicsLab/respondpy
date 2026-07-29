@@ -4,7 +4,7 @@
 # Created Date: 2025-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-07-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2025-2026 Syndemics Lab at Boston Medical Center               #
@@ -20,16 +20,13 @@ from .cost_effectiveness import (
     discount, cwise_product, cwise_min, calculate_life_years
 )
 from .history import History
-
 from .model import Model
-
-from .simulation import (
-    Simulation, build_simulation
-)
-
+from .simulation import Simulation
 from .timestep import Timestep
-
 from .transition import Transition
+
+from .build import build_simulation, build_model, build_timestep, build_default_transitions, build_transition, add_matrix_to_transition
+
 
 __all__ = [
     "data",
@@ -40,9 +37,14 @@ __all__ = [
     "History",
     "Model",
     "Simulation",
-    "build_simulation",
     "Timestep",
     "Transition",
+    "build_simulation",
+    "build_model",
+    "build_timestep",
+    "build_default_transitions",
+    "build_transition",
+    "add_matrix_to_transition"
 ]
 
 

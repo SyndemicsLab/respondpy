@@ -1,97 +1,67 @@
 # Architecture
 
-This page summarizes the public surface and runtime flow of respondpy.
+This section explains the public API and runtime behavior of respondpy.
+It is intentionally conceptual: there are no references pages here and no
+how-to recipes.
 
-## Public API
+If you need task-oriented steps, use [How-To Guides](../how_to/data_loading.md).
+If you need API signatures and symbol-level details, use
+[References](../references/wrapper_typing.md).
+If you want guided learning exercises, use
+[Tutorials](../tutorials/base_respond.md).
+
+```{toctree}
+:maxdepth: 1
+
+public-api
+object-lifecycle
+data-flow
+runtime-execution
+```
+
+## Overview
 
 ```mermaid
 flowchart LR
-	subgraph Pkg[respondpy package]
+	subgraph Public[respondpy public surface]
 		data[data]
-		discount[discount]
-		cwise_product[cwise_product]
-		cwise_min[cwise_min]
-		calculate_life_years[calculate_life_years]
-
+		cost[cost_effectiveness]
 		History[History]
 		Model[Model]
-		build_model[build_model]
-		add_transitions_to_model[add_transitions_to_model]
-		build_model_transitions[build_model_transitions]
-
 		Simulation[Simulation]
-		build_simulation[build_simulation]
-
+		Timestep[Timestep]
 		Transition[Transition]
-		transition_factory[transition_factory]
-		build_timestep_transition[build_timestep_transition]
+		build_simulation[build_simulation]
+		build_model[build_model]
+		build_timestep[build_timestep]
+		build_default_transitions[build_default_transitions]
+		build_transition[build_transition]
+		add_matrix_to_transition[add_matrix_to_transition]
 	end
 
 	build_simulation --> Simulation
 	build_model --> Model
-	add_transitions_to_model --> Model
-	build_model_transitions --> Model
-	transition_factory --> Transition
-	build_timestep_transition --> Transition
+	build_timestep --> Timestep
+	build_default_transitions --> Transition
+	build_transition --> Transition
+	add_matrix_to_transition --> Transition
+	Simulation --> History
+	data --> Model
+	data --> Transition
 ```
 
-## Execution Diagram
+## Scope
 
 ```mermaid
-flowchart LR
-	A[Input initialized with DB + sim.conf] --> B["build_simulation(input_data, cohort_ids)"]
-	B --> C{Iterate cohort ids}
-	C --> D["build_model(input_data, cohort_id)"]
-	D --> E["input_data.select_parameter(INITIAL_COHORT, cohort_id, time=1)"]
-	E --> F["Model.set_state(initial_population)"]
-	F --> G["build_model_transitions(model, input_data, cohort_id)"]
-	G --> H["build_timestep_transition(timestep, input_data, cohort_id)"]
-	H --> I["migration transition"]
-	H --> J["intervention transition"]
-	H --> K["behavior transition"]
-	H --> L["overdose transition"]
-	H --> M["background death transition"]
-	I --> N["add_transitions_to_model"]
-	J --> N
-	K --> N
-	L --> N
-	M --> N
-	N --> O["Simulation.add_model(model)"]
-	O --> P["Simulation.run()"]
-	P --> Q["get_model_sparse_histories() -> History objects"]
-```
+flowchart TB
+	A[Public API]
+	B[Core runtime objects]
+	C[Data access and validation]
+	D[Simulation assembly helpers]
+	E[Execution and output flow]
 
-## UML Library Flow
-
-```mermaid
-sequenceDiagram
-	autonumber
-	actor User
-	participant In as Input
-	participant BS as build_simulation()
-	participant BM as build_model()
-	participant BMT as build_model_transitions()
-	participant BTT as build_timestep_transition()
-	participant Sim as Simulation
-	participant Mod as Model
-	participant Tr as Transition
-	participant Hist as History
-
-	User->>In: create Input(path or db_path/conf_path)
-	User->>BS: build_simulation(In, cohort_ids)
-	loop for each cohort_id
-		BS->>BM: build_model(In, cohort_id)
-		BM->>In: select_parameter(INITIAL_COHORT, cohort_id, time=1)
-		BM->>Mod: set_state(initial_population)
-		BM->>BMT: build_model_transitions(Mod, In, cohort_id)
-		loop for each timestep
-			BMT->>BTT: build_timestep_transition(timestep, In, cohort_id)
-			BTT-->>BMT: [migration, intervention, behavior, overdose, mortality]
-			BMT->>Mod: add_transition(Transition...)
-		end
-		BS->>Sim: add_model(Mod)
-	end
-	User->>Sim: run()
-	User->>Sim: get_model_sparse_histories()
-	Sim-->>Hist: return per-model History objects
+	A --> B
+	A --> C
+	A --> D
+	A --> E
 ```

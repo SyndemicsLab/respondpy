@@ -50,6 +50,7 @@ docs = [
     "sphinx-book-theme>=0.0.33",
     "sphinx>=4.0",
     "sphinx_copybutton",
+    "sphinxcontrib-mermaid>=2.1.0",
 ]
 # hypothesis is slow on iOS, can fail health check
 # pytest-xdist has no processes on iOS
