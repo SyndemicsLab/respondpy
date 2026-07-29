@@ -53,17 +53,3 @@ for history_name, history in model_history.items():
 for history_name, history in model_history.items():
     print(history_name, history.get_latest_recorded_timestep())
 ```
-
-## Interpretation Flow
-
-```mermaid
-flowchart TD
-	A[Simulation.run()] --> B[get_model_history(index)]
-	B --> C[History objects by name]
-	C --> D[get_recorded_timesteps]
-	C --> E[get_recorded_states]
-	C --> F[get_history_mode]
-	D --> G[Temporal coverage checks]
-	E --> H[State trajectory checks]
-	F --> I[Snapshot vs accumulated interpretation]
-```
