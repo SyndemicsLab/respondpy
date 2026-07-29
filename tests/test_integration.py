@@ -241,7 +241,8 @@ def test_simulation_run_104_midrun_parameter_increase(
         cohort_id=1,
         time=1,
     )
-    assert float(np.sum(flat_migration_t52)) == float(np.sum(flat_migration_t1))
+    assert float(np.sum(flat_migration_t52)) == float(
+        np.sum(flat_migration_t1))
 
     migration_t1 = inp.select_parameter(
         rpy.data.Parameter(rpy.data.ParameterType.MIGRATION_COHORT),
@@ -271,3 +272,184 @@ def test_simulation_run_104_midrun_parameter_increase(
         "Expected larger final population when migration inflow increases at "
         "timestep 52."
     )
+
+
+@pytest.fixture
+def setup_db_for_numerical_check(tmp_path_factory, db_schema):
+    """Build deterministic dummy data for math-focused integration checks."""
+    temp_dir = tmp_path_factory.mktemp("test-data")
+    db_path = temp_dir / "input_numerical.db"
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.executescript(db_schema)
+    cursor.executescript("""
+INSERT INTO cohort (id, description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample)
+VALUES (1, "Numerical Cohort", 1, 1, 1, 1, 1, 1, 1, 1);
+
+INSERT INTO intervention (id, name)
+VALUES (1, "i1"), (2, "i2");
+
+INSERT INTO behavior (id, name)
+VALUES (1, "b1"), (2, "b2");
+
+INSERT INTO initial_population (sample, intervention, behavior, count)
+VALUES
+    (1, 1, 1, 100.0),
+    (1, 1, 2, 80.0),
+    (1, 2, 1, 60.0),
+    (1, 2, 2, 40.0);
+
+INSERT INTO population_change (sample, intervention, behavior, time, count)
+VALUES
+    (1, 1, 1, 1, 1.0),
+    (1, 1, 2, 1, -2.0),
+    (1, 2, 1, 1, 3.0),
+    (1, 2, 2, 1, -1.0);
+
+INSERT INTO behavior_transition (sample, intervention, time, initial_behavior, new_behavior, probability)
+VALUES
+    (1, 1, 1, 1, 1, 0.9),
+    (1, 1, 1, 1, 2, 0.1),
+    (1, 1, 1, 2, 1, 0.2),
+    (1, 1, 1, 2, 2, 0.8),
+    (1, 2, 1, 1, 1, 0.85),
+    (1, 2, 1, 1, 2, 0.15),
+    (1, 2, 1, 2, 1, 0.25),
+    (1, 2, 1, 2, 2, 0.75);
+
+INSERT INTO intervention_transition (sample, behavior, time, initial_intervention, new_intervention, probability)
+VALUES
+    (1, 1, 1, 1, 1, 0.95),
+    (1, 1, 1, 1, 2, 0.05),
+    (1, 1, 1, 2, 1, 0.10),
+    (1, 1, 1, 2, 2, 0.90),
+    (1, 2, 1, 1, 1, 0.92),
+    (1, 2, 1, 1, 2, 0.08),
+    (1, 2, 1, 2, 1, 0.15),
+    (1, 2, 1, 2, 2, 0.85);
+
+INSERT INTO overdose (sample, intervention, behavior, time, probability)
+VALUES
+    (1, 1, 1, 1, 0.05),
+    (1, 1, 2, 1, 0.04),
+    (1, 2, 1, 1, 0.03),
+    (1, 2, 2, 1, 0.02);
+
+INSERT INTO overdose_fatality (sample, intervention, behavior, time, probability)
+VALUES
+    (1, 1, 1, 1, 0.20),
+    (1, 1, 2, 1, 0.10),
+    (1, 2, 1, 1, 0.15),
+    (1, 2, 2, 1, 0.25);
+
+INSERT INTO background_mortality (sample, time, probability)
+VALUES (1, 1, 0.01);
+
+INSERT INTO smr (sample, intervention, behavior, time, ratio)
+VALUES
+    (1, 1, 1, 1, 1.2),
+    (1, 1, 2, 1, 1.0),
+    (1, 2, 1, 1, 1.1),
+    (1, 2, 2, 1, 0.9);
+""")
+    conn.commit()
+    conn.close()
+
+    yield db_path
+
+
+@pytest.fixture
+def setup_config_one_executed_timestep(tmp_path_factory):
+    """Config for exactly one executed timestep.
+
+    RESPOND records timestep 0 as the initial state, so duration 2 runs one
+    transition step.
+    """
+    temp_dir = tmp_path_factory.mktemp("test-data")
+    config_path = temp_dir / "sim_one_step.conf"
+    cfg = ConfigParser()
+    cfg['simulation'] = {
+        'duration': '2',
+        'parameter_change_times': '2',
+        'stratify_entering_cohort': 'false',
+    }
+    cfg['output'] = {
+        'build_summary_stats': 'true',
+        'save_state_history': 'true',
+        'timesteps_to_report': '2',
+    }
+
+    with config_path.open('w') as configfile:
+        cfg.write(configfile)
+
+    yield config_path
+
+
+@pytest.fixture
+def setup_config_fifty_two_executed_timesteps(tmp_path_factory):
+    """Config for exactly fifty-two executed timesteps.
+
+    RESPOND records timestep 0 as the initial state, so duration 53 runs
+    fifty-two transition steps.
+    """
+    temp_dir = tmp_path_factory.mktemp("test-data")
+    config_path = temp_dir / "sim_52_steps.conf"
+    cfg = ConfigParser()
+    cfg['simulation'] = {
+        'duration': '53',
+        'parameter_change_times': '53',
+        'stratify_entering_cohort': 'false',
+    }
+    cfg['output'] = {
+        'build_summary_stats': 'true',
+        'save_state_history': 'true',
+        'timesteps_to_report': '53',
+    }
+
+    with config_path.open('w') as configfile:
+        cfg.write(configfile)
+
+    yield config_path
+
+
+@pytest.mark.integration
+def test_single_timestep_numerical_state_matches_expected(
+    setup_db_for_numerical_check,
+    setup_config_one_executed_timestep,
+):
+    """Single-step run should match manually computed transition math."""
+    inp = rpy.data.Input(
+        db_path=setup_db_for_numerical_check,
+        conf_path=setup_config_one_executed_timestep,
+    )
+    sim = rpy.build_simulation(inp)
+    sim.run()
+
+    final_state = sim.get_model(0).get_state()
+    expected_state = np.array([216.2933685, 0.0, 0.0, 210.24611685000002])
+
+    np.testing.assert_allclose(
+        final_state, expected_state, rtol=1e-10, atol=1e-10)
+
+
+@pytest.mark.integration
+def test_fifty_two_timestep_numerical_state_matches_expected(
+    setup_db_for_numerical_check,
+    setup_config_fifty_two_executed_timesteps,
+):
+    """Fifty-two-step run should match manually computed transition math."""
+    inp = rpy.data.Input(
+        db_path=setup_db_for_numerical_check,
+        conf_path=setup_config_fifty_two_executed_timesteps,
+    )
+    sim = rpy.build_simulation(inp)
+    sim.run()
+
+    final_state = sim.get_model(0).get_state()
+    expected_state = np.array(
+        [5.764271919791796e26, 0.0, 0.0, 5.6072656482224475e26]
+    )
+
+    np.testing.assert_allclose(
+        final_state, expected_state, rtol=1e-9, atol=1e-9)
