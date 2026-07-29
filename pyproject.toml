@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.2.3"
+version = "0.3.0"
 description = "The Syndemic Lab's RESPOND Simulation Python Extension Module."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -121,7 +121,7 @@ filterwarnings = [
     "default:could not create cache path:pytest.PytestCacheWarning",
 ]
 log_level = "INFO"
-markers = ["smoke", "unit", "integration", "benchmark"]
+markers = ["smoke", "unit", "integration", "benchmark", "typing"]
 required_plugins = ["pytest-benchmark"]
 
 [tool.coverage.run]
@@ -245,7 +245,7 @@ build-frontend = "build[uv]"
 # Test Step Details
 test-groups = ["test"]
 test-sources = ["pyproject.toml", "tests"]
-test-command = "python -m pytest tests"
+test-command = "python -m pytest tests -m 'smoke or unit or integration'"
 test-skip = [
   "cp31*-musllinux_*", # Threading test crashes on musllinux
   "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above

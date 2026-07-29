@@ -4,7 +4,7 @@
 # Created Date: 2026-07-22                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-22                                                    #
+# Last Modified: 2026-07-29                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -39,8 +39,8 @@ def _run_mypy(path: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-@pytest.mark.smoke
-def test_mypy_smoke_positive_stub_usage(tmp_path: Path) -> None:
+@pytest.mark.typing
+def test_mypy_typing_positive_stub_usage(tmp_path: Path) -> None:
     """Typed usage matching stubs should pass mypy."""
     test_file = tmp_path / "stub_smoke_positive.py"
     test_file.write_text(
@@ -76,8 +76,8 @@ assert mode.name == "kSnapshot"
     )
 
 
-@pytest.mark.smoke
-def test_mypy_smoke_negative_stub_misuse(tmp_path: Path) -> None:
+@pytest.mark.typing
+def test_mypy_typing_negative_stub_misuse(tmp_path: Path) -> None:
     """Typed misuse should fail mypy with informative message patterns."""
     test_file = tmp_path / "stub_smoke_negative.py"
     test_file.write_text(
