@@ -292,7 +292,8 @@ def build_default_transitions(
         input_data, cohort_id, Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY), time=time, log_name=log_name, log_file=log_file
     )
 
-    # d = add_matrix_to_transition(d, input_data, cohort_id, Parameter(
-    #     ParameterType.STANDARD_MORTALITY_RATIO), time=time)
+    d.get_matrices()[0] = d.get_matrices()[0] * input_data.select_parameter(
+        Parameter(ParameterType.STANDARD_MORTALITY_RATIO), cohort_id, time=time
+    )
 
     return [m, b, i, o, d]
