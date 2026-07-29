@@ -54,8 +54,14 @@ void register_model(py::module &m) {
         .def("get_timestep_at_index", &Model::GetTimestepAtIndex,
              py::arg("idx"),
              "Get the timestep at the specified index in the model's sequence.")
-        .def("get_state", &Model::GetState,
-             "Get the current state vector of the model.")
+          .def(
+               "get_state",
+               [](const Model &self) {
+                    // Return a concrete vector copy to avoid exposing Eigen::Ref
+                    // lifetimes across the Python boundary.
+                    return Eigen::VectorXd(self.GetState());
+               },
+               "Get the current state vector of the model.")
         .def("get_name", &Model::GetName, "Get the name of the model.")
         .def("get_histories", &Model::GetHistories,
              "Get the list of histories associated with the model.")
@@ -68,8 +74,14 @@ void register_model(py::module &m) {
              "Get the configured final simulation timestep, or -1 if unset.")
         .def("get_initial_history_recorded", &Model::GetInitialHistoryRecorded,
              "Check if the initial history has been recorded.")
-        .def("set_state", &Model::SetState, py::arg("state"),
-             "Set the current state vector of the model.")
+          .def(
+               "set_state",
+               [](Model &self, const Eigen::VectorXd &state) {
+                    // Copy into a concrete Eigen vector first, then pass by Ref.
+                    // This avoids temporary-map lifetime issues on some platforms.
+                    self.SetState(state);
+               },
+               py::arg("state"), "Set the current state vector of the model.")
         .def("set_history_capture_interval", &Model::SetHistoryCaptureInterval,
              py::arg("interval"),
              "Set the global history capture interval. Records every "
