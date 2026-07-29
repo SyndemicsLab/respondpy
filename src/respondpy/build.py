@@ -4,7 +4,7 @@
 # Created Date: 2026-07-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-28                                                    #
+# Last Modified: 2026-07-29                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -292,7 +292,7 @@ def build_default_transitions(
         input_data, cohort_id, Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY), time=time, log_name=log_name, log_file=log_file
     )
 
-    d = add_matrix_to_transition(d, input_data, cohort_id, Parameter(
-        ParameterType.STANDARD_MORTALITY_RATIO), time=time)
+    # d = add_matrix_to_transition(d, input_data, cohort_id, Parameter(
+    #     ParameterType.STANDARD_MORTALITY_RATIO), time=time)
 
     return [m, b, i, o, d]
