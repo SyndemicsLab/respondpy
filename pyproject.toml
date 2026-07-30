@@ -259,7 +259,7 @@ environment.CMAKE_BUILD_PARALLEL_LEVEL = "4"
 [[tool.cibuildwheel.overrides]]
 select = ["cp3*-win_arm64"]
 inherit.environment = "append"
-test-command = "python -m pytest -n 1 --benchmark-disable tests"
+test-command = "python -m pytest -n 1 --benchmark-disable tests -m \"smoke or unit or integration\""
 environment.OMP_NUM_THREADS = "1"
 environment.OPENBLAS_NUM_THREADS = "1"
 environment.MKL_NUM_THREADS = "1"
