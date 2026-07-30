@@ -245,7 +245,7 @@ build-frontend = "build[uv]"
 # Test Step Details
 test-groups = ["test"]
 test-sources = ["pyproject.toml", "tests"]
-test-command = "python -m pytest tests -m 'smoke or unit or integration'"
+test-command = "python -m pytest tests -m \"smoke or unit or integration\""
 test-skip = [
   "cp31*-musllinux_*", # Threading test crashes on musllinux
   "cp313*", # polars-runtime-32 has issues with abi3 on 3.13 and above
