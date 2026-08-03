@@ -4,7 +4,7 @@
 # Created Date: 2026-06-10                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-08-03                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -100,33 +100,6 @@ def test_sort_state_vector_happy_path() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.filterwarnings(
-    "ignore:Determining the column names of a LazyFrame requires resolving its schema.*:polars.exceptions.PerformanceWarning"
-)
-def test_sort_transition_matrix_happy_path() -> None:
-    lf = pl.LazyFrame(
-        {
-            "intervention": ["i2", "i1", "i2", "i1"],
-            "behavior": ["b2", "b1", "b1", "b2"],
-            "next_intervention": ["i1", "i2", "i2", "i1"],
-            "next_behavior": ["b1", "b2", "b1", "b2"],
-            "probability": [0.1, 0.2, 0.3, 0.4],
-            # Current implementation drops this column before re-adding it.
-            "i_id": [0, 0, 0, 0],
-        }
-    )
-
-    out = _sort_transition_matrix(
-        lf,
-        behaviors=[[1, 2], ["b1", "b2"]],
-        interventions=[[1, 2], ["i1", "i2"]],
-    ).collect()
-
-    assert out.height == 4
-    assert "probability" in out.columns
-
-
-@pytest.mark.unit
 def test_sort_dataframes_calls_state_vector_sort(monkeypatch: pytest.MonkeyPatch) -> None:
     lf = pl.LazyFrame(
         {
@@ -146,33 +119,6 @@ def test_sort_dataframes_calls_state_vector_sort(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(
         "respondpy.data.database_helpers._sort_state_vector",
         fake_sort_state_vector,
-    )
-
-    out = sort_dataframes(lf, [(1, "b1")], [(1, "i1")]).collect()
-    assert out.columns == ["sentinel"]
-
-
-@pytest.mark.unit
-def test_sort_dataframes_calls_transition_matrix_sort(monkeypatch: pytest.MonkeyPatch) -> None:
-    lf = pl.LazyFrame(
-        {
-            "intervention": ["i1"],
-            "behavior": ["b1"],
-            "next_intervention": ["i1"],
-            "next_behavior": ["b1"],
-        }
-    )
-
-    def fake_sort_transition_matrix(
-            _lf: pl.LazyFrame,
-            _behaviors: list[tuple[int, str]],
-            _interventions: list[tuple[int, str]],
-    ) -> pl.LazyFrame:
-        return pl.LazyFrame({"sentinel": [2]})
-
-    monkeypatch.setattr(
-        "respondpy.data.database_helpers._sort_transition_matrix",
-        fake_sort_transition_matrix,
     )
 
     out = sort_dataframes(lf, [(1, "b1")], [(1, "i1")]).collect()

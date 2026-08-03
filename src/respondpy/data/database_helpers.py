@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-08-03                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -33,7 +33,8 @@ def _normalize_state_pairs(
     ):
         return list(zip(values[0], values[1], strict=True))
 
-    raise ValueError("Invalid state mapping format. Expected list of (id, name) pairs.")
+    raise ValueError(
+        "Invalid state mapping format. Expected list of (id, name) pairs.")
 
 
 def _sort_state_vector(
@@ -120,24 +121,9 @@ def _sort_transition_matrix(
         "new_intervention",
         "new_behavior",
     }
-    legacy_required = {
-        "intervention",
-        "behavior",
-        "next_intervention",
-        "next_behavior",
-    }
 
     if canonical_required.issubset(cols):
         working = lf
-    elif legacy_required.issubset(cols):
-        working = lf.rename(
-            {
-                "intervention": "initial_intervention",
-                "behavior": "initial_behavior",
-                "next_intervention": "new_intervention",
-                "next_behavior": "new_behavior",
-            }
-        )
     else:
         raise ValueError(
             f"Invalid columns provided when attempting to sort transition matrix: {s}")
@@ -181,16 +167,6 @@ def _sort_transition_matrix(
         "initial_b_id",
     ])
 
-    # Preserve the original column order to avoid accidental schema drift.
-    if legacy_required.issubset(cols):
-        sorted_lf = sorted_lf.rename(
-            {
-                "initial_intervention": "intervention",
-                "initial_behavior": "behavior",
-                "new_intervention": "next_intervention",
-                "new_behavior": "next_behavior",
-            }
-        )
     return sorted_lf.select(s)
 
 
@@ -225,14 +201,6 @@ def sort_dataframes(
         "initial_behavior",
         "new_intervention",
         "new_behavior",
-    }.issubset(cols):
-        return _sort_transition_matrix(lf, behaviors, interventions)
-
-    if {
-        "intervention",
-        "behavior",
-        "next_intervention",
-        "next_behavior",
     }.issubset(cols):
         return _sort_transition_matrix(lf, behaviors, interventions)
 
