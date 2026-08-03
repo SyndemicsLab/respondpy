@@ -4,13 +4,37 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-17                                                    #
+# Last Modified: 2026-08-03                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 import polars as pl
+
+
+def _normalize_state_pairs(
+    values: list[tuple[int, str]] | list[list]
+) -> list[tuple[int, str]]:
+    """Normalize state id/name mappings to ``[(id, name), ...]`` format."""
+    if not values:
+        return []
+
+    first = values[0]
+    if isinstance(first, tuple) and len(first) == 2:
+        return values  # type: ignore[return-value]
+
+    # Legacy shape: [[id1, id2, ...], [name1, name2, ...]]
+    if (
+        len(values) == 2
+        and isinstance(values[0], list)
+        and isinstance(values[1], list)
+        and len(values[0]) == len(values[1])
+    ):
+        return list(zip(values[0], values[1], strict=True))
+
+    raise ValueError(
+        "Invalid state mapping format. Expected list of (id, name) pairs.")
 
 
 def _sort_state_vector(
@@ -43,18 +67,24 @@ def _sort_state_vector(
     if 'intervention' not in s or 'behavior' not in s:
         raise ValueError(
             f"Invalid columns provided when attempting to sort state vector: {s}")
+    behavior_pairs = _normalize_state_pairs(behaviors)
+    intervention_pairs = _normalize_state_pairs(interventions)
+
     behav = pl.LazyFrame(
-        behaviors, schema=["b_id", "b_name"], orient='row')
+        behavior_pairs, schema=["b_id", "b_name"], orient='row')
 
     inter = pl.LazyFrame(
-        interventions, schema=["i_id", "i_name"], orient='row')
+        intervention_pairs, schema=["i_id", "i_name"], orient='row')
 
-    # Sort first by behaviors, then by interventions
-    return lf.join(
+    # Sort by intervention id, then behavior id to match Input.get_state_names.
+    sorted_lf = lf.join(
         behav, left_on="behavior", right_on="b_name", how="inner"
     ).join(
         inter, left_on="intervention", right_on="i_name", how="inner"
     ).sort(["i_id", "b_id"]).drop(["i_id", "b_id"])
+
+    # Preserve the original column order to avoid accidental schema drift.
+    return sorted_lf.select(s)
 
 
 def _sort_transition_matrix(
@@ -83,27 +113,61 @@ def _sort_transition_matrix(
     ValueError
         If required transition columns are missing.
     """
-    if 'intervention' not in lf.columns or 'behavior' not in lf.columns or 'next_intervention' not in lf.columns or 'next_behavior' not in lf.columns:
-        raise ValueError(
-            f"Invalid columns provided when attempting to sort transition matrix: {lf.columns}")
-    behav = pl.LazyFrame(behaviors, schema=["b_id", "b_name"])
-    inter = pl.LazyFrame(interventions, schema=["i_id", "i_name"])
+    s = lf.collect_schema().names()
+    cols = set(s)
+    canonical_required = {
+        "initial_intervention",
+        "initial_behavior",
+        "new_intervention",
+        "new_behavior",
+    }
 
-    # Sort order:
-    #   1. Next Behavior
-    #   2. Next Behavior
-    #   3. Initial Behavior
-    #   4. Initial Intervention
-    #   e.g. [active_injection, no_treatment, active_injection, no_treatment], [active_injection, no_treatment, active_injection, buprenorphine], [active_injection, no_treatment, active_injection, methadone], etc.
-    return lf.drop("i_id").join(
-        behav, left_on="next_behavior", right_on="b_name", how="inner"
-    ).sort(pl.col("b_id")).drop("b_id").join(
-        inter, left_on="next_intervention", right_on="i_name", how="inner"
-    ).sort(pl.col("i_id")).drop("i_id").join(
-        behav, left_on="behavior", right_on="b_name", how="inner"
-    ).sort(pl.col("b_id")).drop("b_id").join(
-        inter, left_on="intervention", right_on="i_name", how="inner"
-    ).sort(pl.col("i_id"))
+    if canonical_required.issubset(cols):
+        working = lf
+    else:
+        raise ValueError(
+            f"Invalid columns provided when attempting to sort transition matrix: {s}")
+
+    behavior_pairs = _normalize_state_pairs(behaviors)
+    intervention_pairs = _normalize_state_pairs(interventions)
+
+    behav = pl.LazyFrame(
+        behavior_pairs, schema=["b_id", "b_name"], orient='row'
+    )
+    inter = pl.LazyFrame(
+        intervention_pairs, schema=["i_id", "i_name"], orient='row'
+    )
+
+    # Destination-major ordering guarantees column-stochastic matrices after
+    # reshape for y = Mx when source-state labels define columns.
+    sorted_lf = working.join(
+        inter.rename({"i_id": "new_i_id", "i_name": "new_i_name"}),
+        left_on="new_intervention",
+        right_on="new_i_name",
+        how="inner",
+    ).join(
+        behav.rename({"b_id": "new_b_id", "b_name": "new_b_name"}),
+        left_on="new_behavior",
+        right_on="new_b_name",
+        how="inner",
+    ).join(
+        inter.rename({"i_id": "initial_i_id", "i_name": "initial_i_name"}),
+        left_on="initial_intervention",
+        right_on="initial_i_name",
+        how="inner",
+    ).join(
+        behav.rename({"b_id": "initial_b_id", "b_name": "initial_b_name"}),
+        left_on="initial_behavior",
+        right_on="initial_b_name",
+        how="inner",
+    ).sort(["new_i_id", "new_b_id", "initial_i_id", "initial_b_id"]).drop([
+        "new_i_id",
+        "new_b_id",
+        "initial_i_id",
+        "initial_b_id",
+    ])
+
+    return sorted_lf.select(s)
 
 
 def sort_dataframes(
@@ -130,10 +194,19 @@ def sort_dataframes(
     polars.LazyFrame
         Sorted LazyFrame when shape is recognized, otherwise input.
     """
-    if len(lf.collect_schema().names()) == 3:
-        return _sort_state_vector(lf, behaviors, interventions)
-    if len(lf.collect_schema().names()) == 4:
+    cols = set(lf.collect_schema().names())
+
+    if {
+        "initial_intervention",
+        "initial_behavior",
+        "new_intervention",
+        "new_behavior",
+    }.issubset(cols):
         return _sort_transition_matrix(lf, behaviors, interventions)
+
+    if {"intervention", "behavior"}.issubset(cols):
+        return _sort_state_vector(lf, behaviors, interventions)
+
     return lf
 
 

@@ -360,8 +360,19 @@ class Input:
                 ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]
         )
 
-        if complete_state_vector or complete_transition:
-            return lf
+        if complete_state_vector:
+            return sort_dataframes(
+                lf,
+                self._get_single_state_table("behavior"),
+                self._get_single_state_table("intervention")
+            )
+
+        if complete_transition:
+            return sort_dataframes(
+                lf,
+                self._get_single_state_table("behavior"),
+                self._get_single_state_table("intervention")
+            )
 
         if param.is_state_vector_operation():
             value_col = param.get_value_column_name()
@@ -401,8 +412,8 @@ class Input:
 
         return sort_dataframes(
             res.lazy(),
-            self._get_single_state_table("intervention"),
-            self._get_single_state_table("behavior")
+            self._get_single_state_table("behavior"),
+            self._get_single_state_table("intervention")
         )
 
     # External Functions

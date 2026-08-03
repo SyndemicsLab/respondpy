@@ -427,7 +427,9 @@ def test_single_timestep_numerical_state_matches_expected(
     sim.run()
 
     final_state = sim.get_model(0).get_state()
-    expected_state = np.array([216.2933685, 0.0, 0.0, 210.24611685000002])
+    expected_state = np.array(
+        [105.36565049999999, 71.49283020000001, 61.394525775000005, 38.11650975]
+    )
 
     np.testing.assert_allclose(
         final_state, expected_state, rtol=1e-10, atol=1e-10)
@@ -448,8 +450,104 @@ def test_fifty_two_timestep_numerical_state_matches_expected(
 
     final_state = sim.get_model(0).get_state()
     expected_state = np.array(
-        [5.764271919791796e26, 0.0, 0.0, 5.6072656482224475e26]
+        [63.99771165143241, 28.195217933852412,
+            39.53089805842006, 19.00629313025105]
     )
 
     np.testing.assert_allclose(
         final_state, expected_state, rtol=1e-9, atol=1e-9)
+
+
+@pytest.mark.integration
+def test_behavior_and_intervention_matrices_are_column_stochastic(setup_data):
+    """Behavior and intervention matrices should be column-stochastic for y=Mx."""
+    db_path, config_path = setup_data
+    inp = rpy.data.Input(db_path=db_path, conf_path=config_path)
+    sim = rpy.build_simulation(inp)
+
+    timestep = sim[0].get_timestep_at_index(0)
+    transition_names = timestep.get_transition_names()
+
+    behavior_matrix = timestep[
+        transition_names.index("behavior")
+    ].get_matrices()[0]
+    intervention_matrix = timestep[
+        transition_names.index("intervention")
+    ].get_matrices()[0]
+
+    np.testing.assert_allclose(
+        behavior_matrix.sum(axis=0),
+        np.ones(behavior_matrix.shape[1]),
+        atol=1e-12,
+        rtol=0.0,
+    )
+    np.testing.assert_allclose(
+        intervention_matrix.sum(axis=0),
+        np.ones(intervention_matrix.shape[1]),
+        atol=1e-12,
+        rtol=0.0,
+    )
+
+
+@pytest.mark.integration
+def test_behavior_then_intervention_preserves_mass_one_step(setup_data):
+    """Applying behavior then intervention should preserve total mass."""
+    db_path, config_path = setup_data
+    inp = rpy.data.Input(db_path=db_path, conf_path=config_path)
+    sim = rpy.build_simulation(inp)
+
+    model = sim[0]
+    x0 = model.get_state()
+
+    timestep = model.get_timestep_at_index(0)
+    transition_names = timestep.get_transition_names()
+    behavior_matrix = timestep[
+        transition_names.index("behavior")
+    ].get_matrices()[0]
+    intervention_matrix = timestep[
+        transition_names.index("intervention")
+    ].get_matrices()[0]
+
+    x1 = behavior_matrix @ x0
+    x2 = intervention_matrix @ x1
+
+    np.testing.assert_allclose(
+        float(np.sum(x1)), float(np.sum(x0)), atol=1e-12, rtol=0.0
+    )
+    np.testing.assert_allclose(
+        float(np.sum(x2)), float(np.sum(x1)), atol=1e-12, rtol=0.0
+    )
+
+
+@pytest.mark.integration
+def test_transition_matrix_indices_match_state_name_order(setup_data):
+    """Matrix indices should map as M[destination_state, source_state]."""
+    db_path, config_path = setup_data
+    inp = rpy.data.Input(db_path=db_path, conf_path=config_path)
+
+    state_names = inp.get_state_names()
+    state_to_idx = {state: idx for idx, state in enumerate(state_names)}
+
+    for param_type in (
+        rpy.data.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
+        rpy.data.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+    ):
+        param = rpy.data.Parameter(param_type)
+        matrix = inp.select_parameter(param, cohort_id=1, time=1)
+
+        sample_id = inp._get_sample_id_for_parameter(param, cohort_id=1)
+        long_df = inp._get_parameter_filled(
+            param, sample_id=sample_id, time=1).collect()
+
+        for row in long_df.iter_rows(named=True):
+            src = (row["initial_intervention"], row["initial_behavior"])
+            dst = (row["new_intervention"], row["new_behavior"])
+            src_idx = state_to_idx[src]
+            dst_idx = state_to_idx[dst]
+
+            np.testing.assert_allclose(
+                matrix[dst_idx, src_idx],
+                row["probability"],
+                atol=1e-12,
+                rtol=0.0,
+            )
