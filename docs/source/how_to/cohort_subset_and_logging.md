@@ -44,6 +44,43 @@ simulation.run()
 print(len(simulation.get_model_names()))
 ```
 
+## Write Python logs to the same RESPOND log file
+
+```python
+from pathlib import Path
+
+import respondpy as rpy
+from respondpy.build import build_simulation
+from respondpy.data import Input
+
+input_data = Input(
+    path=Path("/path/to/respond-input"),
+    log_name="respond",
+    log_file="respond.log",
+)
+
+simulation = build_simulation(
+    input_data,
+    log_name="respond",
+    log_file="respond.log",
+)
+
+rpy.logging.log_info("respond", "Starting simulation run from Python")
+simulation.run()
+rpy.logging.log_info("respond", "Simulation run complete")
+rpy.logging.flush_all_loggers()
+```
+
+For concurrent logging to one file, use shared sink helpers before creating
+runtime objects:
+
+```python
+import respondpy as rpy
+
+rpy.logging.create_shared_file_sink("respond.log")
+rpy.logging.create_shared_logger("respond")
+```
+
 ## Fail fast on unknown cohorts
 
 ```python

@@ -15,6 +15,41 @@ RESPOND is a simulation model developed by the Syndemics Lab at Boston Medical C
 
 This tool makes use of the popular tool [Pybind11](https://pybind11.readthedocs.io/en/stable/index.html). From here, we expose bindings for users to connect to via Python.
 
+## Logging Across C++ and Python
+
+`respondpy` now exposes RESPOND logging through a top-level module,
+`respondpy.logging`, so Python and C++ can write to the same logger/file
+without reimplementing logging behavior.
+
+```python
+from pathlib import Path
+
+import respondpy as rpy
+from respondpy.data import Input
+
+base = Path("/path/to/respond-input")
+log_name = "respond"
+log_file = "respond.log"
+
+# Input can initialize the logger through the C++ backend.
+input_data = Input(path=base, log_name=log_name, log_file=log_file)
+
+# Python-side logging uses the same RESPOND logger backend.
+rpy.logging.log_info(log_name, "Loading input complete")
+rpy.logging.log_warning(log_name, "Using fallback parameter for cohort 3")
+rpy.logging.flush_all_loggers()
+```
+
+To support concurrent logging from multiple models/threads to one file, prefer
+the shared sink APIs exposed by the same module:
+
+```python
+import respondpy as rpy
+
+rpy.logging.create_shared_file_sink("respond.log")
+rpy.logging.create_shared_logger("respond")
+```
+
 ## Building and Installing
 
 The bindings are available on PyPI! They can be installed via `pip install respondpy`.

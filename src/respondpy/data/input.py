@@ -12,7 +12,7 @@
 
 import sqlite3
 from pathlib import Path
-from typing import Literal, Annotated
+from typing import Annotated, Literal
 from operator import itemgetter
 from configparser import ConfigParser
 
@@ -20,6 +20,7 @@ import numpy as np
 import numpy.typing as npt
 import polars as pl
 
+from .. import logging as rpy_logging
 from .database_helpers import sort_dataframes
 from .parameters import Parameter, ParameterType
 from .transition_matrices import build_constant_transition, update_retention_probability, combine_dataframes
@@ -40,7 +41,9 @@ class Input:
         db_name: str = "input.db",
         conf_name: str = "sim.conf",
         db_path: str | Path | None = None,
-        conf_path: str | Path | None = None
+        conf_path: str | Path | None = None,
+        log_name: str | None = "respond",
+        log_file: str | Path | None = None
     ) -> None:
         """Create an Input data source from a base path or explicit files.
 
@@ -56,6 +59,12 @@ class Input:
             Explicit database file path.
         conf_path : str or pathlib.Path, optional
             Explicit config file path.
+        log_name : str, optional
+            RESPOND logger name used for Python-side logging. Set to ``None`` to
+            disable logging from this Input instance.
+        log_file : str or pathlib.Path, optional
+            Optional logger output file. If provided, attempts to create the
+            logger through RESPOND's C++ logging backend.
 
         Raises
         ------
@@ -96,9 +105,19 @@ class Input:
         self.states: dict[str, list] = {}
         self.interventions: list[str] | None = None
         self.behaviors: list[str] | None = None
+        self._log_name = log_name
+        self._log_file = str(log_file) if log_file is not None else None
+
+        if self._log_name is not None and self._log_file is not None:
+            rpy_logging.create_file_logger(self._log_name, self._log_file)
 
     def __repr__(self) -> str:
         return f"Input(db_path={self._db_path}, conf_path={self._conf_path})"
+
+    @property
+    def log_name(self) -> str | None:
+        """Return the configured RESPOND logger name for this Input."""
+        return self._log_name
 
     @property
     def config(self) -> ConfigParser:
