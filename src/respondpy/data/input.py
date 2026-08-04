@@ -42,7 +42,7 @@ class Input:
         conf_name: str = "sim.conf",
         db_path: str | Path | None = None,
         conf_path: str | Path | None = None,
-        log_name: str | None = "respond",
+        log_name: str = "respond",
         log_file: str | Path | None = None
     ) -> None:
         """Create an Input data source from a base path or explicit files.
@@ -115,7 +115,7 @@ class Input:
         return f"Input(db_path={self._db_path}, conf_path={self._conf_path})"
 
     @property
-    def log_name(self) -> str | None:
+    def log_name(self) -> str:
         """Return the configured RESPOND logger name for this Input."""
         return self._log_name
 
@@ -141,9 +141,9 @@ class Input:
     def _connect_and_executemany(self, data: list[tuple], stmt: str) -> None:
         n_question_marks = stmt.count("?")
         if not self._check_valid_list(data, n_question_marks):
-            raise ValueError(
-                f"Data provided does not match the expected format for the SQL statement! Expected list of tuples with {n_question_marks} items each. Provided data: {data}"
-            )
+            msg = f"Data provided does not match the expected format for the SQL statement! Expected list of tuples with {n_question_marks} items each. Provided data: {data}"
+            rpy_logging.log_error(self.log_name, msg)
+            raise ValueError(msg)
         con = self._get_connection()
         cur = con.cursor()
         cur.executemany(stmt, data)
@@ -208,9 +208,9 @@ class Input:
         stmt = f"SELECT {col_name} FROM cohort WHERE id = ?"
         _, result = self._connect_and_fetchall(stmt, (str(cohort_id),))
         if len(result) == 0 or len(result[0]) == 0:
-            raise ValueError(
-                f"No sample ID found for parameter {param} and cohort ID {cohort_id}!"
-            )
+            msg = f"No sample ID found for parameter {param} and cohort ID {cohort_id}!"
+            rpy_logging.log_error(self.log_name, msg)
+            raise ValueError(msg)
         return result[0][0]
 
     def _select_parameter_raw(
@@ -233,13 +233,9 @@ class Input:
             cols, vals = self._connect_and_fetchall(
                 stmt, (str(sample_id), str(time)))
             if len(vals) == 0:
-
-                raise ValueError(
-                    "Missing time-varying parameter rows in database: "
-                    f"parameter={param.get_parameter_name()}, "
-                    f"sample_id={sample_id}, time={time}. "
-                    "Expected rows for this configured timestep but found none."
-                )
+                msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
+                rpy_logging.log_error(self.log_name, msg)
+                raise ValueError(msg)
             lzdf = pl.LazyFrame(
                 vals, schema=cols, orient='row'
             ).with_columns(
@@ -285,8 +281,9 @@ class Input:
             return lf.select(
                 pl.col(val_col_name)
             ).collect().to_numpy().reshape(n, n)
-        raise ValueError(
-            "Invalid parameter applied when attempting to extract parameters!")
+        msg = f"Invalid parameter applied when attempting to extract parameters! Parameter: {param}"
+        rpy_logging.log_error(self.log_name, msg)
+        raise ValueError(msg)
 
     def _zero_invalid_transitions(
         self,
@@ -423,9 +420,9 @@ class Input:
         init_col = param.get_initial_state_column_name()
         next_col = param.get_next_state_column_name()
         if init_col is None or next_col is None:
-            raise ValueError(
-                f"Parameter {param} is missing the initial or next state column names required for transition matrix operations!"
-            )
+            msg = f"Parameter {param} is missing the initial or next state column names required for transition matrix operations!"
+            rpy_logging.log_error(self.log_name, msg)
+            raise ValueError(msg)
 
         res = self._zero_invalid_transitions(param, res.collect())
 
