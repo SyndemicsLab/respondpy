@@ -34,6 +34,10 @@ class Input:
     and returns either raw rows or model-ready numpy arrays.
     """
 
+    # pylint: disable=too-many-instance-attributes
+    # Nine attributes are reasonable here: database connection, config parser,
+    # state cache, intervention list, behavior list, and logging attributes.
+
     def __init__(
         self,
         *,
