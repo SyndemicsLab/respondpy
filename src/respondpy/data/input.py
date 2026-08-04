@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-16                                                    #
+# Last Modified: 2026-08-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -88,7 +88,6 @@ class Input:
             raise FileNotFoundError(
                 f"Config file not found at {self._conf_path}!")
 
-        self._db_path = db_path
         self._connection = sqlite3.connect(str(self._db_path))
 
         self._config = ConfigParser()
@@ -214,6 +213,14 @@ class Input:
         else:
             cols, vals = self._connect_and_fetchall(
                 stmt, (str(sample_id), str(time)))
+            if len(vals) == 0:
+
+                raise ValueError(
+                    "Missing time-varying parameter rows in database: "
+                    f"parameter={param.get_parameter_name()}, "
+                    f"sample_id={sample_id}, time={time}. "
+                    "Expected rows for this configured timestep but found none."
+                )
             lzdf = pl.LazyFrame(
                 vals, schema=cols, orient='row'
             ).with_columns(

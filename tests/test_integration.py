@@ -4,7 +4,7 @@
 # Created Date: 2026-06-29                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-16                                                    #
+# Last Modified: 2026-08-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -42,15 +42,15 @@ def setup_config(tmp_path_factory):
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
     cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '52',
+        'duration': '1',
+        'parameter_change_times': '1',
         'stratify_entering_cohort': 'false'
     }
 
     cfg['output'] = {
         'build_summary_stats': 'true',
         'save_state_history': 'true',
-        'timesteps_to_report': '52',
+        'timesteps_to_report': '1',
     }
 
     with mem_str.open('w') as configfile:
@@ -363,21 +363,21 @@ VALUES
 def setup_config_one_executed_timestep(tmp_path_factory):
     """Config for exactly one executed timestep.
 
-    RESPOND records timestep 0 as the initial state, so duration 2 runs one
+    RESPOND records timestep 0 as the initial state, so duration 1 runs one
     transition step.
     """
     temp_dir = tmp_path_factory.mktemp("test-data")
     config_path = temp_dir / "sim_one_step.conf"
     cfg = ConfigParser()
     cfg['simulation'] = {
-        'duration': '2',
-        'parameter_change_times': '2',
+        'duration': '1',
+        'parameter_change_times': '1',
         'stratify_entering_cohort': 'false',
     }
     cfg['output'] = {
         'build_summary_stats': 'true',
         'save_state_history': 'true',
-        'timesteps_to_report': '2',
+        'timesteps_to_report': '1',
     }
 
     with config_path.open('w') as configfile:
@@ -390,21 +390,21 @@ def setup_config_one_executed_timestep(tmp_path_factory):
 def setup_config_fifty_two_executed_timesteps(tmp_path_factory):
     """Config for exactly fifty-two executed timesteps.
 
-    RESPOND records timestep 0 as the initial state, so duration 53 runs
+    RESPOND records timestep 0 as the initial state, so duration 52 runs
     fifty-two transition steps.
     """
     temp_dir = tmp_path_factory.mktemp("test-data")
     config_path = temp_dir / "sim_52_steps.conf"
     cfg = ConfigParser()
     cfg['simulation'] = {
-        'duration': '53',
-        'parameter_change_times': '53',
+        'duration': '52',
+        'parameter_change_times': '1',
         'stratify_entering_cohort': 'false',
     }
     cfg['output'] = {
         'build_summary_stats': 'true',
         'save_state_history': 'true',
-        'timesteps_to_report': '53',
+        'timesteps_to_report': '52',
     }
 
     with config_path.open('w') as configfile:

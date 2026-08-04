@@ -44,15 +44,15 @@ def setup_config(tmp_path_factory):
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
     cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '52',
+        'duration': '1',
+        'parameter_change_times': '1',
         'stratify_entering_cohort': 'false'
     }
 
     cfg['output'] = {
         'build_summary_stats': 'true',
         'save_state_history': 'true',
-        'timesteps_to_report': '52',
+        'timesteps_to_report': '1',
     }
 
     with mem_str.open('w') as configfile:
@@ -75,6 +75,29 @@ def setup_data(setup_db, setup_config):
     yield setup_db, setup_config
 
 
+@pytest.fixture
+def setup_config_missing_change_time(tmp_path_factory):
+    temp_dir = tmp_path_factory.mktemp("test-data")
+    mem_str = temp_dir / "sim_missing_change_time.conf"
+    cfg = ConfigParser()
+    cfg['simulation'] = {
+        'duration': '52',
+        'parameter_change_times': '52',
+        'stratify_entering_cohort': 'false'
+    }
+
+    cfg['output'] = {
+        'build_summary_stats': 'true',
+        'save_state_history': 'true',
+        'timesteps_to_report': '52',
+    }
+
+    with mem_str.open('w') as configfile:
+        cfg.write(configfile)
+
+    yield mem_str
+
+
 @pytest.mark.unit
 def test_build_model(setup_data) -> None:
     db, cfg = setup_data
@@ -82,6 +105,20 @@ def test_build_model(setup_data) -> None:
     sim = rpy.build_simulation(inp, cohort_ids=[1])
     m = sim.get_model(0)
     assert isinstance(m, rpy.Model)
+
+
+@pytest.mark.unit
+def test_build_model_raises_when_change_time_rows_missing(
+    setup_db,
+    setup_config_missing_change_time,
+) -> None:
+    inp = rpy.data.Input(db_path=setup_db, conf_path=setup_config_missing_change_time)
+
+    with pytest.raises(
+        ValueError,
+        match=r"Missing time-varying parameter rows in database: .*time=52",
+    ):
+        rpy.build_simulation(inp, cohort_ids=[1])
 
 
 @pytest.mark.unit
