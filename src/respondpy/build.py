@@ -4,7 +4,7 @@
 # Created Date: 2026-07-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-29                                                    #
+# Last Modified: 2026-08-04                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -117,7 +117,7 @@ def build_model(
     duration = int(input_data.config.get("simulation", "duration"))
     schedule_times = [1, *change_times]
 
-    for model_timestep in range(1, duration):
+    for model_timestep in range(1, duration+1):
         parameter_time = max(t for t in schedule_times if t <= model_timestep)
         model.add_timestep(build_timestep(
             input_data,

@@ -11,6 +11,7 @@
 ################################################################################
 
 import sqlite3
+import uuid
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -18,6 +19,7 @@ import pytest
 import numpy as np
 import polars as pl
 
+import respondpy as rpy
 import respondpy.data as rpydata
 
 
@@ -368,3 +370,25 @@ def test_insert_parameter_adds_sample_row(input_data):
 
     sample_ids = input_data._get_sample_ids_by_table("initial_population")
     assert 2 in sample_ids
+
+
+@pytest.mark.unit
+def test_input_logging_writes_to_backend_file(setup_data) -> None:
+    db_path, config_path = setup_data
+    log_file = Path(db_path).parent / "respond-input.log"
+    logger_name = f"respond-input-{uuid.uuid4()}"
+
+    input_data = rpydata.Input(
+        db_path=db_path,
+        conf_path=config_path,
+        log_name=logger_name,
+        log_file=log_file,
+    )
+    rpy.logging.log_info(logger_name, "python-input-info-message")
+    rpy.logging.log_warning(logger_name, "python-input-warning-message")
+    rpy.logging.flush_all_loggers()
+    assert log_file.exists()
+
+    contents = log_file.read_text()
+    assert "python-input-info-message" in contents
+    assert "python-input-warning-message" in contents

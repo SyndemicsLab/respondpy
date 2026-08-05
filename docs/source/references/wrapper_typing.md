@@ -12,6 +12,7 @@ For stepwise onboarding exercises, use [Tutorials](../tutorials/base_respond.md)
 :maxdepth: 1
 
 package
+logging
 data
 build
 cost_effectiveness
