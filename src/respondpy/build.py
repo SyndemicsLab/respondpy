@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Sequence
 
 from .data import Input, Parameter, ParameterType, validate_time_list
@@ -116,16 +117,19 @@ def build_model(
 
     duration = int(input_data.config.get("simulation", "duration"))
     schedule_times = [1, *change_times]
+    timestep_templates: dict[int, Timestep] = {}
 
     for model_timestep in range(1, duration+1):
         parameter_time = max(t for t in schedule_times if t <= model_timestep)
-        model.add_timestep(build_timestep(
-            input_data,
-            cohort_id,
-            parameter_time,
-            log_name=log_name,
-            log_file=log_file,
-        ))
+        if parameter_time not in timestep_templates:
+            timestep_templates[parameter_time] = build_timestep(
+                input_data,
+                cohort_id,
+                parameter_time,
+                log_name=log_name,
+                log_file=log_file,
+            )
+        model.add_timestep(copy.copy(timestep_templates[parameter_time]))
     return model
 
 

@@ -232,31 +232,35 @@ class Input:
         sample_id: int = 1,
         time: int = 1
     ) -> pl.LazyFrame:
+        cols, vals = self._select_parameter_rows(param, sample_id, time)
+        lzdf = pl.LazyFrame(vals, schema=cols, orient='row')
+        if param.is_time_varying():
+            lzdf = lzdf.with_columns(sample=sample_id, time=time)
+        else:
+            lzdf = lzdf.with_columns(sample=sample_id)
+        return lzdf
+
+    def _select_parameter_rows(
+        self,
+        param: Parameter,
+        sample_id: int = 1,
+        time: int = 1
+    ) -> tuple[list[str], list[tuple]]:
         stmt = param.get_select_statement(
             self.get_interventions(),
             self.get_behaviors()
         )
         if not param.is_time_varying():
-            cols, vals = self._connect_and_fetchall(
+            return self._connect_and_fetchall(
                 stmt, (str(sample_id),))
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(sample=sample_id)
-        else:
-            cols, vals = self._connect_and_fetchall(
-                stmt, (str(sample_id), str(time)))
-            if len(vals) == 0:
-                msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
-                rpy_logging.log_error(self.log_name, msg)
-                raise ValueError(msg)
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(
-                sample=sample_id,
-                time=time
-            )
 
-        return lzdf
+        cols, vals = self._connect_and_fetchall(
+            stmt, (str(sample_id), str(time)))
+        if len(vals) == 0:
+            msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
+            rpy_logging.log_error(self.log_name, msg)
+            raise ValueError(msg)
+        return cols, vals
 
     def _extract_values(
         self,
@@ -349,7 +353,8 @@ class Input:
         self,
         param: Parameter,
         sample_id: int = 1,
-        time: int = 1
+        time: int = 1,
+        lf: pl.LazyFrame | None = None,
     ) -> pl.LazyFrame:
         """Return a complete parameter table with missing rows backfilled.
 
@@ -376,7 +381,8 @@ class Input:
         ValueError
             If required transition state columns are missing.
         """
-        lf = self._select_parameter_raw(param, sample_id, time)
+        if lf is None:
+            lf = self._select_parameter_raw(param, sample_id, time)
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
             lf = lf.rename({"behavior": "initial_behavior"})
         elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
@@ -561,9 +567,35 @@ class Input:
                 param, sample_id, time).collect().to_numpy()
             return result
 
+        cols, vals = self._select_parameter_rows(param, sample_id, time)
+        n_interventions = len(self.get_interventions())
+        n_behaviors = len(self.get_behaviors())
+        n_states = n_interventions * n_behaviors
+        expected_rows = (
+            n_states
+            if param.is_state_vector_operation()
+            else n_states * n_states
+        )
+        if len(vals) == expected_rows:
+            value_index = cols.index(param.get_value_column_name())
+            result = np.asarray(
+                [row[value_index] for row in vals], dtype=np.float64
+            )
+            shape = (n_states, 1) if param.is_state_vector_operation() else (
+                n_states, n_states
+            )
+            result = result.reshape(shape)
+            self._parameter_cache[cache_key] = result.copy()
+            return result.copy()
+
+        lf = pl.LazyFrame(vals, schema=cols, orient='row')
+        if param.is_time_varying():
+            lf = lf.with_columns(sample=sample_id, time=time)
+        else:
+            lf = lf.with_columns(sample=sample_id)
         result = self._extract_values(
             param,
-            self._get_parameter_filled(param, sample_id, time),
+            self._get_parameter_filled(param, sample_id, time, lf=lf),
             n=len(self.get_state_names())
         )
         self._parameter_cache[cache_key] = result.copy()
