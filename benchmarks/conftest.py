@@ -159,53 +159,188 @@ CREATE TABLE "cohort_demographics" (
 );
 """
 
-_SEED_DATA = """
-INSERT INTO cohort (id, description, background_mortality_sample, behavior_transition_sample, initial_population_sample, intervention_transition_sample, overdose_sample, overdose_fatality_sample, population_change_sample, smr_sample)
-    VALUES (1, "Benchmark Cohort", 1, 1, 1, 1, 1, 1, 1, 1);
 
-INSERT INTO intervention (id, name)
-    VALUES (1, "no_treatment"), (2, "early_buprenorphine"), (3, "buprenorphine"), (4, "post_buprenorphine");
+def _seed_benchmark_database(conn: sqlite3.Connection) -> None:
+    """Seed a valid benchmark database across timesteps 1..52.
 
-INSERT INTO behavior (id, name)
-    VALUES (1, "active_injection"), (2, "nonactive_injection");
+    The benchmark is intentionally generated programmatically so that
+    time-varying rows exist for multiple parameter-change schedules without
+    requiring a huge static SQL file.
+    """
+    cursor = conn.cursor()
 
-INSERT INTO initial_population (sample, intervention, behavior, count)
-    VALUES (1,1,1,100),(1,1,2,150),(1,2,1,200),(1,2,2,250),(1,3,1,0),(1,3,2,0),(1,4,1,0),(1,4,2,0);
+    cursor.execute(
+        """
+        INSERT INTO cohort (
+            id, description, background_mortality_sample,
+            behavior_transition_sample, initial_population_sample,
+            intervention_transition_sample, overdose_sample,
+            overdose_fatality_sample, population_change_sample, smr_sample
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (1, "Benchmark Cohort", 1, 1, 1, 1, 1, 1, 1, 1),
+    )
 
-INSERT INTO population_change (sample, intervention, behavior, time, count)
-    VALUES (1,1,1,1,100),(1,1,2,1,150),(1,2,1,1,200),(1,2,2,1,250),(1,3,1,1,0),(1,3,2,1,0),(1,4,1,1,0),(1,4,2,1,0);
+    cursor.executemany(
+        "INSERT INTO intervention (id, name) VALUES (?, ?)",
+        [
+            (1, "no_treatment"),
+            (2, "early_buprenorphine"),
+            (3, "buprenorphine"),
+            (4, "post_buprenorphine"),
+        ],
+    )
+    cursor.executemany(
+        "INSERT INTO behavior (id, name) VALUES (?, ?)",
+        [
+            (1, "active_injection"),
+            (2, "nonactive_injection"),
+        ],
+    )
+    cursor.executemany(
+        "INSERT INTO initial_population (sample, intervention, behavior, count) VALUES (?, ?, ?, ?)",
+        [
+            (1, 1, 1, 100),
+            (1, 1, 2, 150),
+            (1, 2, 1, 200),
+            (1, 2, 2, 250),
+            (1, 3, 1, 0),
+            (1, 3, 2, 0),
+            (1, 4, 1, 0),
+            (1, 4, 2, 0),
+        ],
+    )
 
-INSERT INTO intervention_transition (sample, behavior, time, initial_intervention, new_intervention, probability)
-    VALUES (1,1,1,1,1,0.8),(1,2,1,1,1,0.7),(1,1,1,1,2,0.2),(1,2,1,1,2,0.3),
-           (1,1,1,1,3,0.0),(1,2,1,1,3,0.0),(1,1,1,1,4,0.0),(1,2,1,1,4,0.0),
-           (1,1,1,2,1,0.0),(1,2,1,2,1,0.0),(1,1,1,2,2,0.7),(1,2,1,2,2,0.6),
-           (1,1,1,2,3,0.2),(1,2,1,2,3,0.1),(1,1,1,2,4,0.1),(1,2,1,2,4,0.3),
-           (1,1,1,3,1,0.0),(1,2,1,3,1,0.0),(1,1,1,3,2,0.0),(1,2,1,3,2,0.0),
-           (1,1,1,3,3,0.8),(1,2,1,3,3,0.8),(1,1,1,3,4,0.2),(1,2,1,3,4,0.2),
-           (1,1,1,4,1,0.8),(1,2,1,4,1,0.8),(1,1,1,4,2,0.0),(1,2,1,4,2,0.0),
-           (1,1,1,4,3,0.0),(1,2,1,4,3,0.0),(1,1,1,4,4,0.2),(1,2,1,4,4,0.2);
+    behavior_transition_rows = []
+    intervention_transition_rows = []
+    population_change_rows = []
+    smr_rows = []
+    background_mortality_rows = []
+    overdose_rows = []
+    overdose_fatality_rows = []
 
-INSERT INTO behavior_transition (sample, intervention, time, initial_behavior, new_behavior, probability)
-    VALUES (1,1,1,1,1,0.8),(1,1,1,1,2,0.2),(1,1,1,2,1,0.1),(1,1,1,2,2,0.9),
-           (1,2,1,1,1,0.9),(1,2,1,1,2,0.1),(1,2,1,2,1,0.7),(1,2,1,2,2,0.3),
-           (1,3,1,1,1,0.3),(1,3,1,1,2,0.7),(1,3,1,2,1,0.4),(1,3,1,2,2,0.6),
-           (1,4,1,1,1,0.3),(1,4,1,1,2,0.7),(1,4,1,2,1,0.2),(1,4,1,2,2,0.8);
+    for t in range(1, 53):
+        population_change_rows.extend([
+            (1, 1, 1, t, 100),
+            (1, 1, 2, t, 150),
+            (1, 2, 1, t, 200),
+            (1, 2, 2, t, 250),
+            (1, 3, 1, t, 0),
+            (1, 3, 2, t, 0),
+            (1, 4, 1, t, 0),
+            (1, 4, 2, t, 0),
+        ])
 
-INSERT INTO smr (sample, intervention, behavior, time, ratio)
-    VALUES (1,1,1,1,2.0),(1,1,2,1,2.1),(1,2,1,1,2.0),(1,2,2,1,2.1),
-           (1,3,1,1,2.0),(1,3,2,1,2.1),(1,4,1,1,2.0),(1,4,2,1,2.1);
+        background_mortality_rows.append((1, t, 0.25))
 
-INSERT INTO background_mortality (sample, time, probability)
-    VALUES (1,1,0.25);
+        smr_rows.extend([
+            (1, 1, 1, t, 2.0),
+            (1, 1, 2, t, 2.1),
+            (1, 2, 1, t, 2.0),
+            (1, 2, 2, t, 2.1),
+            (1, 3, 1, t, 2.0),
+            (1, 3, 2, t, 2.1),
+            (1, 4, 1, t, 2.0),
+            (1, 4, 2, t, 2.1),
+        ])
 
-INSERT INTO overdose (sample, intervention, behavior, time, probability)
-    VALUES (1,1,1,1,0.8),(1,1,2,1,0.7),(1,2,1,1,0.8),(1,2,2,1,0.7),
-           (1,3,1,1,0.8),(1,3,2,1,0.7),(1,4,1,1,0.8),(1,4,2,1,0.7);
+        overdose_rows.extend([
+            (1, 1, 1, t, 0.8),
+            (1, 1, 2, t, 0.7),
+            (1, 2, 1, t, 0.8),
+            (1, 2, 2, t, 0.7),
+            (1, 3, 1, t, 0.8),
+            (1, 3, 2, t, 0.7),
+            (1, 4, 1, t, 0.8),
+            (1, 4, 2, t, 0.7),
+        ])
 
-INSERT INTO overdose_fatality (sample, intervention, behavior, time, probability)
-    VALUES (1,1,1,1,0.1),(1,1,2,1,0.2),(1,2,1,1,0.1),(1,2,2,1,0.2),
-           (1,3,1,1,0.1),(1,3,2,1,0.2),(1,4,1,1,0.1),(1,4,2,1,0.2);
-"""
+        overdose_fatality_rows.extend([
+            (1, 1, 1, t, 0.1),
+            (1, 1, 2, t, 0.2),
+            (1, 2, 1, t, 0.1),
+            (1, 2, 2, t, 0.2),
+            (1, 3, 1, t, 0.1),
+            (1, 3, 2, t, 0.2),
+            (1, 4, 1, t, 0.1),
+            (1, 4, 2, t, 0.2),
+        ])
+
+        for intervention in range(1, 5):
+            for initial_behavior in (1, 2):
+                for new_behavior in (1, 2):
+                    behavior_transition_rows.append(
+                        (
+                            1,
+                            intervention,
+                            t,
+                            initial_behavior,
+                            new_behavior,
+                            {
+                                1: {(1, 1): 0.8, (1, 2): 0.2, (2, 1): 0.1, (2, 2): 0.9},
+                                2: {(1, 1): 0.9, (1, 2): 0.1, (2, 1): 0.7, (2, 2): 0.3},
+                                3: {(1, 1): 0.3, (1, 2): 0.7, (2, 1): 0.4, (2, 2): 0.6},
+                                4: {(1, 1): 0.3, (1, 2): 0.7, (2, 1): 0.2, (2, 2): 0.8},
+                            }[intervention][(initial_behavior, new_behavior)],
+                        )
+                    )
+
+        for behavior in (1, 2):
+            for initial_intervention in range(1, 5):
+                for new_intervention in range(1, 5):
+                    intervention_transition_rows.append(
+                        (
+                            1,
+                            behavior,
+                            t,
+                            initial_intervention,
+                            new_intervention,
+                            {
+                                1: {
+                                    (1, 1): 0.8, (1, 2): 0.2, (1, 3): 0.0, (1, 4): 0.0,
+                                    (2, 1): 0.0, (2, 2): 0.7, (2, 3): 0.2, (2, 4): 0.1,
+                                    (3, 1): 0.0, (3, 2): 0.0, (3, 3): 0.8, (3, 4): 0.2,
+                                    (4, 1): 0.8, (4, 2): 0.0, (4, 3): 0.0, (4, 4): 0.2,
+                                },
+                                2: {
+                                    (1, 1): 0.7, (1, 2): 0.3, (1, 3): 0.0, (1, 4): 0.0,
+                                    (2, 1): 0.0, (2, 2): 0.6, (2, 3): 0.1, (2, 4): 0.3,
+                                    (3, 1): 0.0, (3, 2): 0.0, (3, 3): 0.8, (3, 4): 0.2,
+                                    (4, 1): 0.8, (4, 2): 0.0, (4, 3): 0.0, (4, 4): 0.2,
+                                },
+                            }[behavior][(initial_intervention, new_intervention)],
+                        )
+                    )
+
+    cursor.executemany(
+        "INSERT INTO population_change (sample, intervention, behavior, time, count) VALUES (?, ?, ?, ?, ?)",
+        population_change_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO intervention_transition (sample, behavior, time, initial_intervention, new_intervention, probability) VALUES (?, ?, ?, ?, ?, ?)",
+        intervention_transition_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO behavior_transition (sample, intervention, time, initial_behavior, new_behavior, probability) VALUES (?, ?, ?, ?, ?, ?)",
+        behavior_transition_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO smr (sample, intervention, behavior, time, ratio) VALUES (?, ?, ?, ?, ?)",
+        smr_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO background_mortality (sample, time, probability) VALUES (?, ?, ?)",
+        background_mortality_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO overdose (sample, intervention, behavior, time, probability) VALUES (?, ?, ?, ?, ?)",
+        overdose_rows,
+    )
+    cursor.executemany(
+        "INSERT INTO overdose_fatality (sample, intervention, behavior, time, probability) VALUES (?, ?, ?, ?, ?)",
+        overdose_fatality_rows,
+    )
+    conn.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -219,8 +354,7 @@ def benchmark_db(tmp_path_factory) -> Path:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.executescript(_DB_SCHEMA)
-    cursor.executescript(_SEED_DATA)
-    conn.commit()
+    _seed_benchmark_database(conn)
     conn.close()
     return db_path
 
@@ -232,7 +366,7 @@ def benchmark_config(tmp_path_factory) -> str:
     cfg = ConfigParser()
     cfg["simulation"] = {
         "duration": "52",
-        "parameter_change_times": "52",
+        "parameter_change_times": "1",
         "stratify_entering_cohort": "false",
     }
     cfg["output"] = {

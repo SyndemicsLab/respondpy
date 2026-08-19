@@ -40,19 +40,21 @@ from respondpy.data import Input
 
 
 def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
-    """Write each model's densified state histories to a separate CSV file.
+    """Write each model's recorded state histories to a separate CSV file.
 
     Output format per file:
         history_name, timestep, state_0, state_1, ..., state_n
 
     Files are named ``<model_name>_histories.csv`` and written to *out_dir*.
     """
-    all_model_histories = sim.get_model_histories()
-    for model_name, model_history in all_model_histories.items():
+    for model_idx, model_name in enumerate(sim.get_model_names()):
+        model_history = sim.get_model_history(model_idx)
         rows: list[dict] = []
-        for hist_name, state_vectors in model_history.items():
-            for t, vec in enumerate(state_vectors):
-                row = {"history_name": hist_name, "timestep": t}
+        for hist_name, history in model_history.items():
+            state_map = history.get_state_map()
+            for timestep in history.get_recorded_timesteps():
+                vec = state_map[timestep]
+                row = {"history_name": hist_name, "timestep": int(timestep)}
                 row.update({f"state_{i}": float(v) for i, v in enumerate(vec)})
                 rows.append(row)
         if rows:
@@ -68,14 +70,16 @@ def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
 def test_bench_load_data(benchmark, benchmark_db, benchmark_config):
     """Benchmark SQLite data loading and Simulation construction.
 
-    Measures the time to call build_simulation() from scratch on each round,
-    including all database reads and model/transition setup.
+    Each round builds a fresh Input instance so the measurement captures the
+    cold load path rather than reusing cached parameter arrays or sample ids.
     """
-    input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+
+    def _build_from_scratch():
+        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+        return build_simulation(input_data, cohort_ids=[1])
 
     benchmark.pedantic(
-        build_simulation,
-        kwargs={'input_data': input_data, 'cohort_ids': [1]},
+        _build_from_scratch,
         rounds=10,
         iterations=1,
     )

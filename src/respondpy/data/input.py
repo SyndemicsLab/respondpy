@@ -109,6 +109,8 @@ class Input:
         self.states: dict[str, list] = {}
         self.interventions: list[str] | None = None
         self.behaviors: list[str] | None = None
+        self._sample_id_cache: dict[tuple[ParameterType, int], int] = {}
+        self._parameter_cache: dict[tuple[ParameterType, int, int], np.ndarray] = {}
         self._log_name = log_name
         self._log_file = str(log_file) if log_file is not None else None
 
@@ -208,6 +210,10 @@ class Input:
             param: Parameter,
             cohort_id: int = 1
     ) -> int:
+        cache_key = (param.get_parameter_type(), cohort_id)
+        if cache_key in self._sample_id_cache:
+            return self._sample_id_cache[cache_key]
+
         col_name = param.get_cohort_column_name()
         stmt = f"SELECT {col_name} FROM cohort WHERE id = ?"
         _, result = self._connect_and_fetchall(stmt, (str(cohort_id),))
@@ -215,7 +221,10 @@ class Input:
             msg = f"No sample ID found for parameter {param} and cohort ID {cohort_id}!"
             rpy_logging.log_error(self.log_name, msg)
             raise ValueError(msg)
-        return result[0][0]
+
+        sample_id = result[0][0]
+        self._sample_id_cache[cache_key] = sample_id
+        return sample_id
 
     def _select_parameter_raw(
         self,
@@ -388,18 +397,10 @@ class Input:
         )
 
         if complete_state_vector:
-            return sort_dataframes(
-                lf,
-                self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
-            )
+            return lf
 
         if complete_transition:
-            return sort_dataframes(
-                lf,
-                self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
-            )
+            return lf
 
         if param.is_state_vector_operation():
             value_col = param.get_value_column_name()
@@ -549,16 +550,24 @@ class Input:
         numpy.ndarray
             Raw rows or model-ready shaped numpy array.
         """
-        sample_id = self._get_sample_id_for_parameter(param, cohort_id)
-        if raw:
-            return self._select_parameter_raw(
-                param, sample_id, time).collect().to_numpy()
+        cache_key = (param.get_parameter_type(), cohort_id, time)
+        if not raw and cache_key in self._parameter_cache:
+            return self._parameter_cache[cache_key].copy()
 
-        return self._extract_values(
+        sample_id = self._get_sample_id_for_parameter(param, cohort_id)
+
+        if raw:
+            result = self._select_parameter_raw(
+                param, sample_id, time).collect().to_numpy()
+            return result
+
+        result = self._extract_values(
             param,
             self._get_parameter_filled(param, sample_id, time),
             n=len(self.get_state_names())
         )
+        self._parameter_cache[cache_key] = result.copy()
+        return result.copy()
 
     def insert_parameter(
         self,
@@ -574,4 +583,5 @@ class Input:
         data : list
             Row tuples matching ``param`` insert statement order.
         """
-        return self._connect_and_executemany(data, param.get_insert_statement())
+        self._connect_and_executemany(data, param.get_insert_statement())
+        self._parameter_cache.clear()
