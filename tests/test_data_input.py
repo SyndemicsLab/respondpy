@@ -182,6 +182,63 @@ def test_get_cohort_ids(input_data):
 
 
 @pytest.mark.unit
+def test_select_parameter_is_cached(input_data):
+    param = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+
+    original_sample_lookup = input_data._get_sample_id_for_parameter
+    original_parameter_rows = input_data._select_parameter_rows
+    calls = {"sample_lookup": 0, "parameter_fill": 0}
+
+    def counting_sample_lookup(param_obj, cohort_id=1):
+        calls["sample_lookup"] += 1
+        return original_sample_lookup(param_obj, cohort_id)
+
+    def counting_parameter_rows(param_obj, sample_id=1, time=1):
+        calls["parameter_fill"] += 1
+        return original_parameter_rows(param_obj, sample_id, time)
+
+    input_data._get_sample_id_for_parameter = counting_sample_lookup
+    input_data._select_parameter_rows = counting_parameter_rows
+
+    first = input_data.select_parameter(param, cohort_id=1, time=1)
+    second = input_data.select_parameter(param, cohort_id=1, time=1)
+
+    assert isinstance(first, np.ndarray)
+    assert np.array_equal(first, second)
+    assert calls["sample_lookup"] == 1
+    assert calls["parameter_fill"] == 1
+
+
+@pytest.mark.unit
+def test_complete_parameter_avoids_sort(input_data, monkeypatch):
+    param = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+    sample_id = input_data._get_sample_id_for_parameter(param, cohort_id=1)
+
+    def fail_sort(*args, **kwargs):
+        raise AssertionError("complete parameter tables should bypass sort_dataframes")
+
+    monkeypatch.setattr("respondpy.data.input.sort_dataframes", fail_sort)
+
+    lf = input_data._get_parameter_filled(param, sample_id=sample_id, time=1)
+    assert isinstance(lf, pl.LazyFrame)
+    assert lf.select(pl.len()).collect().item() == len(input_data.get_interventions()) * len(input_data.get_behaviors())
+
+
+@pytest.mark.unit
+def test_complete_parameter_uses_direct_numpy_path(input_data, monkeypatch):
+    param = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+
+    def fail_fill(*args, **kwargs):
+        raise AssertionError("complete parameter tables should bypass Polars filling")
+
+    monkeypatch.setattr(input_data, "_get_parameter_filled", fail_fill)
+
+    result = input_data.select_parameter(param, cohort_id=1, time=1)
+
+    assert result.shape == (len(input_data.get_state_names()), 1)
+
+
+@pytest.mark.unit
 def test_select_parameter_intervention(input_data):
     param = rpydata.Parameter(
         rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)
@@ -366,10 +423,14 @@ def test_insert_cohorts_adds_new_row(input_data):
 @pytest.mark.unit
 def test_insert_parameter_adds_sample_row(input_data):
     parameter = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+    input_data.select_parameter(parameter, cohort_id=1)
+    assert input_data._parameter_cache
+
     input_data.insert_parameter(parameter, [(2, 1, 1, 42.0)])
 
     sample_ids = input_data._get_sample_ids_by_table("initial_population")
     assert 2 in sample_ids
+    assert not input_data._parameter_cache
 
 
 @pytest.mark.unit

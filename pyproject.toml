@@ -110,7 +110,7 @@ explicit = true
 
 [tool.pytest]
 minversion = "9.0"
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
 addopts = [
     "-ra",
     "--strict",
@@ -211,7 +211,7 @@ ignore = [
 ]
 typing-modules = ["respondpy._core"]
 isort.required-imports = ["from __future__ import annotations"]
-exclude = ["tests/*"]
+exclude = ["tests/*", "benchmarks/*", "docs/*"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 13

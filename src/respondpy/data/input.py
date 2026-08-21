@@ -109,6 +109,8 @@ class Input:
         self.states: dict[str, list] = {}
         self.interventions: list[str] | None = None
         self.behaviors: list[str] | None = None
+        self._sample_id_cache: dict[tuple[ParameterType, int], int] = {}
+        self._parameter_cache: dict[tuple[ParameterType, int, int], np.ndarray] = {}
         self._log_name = log_name
         self._log_file = str(log_file) if log_file is not None else None
 
@@ -208,6 +210,10 @@ class Input:
             param: Parameter,
             cohort_id: int = 1
     ) -> int:
+        cache_key = (param.get_parameter_type(), cohort_id)
+        if cache_key in self._sample_id_cache:
+            return self._sample_id_cache[cache_key]
+
         col_name = param.get_cohort_column_name()
         stmt = f"SELECT {col_name} FROM cohort WHERE id = ?"
         _, result = self._connect_and_fetchall(stmt, (str(cohort_id),))
@@ -215,7 +221,10 @@ class Input:
             msg = f"No sample ID found for parameter {param} and cohort ID {cohort_id}!"
             rpy_logging.log_error(self.log_name, msg)
             raise ValueError(msg)
-        return result[0][0]
+
+        sample_id = result[0][0]
+        self._sample_id_cache[cache_key] = sample_id
+        return sample_id
 
     def _select_parameter_raw(
         self,
@@ -223,31 +232,35 @@ class Input:
         sample_id: int = 1,
         time: int = 1
     ) -> pl.LazyFrame:
+        cols, vals = self._select_parameter_rows(param, sample_id, time)
+        lzdf = pl.LazyFrame(vals, schema=cols, orient='row')
+        if param.is_time_varying():
+            lzdf = lzdf.with_columns(sample=sample_id, time=time)
+        else:
+            lzdf = lzdf.with_columns(sample=sample_id)
+        return lzdf
+
+    def _select_parameter_rows(
+        self,
+        param: Parameter,
+        sample_id: int = 1,
+        time: int = 1
+    ) -> tuple[list[str], list[tuple]]:
         stmt = param.get_select_statement(
             self.get_interventions(),
             self.get_behaviors()
         )
         if not param.is_time_varying():
-            cols, vals = self._connect_and_fetchall(
+            return self._connect_and_fetchall(
                 stmt, (str(sample_id),))
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(sample=sample_id)
-        else:
-            cols, vals = self._connect_and_fetchall(
-                stmt, (str(sample_id), str(time)))
-            if len(vals) == 0:
-                msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
-                rpy_logging.log_error(self.log_name, msg)
-                raise ValueError(msg)
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(
-                sample=sample_id,
-                time=time
-            )
 
-        return lzdf
+        cols, vals = self._connect_and_fetchall(
+            stmt, (str(sample_id), str(time)))
+        if len(vals) == 0:
+            msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
+            rpy_logging.log_error(self.log_name, msg)
+            raise ValueError(msg)
+        return cols, vals
 
     def _extract_values(
         self,
@@ -340,7 +353,8 @@ class Input:
         self,
         param: Parameter,
         sample_id: int = 1,
-        time: int = 1
+        time: int = 1,
+        lf: pl.LazyFrame | None = None,
     ) -> pl.LazyFrame:
         """Return a complete parameter table with missing rows backfilled.
 
@@ -367,7 +381,8 @@ class Input:
         ValueError
             If required transition state columns are missing.
         """
-        lf = self._select_parameter_raw(param, sample_id, time)
+        if lf is None:
+            lf = self._select_parameter_raw(param, sample_id, time)
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
             lf = lf.rename({"behavior": "initial_behavior"})
         elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
@@ -388,18 +403,10 @@ class Input:
         )
 
         if complete_state_vector:
-            return sort_dataframes(
-                lf,
-                self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
-            )
+            return lf
 
         if complete_transition:
-            return sort_dataframes(
-                lf,
-                self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
-            )
+            return lf
 
         if param.is_state_vector_operation():
             value_col = param.get_value_column_name()
@@ -549,16 +556,50 @@ class Input:
         numpy.ndarray
             Raw rows or model-ready shaped numpy array.
         """
-        sample_id = self._get_sample_id_for_parameter(param, cohort_id)
-        if raw:
-            return self._select_parameter_raw(
-                param, sample_id, time).collect().to_numpy()
+        cache_key = (param.get_parameter_type(), cohort_id, time)
+        if not raw and cache_key in self._parameter_cache:
+            return self._parameter_cache[cache_key].copy()
 
-        return self._extract_values(
+        sample_id = self._get_sample_id_for_parameter(param, cohort_id)
+
+        if raw:
+            result = self._select_parameter_raw(
+                param, sample_id, time).collect().to_numpy()
+            return result
+
+        cols, vals = self._select_parameter_rows(param, sample_id, time)
+        n_interventions = len(self.get_interventions())
+        n_behaviors = len(self.get_behaviors())
+        n_states = n_interventions * n_behaviors
+        expected_rows = (
+            n_states
+            if param.is_state_vector_operation()
+            else n_states * n_states
+        )
+        if len(vals) == expected_rows:
+            value_index = cols.index(param.get_value_column_name())
+            result = np.asarray(
+                [row[value_index] for row in vals], dtype=np.float64
+            )
+            shape = (n_states, 1) if param.is_state_vector_operation() else (
+                n_states, n_states
+            )
+            result = result.reshape(shape)
+            self._parameter_cache[cache_key] = result.copy()
+            return result.copy()
+
+        lf = pl.LazyFrame(vals, schema=cols, orient='row')
+        if param.is_time_varying():
+            lf = lf.with_columns(sample=sample_id, time=time)
+        else:
+            lf = lf.with_columns(sample=sample_id)
+        result = self._extract_values(
             param,
-            self._get_parameter_filled(param, sample_id, time),
+            self._get_parameter_filled(param, sample_id, time, lf=lf),
             n=len(self.get_state_names())
         )
+        self._parameter_cache[cache_key] = result.copy()
+        return result.copy()
 
     def insert_parameter(
         self,
@@ -574,4 +615,5 @@ class Input:
         data : list
             Row tuples matching ``param`` insert statement order.
         """
-        return self._connect_and_executemany(data, param.get_insert_statement())
+        self._connect_and_executemany(data, param.get_insert_statement())
+        self._parameter_cache.clear()

@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 2bc260ef749a76b7eba73a4d64e9d38c48ed2bdc # v2.5.1
+    GIT_TAG cd2c0061a5e7ce27d7bdec17eacf96ef6fc5ad75 # main (Post PR 153)
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)
