@@ -4,8 +4,8 @@
 # Created Date: 2026-07-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-04                                                    #
-# Modified By: Matthew Carroll                                                 #
+# Last Modified: 2026-09-16                                                    #
+# Modified By: Dimitri Baptiste                                                #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
@@ -22,11 +22,12 @@ from .transition import Transition
 
 
 def build_simulation(
-        input_data: Input,
-        *,
-        cohort_ids: Sequence[int] | None = None,
-        log_name: str = "respond",
-        log_file: str = "respond.log"
+    input_data: Input,
+    *,
+    processor_count: int | None = None,
+    cohort_ids: Sequence[int] | None = None,
+    log_name: str = "respond",
+    log_file: str = "respond.log",
 ) -> Simulation:
     """Build a simulation populated with one model per cohort.
 
@@ -34,6 +35,9 @@ def build_simulation(
     ----------
     input_data : Input
         Loaded input data and simulation configuration.
+    processor_count: int, optional
+        The number of processors (threads) to use when a model runs. When
+        omitted, the maximum number of available processors is used.
     cohort_ids : Sequence of int, optional
         Cohort identifiers to include in the simulation. When omitted, all
         cohort identifiers present in ``input_data`` are used.
@@ -65,7 +69,14 @@ def build_simulation(
     duration = int(input_data.config.get("simulation", "duration"))
     s.set_duration(duration)
     for cohort_id in cohort_ids:
-        s.add_model(build_model(input_data, cohort_id))
+        if processor_count:
+            s.add_model(
+                build_model(
+                    input_data, cohort_id, processor_count=processor_count
+                )
+            )
+        else:
+            s.add_model(build_model(input_data, cohort_id))
 
     return s
 
@@ -74,8 +85,9 @@ def build_model(
     input_data: Input,
     cohort_id: int,
     *,
+    processor_count: int | None = None,
     log_name: str = "respond",
-    log_file: str = "respond.log"
+    log_file: str = "respond.log",
 ) -> Model:
     """Build a model for a single cohort.
 
@@ -86,6 +98,9 @@ def build_model(
     cohort_id : int
         Cohort identifier used to select the initial state and parameter
         values.
+    processor_count : int, optional
+        The number of processors (threads) to use when a model runs. When
+        omitted, the maximum number of available processors is used.
     log_name : str, default="respond"
         Logger name used by the underlying model.
     log_file : str, default="respond.log"
@@ -97,7 +112,13 @@ def build_model(
         A model configured with the cohort initial state and timestep
         transitions.
     """
-    model = Model("markov", log_name, log_file)
+    # if the number of threads to use is specified, use the correct model
+    # constructor
+    if processor_count:
+        model = Model("markov", processor_count, log_name, log_file)
+    else:
+        model = Model("markov", log_name, log_file)
+
     initial_state = input_data.select_parameter(
         Parameter(ParameterType.INITIAL_COHORT),
         cohort_id,
@@ -109,7 +130,8 @@ def build_model(
             map(
                 int,
                 input_data.config.get(
-                    "simulation", "parameter_change_times").split(),
+                    "simulation", "parameter_change_times"
+                ).split(),
             )
         )
     )
@@ -117,15 +139,17 @@ def build_model(
     duration = int(input_data.config.get("simulation", "duration"))
     schedule_times = [1, *change_times]
 
-    for model_timestep in range(1, duration+1):
+    for model_timestep in range(1, duration + 1):
         parameter_time = max(t for t in schedule_times if t <= model_timestep)
-        model.add_timestep(build_timestep(
-            input_data,
-            cohort_id,
-            parameter_time,
-            log_name=log_name,
-            log_file=log_file,
-        ))
+        model.add_timestep(
+            build_timestep(
+                input_data,
+                cohort_id,
+                parameter_time,
+                log_name=log_name,
+                log_file=log_file,
+            )
+        )
     return model
 
 
@@ -135,7 +159,7 @@ def build_timestep(
     tstep: int = 1,
     *,
     log_name: str = "respond",
-    log_file: str = "respond.log"
+    log_file: str = "respond.log",
 ) -> Timestep:
     """Build a timestep containing the cohort transitions for a time point.
 
@@ -160,7 +184,8 @@ def build_timestep(
     timestep = Timestep(log_name, log_file)
 
     transitions = build_default_transitions(
-        input_data, cohort_id, time=tstep, log_name=log_name, log_file=log_file)
+        input_data, cohort_id, time=tstep, log_name=log_name, log_file=log_file
+    )
 
     for transition in transitions:
         timestep.add_transition(transition)
@@ -175,7 +200,7 @@ def build_transition(
     *,
     time: int = 1,
     log_name: str = "respond",
-    log_file: str = "respond.log"
+    log_file: str = "respond.log",
 ) -> Transition:
     """Build a transition for a single parameter and cohort.
 
@@ -204,19 +229,19 @@ def build_transition(
         param.get_parameter_name(),
         param.get_parameter_name(),
         log_name,
-        log_file
+        log_file,
     )
     transition.add_matrix(input_data.select_parameter(param, cohort_id, time))
     return transition
 
 
 def add_matrix_to_transition(
-        transition: Transition,
-        input_data: Input,
-        cohort_id: int,
-        param: Parameter,
-        *,
-        time: int = 1
+    transition: Transition,
+    input_data: Input,
+    cohort_id: int,
+    param: Parameter,
+    *,
+    time: int = 1,
 ) -> Transition:
     """Add another parameter matrix to an existing transition.
 
@@ -248,7 +273,7 @@ def build_default_transitions(
     *,
     time: int = 1,
     log_name: str = "respond",
-    log_file: str = "respond.log"
+    log_file: str = "respond.log",
 ) -> list[Transition]:
     """Build the default transitions used by each timestep.
 
@@ -271,25 +296,55 @@ def build_default_transitions(
         The default transition set for a timestep, in model order.
     """
     m = build_transition(
-        input_data, cohort_id, Parameter(ParameterType.MIGRATION_COHORT), time=time, log_name=log_name, log_file=log_file
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.MIGRATION_COHORT),
+        time=time,
+        log_name=log_name,
+        log_file=log_file,
     )
 
     b = build_transition(
-        input_data, cohort_id, Parameter(ParameterType.BEHAVIOR_TRANSITION_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.BEHAVIOR_TRANSITION_PROBABILITY),
+        time=time,
+        log_name=log_name,
+        log_file=log_file,
     )
 
     i = build_transition(
-        input_data, cohort_id, Parameter(ParameterType.INTERVENTION_TRANSITION_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.INTERVENTION_TRANSITION_PROBABILITY),
+        time=time,
+        log_name=log_name,
+        log_file=log_file,
     )
 
     o = build_transition(
-        input_data, cohort_id, Parameter(ParameterType.OVERDOSE_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.OVERDOSE_PROBABILITY),
+        time=time,
+        log_name=log_name,
+        log_file=log_file,
     )
-    o = add_matrix_to_transition(o, input_data, cohort_id, Parameter(
-        ParameterType.OVERDOSE_FATALITY_PROBABILITY), time=time)
+    o = add_matrix_to_transition(
+        o,
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.OVERDOSE_FATALITY_PROBABILITY),
+        time=time,
+    )
 
     d = build_transition(
-        input_data, cohort_id, Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY), time=time, log_name=log_name, log_file=log_file
+        input_data,
+        cohort_id,
+        Parameter(ParameterType.BACKGROUND_DEATH_PROBABILITY),
+        time=time,
+        log_name=log_name,
+        log_file=log_file,
     )
 
     d.get_matrices()[0] = d.get_matrices()[0] * input_data.select_parameter(
