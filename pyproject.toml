@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "respondpy"
-version = "0.3.2"
+version = "0.3.3"
 description = "The Syndemic Lab's RESPOND Simulation Python Extension Module."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,7 @@ keywords = ["simulation", "Opioid Use Disorder", "markov", "Syndemics"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "Operating System :: POSIX :: Linux", 
+    "Operating System :: POSIX :: Linux",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -62,7 +62,7 @@ test = [
     "pytest>=9.0.2",
     "pytest-benchmark",
     "nox>=2026.2.9",
-    "hypothesis>=6.0; sys_platform != 'ios'", 
+    "hypothesis>=6.0; sys_platform != 'ios'",
     "pytest-xdist; sys_platform != 'ios'"
 ]
 github = [
@@ -234,7 +234,7 @@ build = [
     "cp314-*"
 ]
 skip = [
-    "*-win32", 
+    "*-win32",
     "*-pyodide_*",
     "*-android_*",
     "*-ios_*",
