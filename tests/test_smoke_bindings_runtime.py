@@ -68,6 +68,36 @@ def test_history_mode_members_and_latest_timestep_method_are_exposed() -> None:
 
 
 @pytest.mark.smoke
+def test_runtime_configuration_bindings_are_mutable_and_nested() -> None:
+    """Runtime configuration structs should expose defaults and mutable fields."""
+    execution = rpy.ExecutionConfig()
+    logging = rpy.LoggingConfig()
+    runtime = rpy.RuntimeConfig()
+
+    assert execution.total_threads == 0
+    assert execution.eigen_threads == 1
+    assert execution.run_models_concurrently is False
+    assert logging.logger_name == "respond"
+    assert logging.file_path == "respond.log"
+    assert logging.use_shared_sink is False
+
+    execution.total_threads = 4
+    execution.eigen_threads = 1
+    execution.run_models_concurrently = True
+    logging.logger_name = "test"
+    logging.file_path = "test.log"
+    logging.use_shared_sink = True
+    runtime.execution = execution
+    runtime.logging = logging
+
+    assert rpy.config.ExecutionConfig is rpy.ExecutionConfig
+    assert runtime.execution.total_threads == 4
+    assert runtime.execution.run_models_concurrently is True
+    assert runtime.logging.logger_name == "test"
+    assert runtime.logging.use_shared_sink is True
+
+
+@pytest.mark.smoke
 def test_simulation_create_new_model_returns_model_and_registers_model() -> None:
     """Simulation.create_new_model should return a cloned Model instance."""
     simulation = rpy.Simulation()
