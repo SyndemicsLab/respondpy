@@ -4,7 +4,7 @@
 // Created Date: 2026-02-09                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-22                                                  //
+// Last Modified: 2026-09-25                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -12,6 +12,7 @@
 
 #include <respondpy/pybind11.hpp>
 
+#include <respond/runtime_config.hpp>
 #include <respond/simulation.hpp>
 
 namespace py = pybind11;
@@ -28,6 +29,13 @@ void register_simulation(py::module &m) {
         .def(py::init<const std::string &, const std::string &>(),
              py::arg("log_name"), py::arg("log_filepath"),
              "Constructs a Simulation with a specified logger and log file.")
+        .def(py::init<const std::string &, const std::string &,
+                      const ExecutionConfig &>(),
+             py::arg("log_name"), py::arg("log_filepath"),
+             py::arg("execution_config"),
+             "Constructs a Simulation with logger and execution settings.")
+        .def(py::init<const RuntimeConfig &>(), py::arg("runtime_config"),
+             "Constructs a Simulation with shared runtime settings.")
         .def("__copy__",
              [](const Simulation &self) { return Simulation(self); })
         .def(
@@ -106,6 +114,14 @@ void register_simulation(py::module &m) {
              "simulation. Throws an exception if the index is out of bounds.")
         .def("set_duration", &Simulation::SetDuration, py::arg("duration"),
              "Set the duration for which the simulation should run.")
+        .def("get_execution_config", &Simulation::GetExecutionConfig,
+             "Get the current execution configuration.")
+        .def("set_execution_config", &Simulation::SetExecutionConfig,
+             py::arg("execution_config"), "Set the execution configuration.")
+        .def("get_runtime_config", &Simulation::GetRuntimeConfig,
+             "Get the current runtime configuration.")
+        .def("set_runtime_config", &Simulation::SetRuntimeConfig,
+             py::arg("runtime_config"), "Set the runtime configuration.")
         .def("__repr__", [](const Simulation &m) {
             return "<respondpy.Simulation with " +
                    std::to_string(m.GetModelNames().size()) + " models>";

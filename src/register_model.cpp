@@ -4,8 +4,8 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-09-16                                                  //
-// Modified By: Dimitri Baptiste                                              //
+// Last Modified: 2026-09-25                                                  //
+// Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 
 #include <respond/constants.hpp>
 #include <respond/model.hpp>
+#include <respond/runtime_config.hpp>
 
 namespace py = pybind11;
 using namespace respond;
@@ -21,6 +22,12 @@ using namespace respond;
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_model(py::module &m) {
     py::class_<Model, py::smart_holder>(m, "Model")
+        .def(py::init(
+                 py::overload_cast<const std::string &, const RuntimeConfig &>(
+                     &Model::Create)),
+             py::arg("name"), py::arg("runtime_config"),
+             "Factory method to create a Model instance with shared runtime "
+             "configuration.")
         .def(
             py::init(py::overload_cast<const std::string &, const std::string &,
                                        const std::string &>(&Model::Create)),

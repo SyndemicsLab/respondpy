@@ -1,10 +1,10 @@
 ################################################################################
-# File: test_smoke_stubs_mypy.py                                               #
+# File: test_typing_stubs_mypy.py                                              #
 # Project: respondpy                                                           #
 # Created Date: 2026-07-22                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-29                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -50,6 +50,19 @@ import numpy as np
 import respondpy as rpy
 from respondpy.history import HistoryMode
 
+runtime_config = rpy.RuntimeConfig()
+runtime_config.execution.total_threads = 2
+logging_status: rpy.logging.CreationStatus = rpy.logging.configure_logger(
+    runtime_config.logging
+)
+logger_info: str = rpy.logging.get_logger_info(runtime_config.logging.logger_name)
+rpy.logging.set_log_pattern(rpy.logging.LogPattern.kStandard)
+rpy.logging.set_logger_level(runtime_config.logging.logger_name, 2)
+model_with_config: rpy.Model = rpy.Model("markov", runtime_config)
+simulation_with_config = rpy.Simulation(runtime_config)
+simulation_with_config.set_execution_config(runtime_config.execution)
+execution_config: rpy.ExecutionConfig = simulation_with_config.get_execution_config()
+ 
 state = np.array([1.0, 2.0, 3.0], dtype=float)
 transition = rpy.Transition("migration")
 transition.add_matrix(np.zeros((3, 1)))
@@ -60,6 +73,10 @@ mode: HistoryMode = HistoryMode.kSnapshot
 latest_timestep: int = int(rpy.History("state").get_latest_recorded_timestep())
 
 assert isinstance(created_model, rpy.Model)
+assert isinstance(model_with_config, rpy.Model)
+assert isinstance(execution_config.total_threads, int)
+assert isinstance(logging_status, rpy.logging.CreationStatus)
+assert isinstance(logger_info, str)
 assert latest_timestep >= -1
 assert next_state.shape == state.shape
 assert isinstance(history_map, dict)

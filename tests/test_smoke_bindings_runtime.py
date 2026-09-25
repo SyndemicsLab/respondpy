@@ -4,7 +4,7 @@
 # Created Date: 2026-07-22                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-22                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,6 +13,11 @@
 """Smoke tests validating pybind runtime contracts for core bindings."""
 
 from __future__ import annotations
+
+from copy import copy
+from concurrent.futures import ThreadPoolExecutor
+import math
+import uuid
 
 import numpy as np
 import pytest
@@ -95,6 +100,247 @@ def test_runtime_configuration_bindings_are_mutable_and_nested() -> None:
     assert runtime.execution.run_models_concurrently is True
     assert runtime.logging.logger_name == "test"
     assert runtime.logging.use_shared_sink is True
+
+
+@pytest.mark.smoke
+def test_logging_api_parity(tmp_path) -> None:
+    """Logging bindings should expose the hotfix API and status semantics."""
+    logging = rpy.logging
+    suffix = uuid.uuid4().hex
+    logger_name = f"logging_parity_{suffix}"
+    logfile = tmp_path / "configured.log"
+
+    config = rpy.LoggingConfig()
+    config.logger_name = logger_name
+    config.file_path = str(logfile)
+
+    assert logging.configure_logger(config) == logging.CreationStatus.kSuccess
+    assert logging.check_logger_exists(
+        logger_name) == logging.CreationStatus.kExists
+    assert logger_name in logging.get_logger_info(logger_name)
+
+    assert logging.configure_logger(config) == logging.CreationStatus.kExists
+    conflicting = rpy.LoggingConfig()
+    conflicting.logger_name = logger_name
+    conflicting.file_path = str(tmp_path / "conflicting.log")
+    assert logging.configure_logger(
+        conflicting) == logging.CreationStatus.kError
+
+    logging.set_logger_level(logger_name, 2)
+    logging.log_info(logger_name, "configured message")
+    logging.log_warning(logger_name, "warning message")
+    logging.log_error(logger_name, "error message")
+    logging.log_debug(logger_name, "debug message")
+
+    shared_logfile = tmp_path / "shared.log"
+    shared_name_a = f"shared_a_{suffix}"
+    shared_name_b = f"shared_b_{suffix}"
+    assert (
+        logging.create_shared_file_sink(str(shared_logfile))
+        == logging.CreationStatus.kSuccess
+    )
+    assert (
+        logging.create_shared_file_sink(str(shared_logfile))
+        == logging.CreationStatus.kExists
+    )
+    assert (
+        logging.create_shared_logger(shared_name_a)
+        == logging.CreationStatus.kSuccess
+    )
+    assert (
+        logging.create_shared_logger(shared_name_b)
+        == logging.CreationStatus.kSuccess
+    )
+    logging.log_info(shared_name_a, "shared message A")
+    logging.log_info(shared_name_b, "shared message B")
+
+    concurrent_names = [
+        f"shared_concurrent_{suffix}_{index}" for index in range(4)]
+
+    def create_and_write(name: str) -> logging.CreationStatus:
+        status = logging.create_shared_logger(name)
+        logging.log_info(name, f"concurrent message {name}")
+        return status
+
+    with ThreadPoolExecutor(max_workers=len(concurrent_names)) as executor:
+        statuses = list(executor.map(create_and_write, concurrent_names))
+
+    assert statuses == [logging.CreationStatus.kSuccess] * \
+        len(concurrent_names)
+
+    original_pattern = logging.get_log_pattern()
+    logging.set_log_pattern(logging.LogPattern.kDetailed)
+    assert logging.get_log_pattern() == logging.LogPattern.kDetailed
+    logging.set_log_pattern(original_pattern)
+    logging.set_flush_interval(0)
+    logging.flush_all_loggers()
+    logging.flush_all_loggers()
+
+    assert "configured message" in logfile.read_text(encoding="utf-8")
+    shared_output = shared_logfile.read_text(encoding="utf-8")
+    assert "shared message A" in shared_output
+    assert "shared message B" in shared_output
+    for name in concurrent_names:
+        assert f"concurrent message {name}" in shared_output
+    assert (
+        logging.check_logger_exists(f"missing_{suffix}")
+        == logging.CreationStatus.kNotCreated
+    )
+
+
+@pytest.mark.smoke
+def test_model_accepts_runtime_configuration(tmp_path) -> None:
+    """Model should support construction with shared runtime settings."""
+    runtime = rpy.RuntimeConfig()
+    runtime.logging.logger_name = "model_runtime_config"
+    runtime.logging.file_path = str(tmp_path / "model.log")
+
+    model = rpy.Model("markov", runtime)
+
+    assert isinstance(model, rpy.Model)
+    assert model.get_name() == "markov"
+
+
+@pytest.mark.smoke
+def test_simulation_runtime_configuration_accessors_and_constructors(
+    tmp_path,
+) -> None:
+    """Simulation should expose runtime settings and compatibility constructors."""
+    runtime = rpy.RuntimeConfig()
+    runtime.execution.total_threads = 2
+    runtime.execution.run_models_concurrently = True
+    runtime.logging.logger_name = "simulation_runtime_config"
+    runtime.logging.file_path = str(tmp_path / "simulation.log")
+
+    simulation = rpy.Simulation(runtime)
+    execution = simulation.get_execution_config()
+    returned_runtime = simulation.get_runtime_config()
+
+    assert execution.total_threads == 2
+    assert execution.run_models_concurrently is True
+    assert returned_runtime.logging.logger_name == "simulation_runtime_config"
+
+    replacement_execution = rpy.ExecutionConfig()
+    replacement_execution.total_threads = 3
+    simulation.set_execution_config(replacement_execution)
+    assert simulation.get_execution_config().total_threads == 3
+
+    runnable = rpy.Simulation()
+    runnable.create_new_model("markov")
+    runnable.run(1)
+
+    replacement_runtime = rpy.RuntimeConfig()
+    replacement_runtime.logging.logger_name = "simulation_runtime_replaced"
+    replacement_runtime.logging.file_path = str(tmp_path / "replaced.log")
+    runnable.set_runtime_config(replacement_runtime)
+    assert (
+        runnable.get_runtime_config().logging.logger_name
+        == "simulation_runtime_replaced"
+    )
+
+    legacy = rpy.Simulation(
+        "simulation_legacy_config",
+        str(tmp_path / "legacy.log"),
+        rpy.ExecutionConfig(),
+    )
+    assert isinstance(legacy, rpy.Simulation)
+
+
+@pytest.mark.smoke
+def test_runtime_simulation_validation_and_concurrency() -> None:
+    """Simulation should enforce duration and Eigen concurrency constraints."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("markov")
+
+    for duration in (0, -2):
+        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+            simulation.run(duration)
+
+    for duration in (0, -1):
+        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+            simulation.set_duration(duration)
+
+    concurrent = rpy.Simulation()
+    concurrent.create_new_model("markov")
+    concurrent.create_new_model("markov")
+    runtime = concurrent.get_runtime_config()
+    runtime.execution.run_models_concurrently = True
+    runtime.execution.eigen_threads = 2
+    runtime.execution.total_threads = 2
+    concurrent.set_runtime_config(runtime)
+
+    with pytest.raises(
+        ValueError,
+        match="Concurrent model execution requires eigen_threads <= 1",
+    ):
+        concurrent.run(1)
+
+    runtime.execution.eigen_threads = 1
+    concurrent.set_runtime_config(runtime)
+    concurrent.run(1)
+
+    def run_concurrent_simulation() -> int:
+        worker = rpy.Simulation()
+        worker.create_new_model("markov")
+        worker.create_new_model("markov")
+        worker_runtime = worker.get_runtime_config()
+        worker_runtime.execution.run_models_concurrently = True
+        worker_runtime.execution.eigen_threads = 1
+        worker_runtime.execution.total_threads = 2
+        worker.set_runtime_config(worker_runtime)
+        worker.run(1)
+        return len(worker.get_models())
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        assert list(executor.map(lambda _: run_concurrent_simulation(), range(2))) == [
+            2,
+            2,
+        ]
+
+
+@pytest.mark.smoke
+def test_runtime_deferred_validation_and_missing_logger(capfd) -> None:
+    """Deferred transition checks and missing logger handling should be clear."""
+    transition = rpy.Transition("migration")
+    transition.add_matrix(np.zeros((2, 1)))
+
+    with pytest.raises(RuntimeError, match="matrix size mismatch"):
+        transition.execute(np.array([1.0, 2.0, 3.0]), {})
+
+    timestep = rpy.Timestep()
+    timestep.create_transition("migration")
+    timestep.add_matrix_to_transition("migration", np.zeros((2, 1)))
+    with pytest.raises(RuntimeError, match="matrix size mismatch"):
+        timestep.get_transition("migration").execute(
+            np.array([1.0, 2.0, 3.0]), {}
+        )
+
+    missing_name = f"missing_logger_{uuid.uuid4().hex}"
+    assert missing_name in rpy.logging.get_logger_info(missing_name)
+    rpy.logging.log_info(missing_name, "missing logger message")
+    rpy.logging.flush_all_loggers()
+    captured = capfd.readouterr()
+    assert missing_name in captured.err
+    assert "not persisted" in captured.err
+
+
+@pytest.mark.smoke
+def test_history_ordering_copy_and_discount_behavior() -> None:
+    """History copies and cost-effectiveness discounting should be stable."""
+    history = rpy.History("runtime_ordering")
+    history.add_state(np.array([3.0]), 3)
+    history.add_state(np.array([1.0]), 1)
+    history.add_state(np.array([2.0]), 2)
+
+    assert list(history.get_recorded_timesteps()) == [1, 2, 3]
+    cloned = copy(history)
+    cloned.add_state(np.array([9.0]), 1)
+    assert history.get_state_map()[1][0] == 1.0
+    assert cloned.get_state_map()[1][0] == 9.0
+
+    result = rpy.discount(np.array([52.0]), 0.05, 52, True, 52.0)
+    expected = 52.0 / math.pow(1.0 + 0.05 / 52.0, 52)
+    np.testing.assert_allclose(result, np.array([expected]))
 
 
 @pytest.mark.smoke

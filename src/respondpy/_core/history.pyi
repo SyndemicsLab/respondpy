@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -120,7 +120,7 @@ class History:
     def __copy__(self) -> History:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> History:
+    def __deepcopy__(self, arg0: dict[str, object]) -> History:
         ...
 
     def add_state(

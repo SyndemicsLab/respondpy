@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -17,18 +17,34 @@ import typing
 from .types import StateVector
 from .history import History
 from .timestep import Timestep
+from .config import RuntimeConfig
 
 __all__: list[str] = ['Model']
 
 
 class Model:
+    @typing.overload
+    def __init__(self, name: str, runtime_config: RuntimeConfig) -> None:
+        ...
+
+    @typing.overload
+    def __init__(
+            self,
+            name: str,
+            processor_count: typing.SupportsInt,
+            log_name: str = "respond",
+            log_file: str = "respond.log"
+    ) -> None:
+        ...
+
+    @typing.overload
     def __init__(self, name: str, log_name: str = "respond", log_file: str = "respond.log") -> None:
         ...
 
     def __copy__(self) -> Model:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> Model:
+    def __deepcopy__(self, arg0: dict[str, object]) -> Model:
         ...
 
     def add_timestep(self, timestep: Timestep) -> None:
