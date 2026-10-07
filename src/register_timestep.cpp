@@ -12,6 +12,7 @@
 
 #include <respondpy/pybind11.hpp>
 
+#include <respond/logging_config.hpp>
 #include <respond/timestep.hpp>
 
 namespace py = pybind11;
@@ -21,12 +22,8 @@ using namespace respond;
 void register_timestep(py::module &m) {
     py::class_<Timestep>(m, "Timestep")
         .def(py::init<>(), "Default constructor for a Timestep instance.")
-        .def(py::init<const std::string &>(), py::arg("log_name"),
-             "Constructs a Timestep with a specified log_name.")
-        .def(
-            py::init<const std::string &, const std::string &>(),
-            py::arg("log_name"), py::arg("log_filepath"),
-            "Constructs a Timestep with a specified log_name and log_filepath.")
+           .def(py::init<const LoggingConfig &>(), py::arg("logging_config"),
+               "Constructs a Timestep with a logging config.")
         .def("__copy__", [](const Timestep &self) { return Timestep(self); })
         .def(
             "__deepcopy__",

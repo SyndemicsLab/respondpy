@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import typing
 
+from .config import LoggingConfig
 from .transition import Transition
 from .types import StateVector, TransitionMatrix
 
@@ -26,11 +27,7 @@ class Timestep:
         ...
 
     @typing.overload
-    def __init__(self, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, log_name: str, log_file: str) -> None:
+    def __init__(self, logging_config: LoggingConfig) -> None:
         ...
 
     def __copy__(self) -> Timestep:

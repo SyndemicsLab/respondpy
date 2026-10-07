@@ -27,23 +27,6 @@ class Simulation:
         ...
 
     @typing.overload
-    def __init__(self, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, log_name: str, log_file: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(
-            self,
-            log_name: str,
-            log_file: str,
-            execution_config: ExecutionConfig
-    ) -> None:
-        ...
-
-    @typing.overload
     def __init__(self, runtime_config: RuntimeConfig) -> None:
         ...
 

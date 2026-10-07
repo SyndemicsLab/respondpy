@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from .data import Input, Parameter, ParameterType, validate_time_list
+from .config import LoggingConfig, RuntimeConfig
 from .simulation import Simulation
 from .model import Model
 from .timestep import Timestep
@@ -65,7 +66,12 @@ def build_simulation(
             raise ValueError(
                 f"Cohort IDs {missing_cohorts} not found in input data."
             )
-    s = Simulation(log_name, log_file)
+    runtime_config = RuntimeConfig()
+    runtime_config.logging.logger_name = log_name
+    runtime_config.logging.file_path = log_file
+    if processor_count:
+        runtime_config.execution.total_threads = processor_count
+    s = Simulation(runtime_config)
     duration = int(input_data.config.get("simulation", "duration"))
     s.set_duration(duration)
     for cohort_id in cohort_ids:
@@ -115,9 +121,16 @@ def build_model(
     # if the number of threads to use is specified, use the correct model
     # constructor
     if processor_count:
-        model = Model("markov", processor_count, log_name, log_file)
+        runtime_config = RuntimeConfig()
+        runtime_config.execution.total_threads = processor_count
+        runtime_config.logging.logger_name = log_name
+        runtime_config.logging.file_path = log_file
+        model = Model("markov", runtime_config)
     else:
-        model = Model("markov", log_name, log_file)
+        runtime_config = RuntimeConfig()
+        runtime_config.logging.logger_name = log_name
+        runtime_config.logging.file_path = log_file
+        model = Model("markov", runtime_config)
 
     initial_state = input_data.select_parameter(
         Parameter(ParameterType.INITIAL_COHORT),
@@ -181,7 +194,10 @@ def build_timestep(
     Timestep
         A timestep populated with the default transitions for ``tstep``.
     """
-    timestep = Timestep(log_name, log_file)
+    logging_config = LoggingConfig()
+    logging_config.logger_name = log_name
+    logging_config.file_path = log_file
+    timestep = Timestep(logging_config)
 
     transitions = build_default_transitions(
         input_data, cohort_id, time=tstep, log_name=log_name, log_file=log_file
@@ -225,11 +241,11 @@ def build_transition(
     Transition
         A transition containing the selected parameter matrix.
     """
+    logging_config = LoggingConfig()
+    logging_config.logger_name = log_name
+    logging_config.file_path = log_file
     transition = Transition(
-        param.get_parameter_name(),
-        param.get_parameter_name(),
-        log_name,
-        log_file,
+        param.get_parameter_name(), param.get_parameter_name(), logging_config
     )
     transition.add_matrix(input_data.select_parameter(param, cohort_id, time))
     return transition

@@ -28,25 +28,6 @@ void register_model(py::module &m) {
              py::arg("name"), py::arg("runtime_config"),
              "Factory method to create a Model instance with shared runtime "
              "configuration.")
-        .def(
-            py::init(py::overload_cast<const std::string &, const std::string &,
-                                       const std::string &>(&Model::Create)),
-            py::arg("name"), py::arg("log_name") = "respond",
-            py::arg("log_filepath") = "respond.log",
-            "Factory method to create a Model instance. Initializes logging "
-            "for the model and returns a unique_ptr to the created instance. "
-            "Throws an exception if the model name is unsupported.")
-        .def(py::init(
-                 py::overload_cast<const std::string &, unsigned int,
-                                   const std::string &, const std::string &>(
-                     &Model::Create)),
-             py::arg("name"), py::arg("processor_count"),
-             py::arg("log_name") = "respond",
-             py::arg("log_filepath") = "respond.log",
-             "Factory method to create a Model instance when the number of "
-             "processors must be specified. Initializes logging for the model "
-             "and returns a unique_ptr to the created instance. Throws an "
-             "exception if the model name is unsupported.")
         .def("__copy__", [](const Model &self) { return self.clone(); })
         .def(
             "__deepcopy__",

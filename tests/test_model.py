@@ -123,7 +123,7 @@ def test_build_model_raises_when_change_time_rows_missing(
 
 @pytest.mark.unit
 def test_model_default_histories_can_be_created() -> None:
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     model.set_state(np.array([1.0, 2.0, 3.0]))
     model.create_default_histories()
 
@@ -135,7 +135,7 @@ def test_model_default_histories_can_be_created() -> None:
 
 @pytest.mark.unit
 def test_model_set_and_get_state_roundtrip() -> None:
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     expected = np.array([3.0, 2.0, 1.0])
 
     model.set_state(expected)

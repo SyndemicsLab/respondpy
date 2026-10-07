@@ -9,8 +9,8 @@ are typed with `RuntimeConfig` and `ExecutionConfig`; logging functions use
 the `LoggingConfig`, `CreationStatus`, `LogType`, and `LogPattern` types from
 `respondpy.logging`.
 
-The deprecated model and simulation construction overloads remain declared so
-existing callers continue to type-check while migrating to `RuntimeConfig`.
+Runtime objects use `RuntimeConfig` and `LoggingConfig` for execution and
+logging settings; deprecated logger-string overloads are not exposed.
 
 For conceptual architecture and execution behavior, use
 [Explanations](../explanations/architecture.md).

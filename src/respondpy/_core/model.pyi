@@ -27,20 +27,6 @@ class Model:
     def __init__(self, name: str, runtime_config: RuntimeConfig) -> None:
         ...
 
-    @typing.overload
-    def __init__(
-            self,
-            name: str,
-            processor_count: typing.SupportsInt,
-            log_name: str = "respond",
-            log_file: str = "respond.log"
-    ) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, name: str, log_name: str = "respond", log_file: str = "respond.log") -> None:
-        ...
-
     def __copy__(self) -> Model:
         ...
 

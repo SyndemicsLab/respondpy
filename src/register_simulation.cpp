@@ -24,16 +24,6 @@ void register_simulation(py::module &m) {
         .def(py::init<>(),
              "Default constructor for a Simulation instance. Initializes the "
              "simulation with the default logger.")
-        .def(py::init<const std::string &>(), py::arg("log_name"),
-             "Constructs a Simulation with a specified logger.")
-        .def(py::init<const std::string &, const std::string &>(),
-             py::arg("log_name"), py::arg("log_filepath"),
-             "Constructs a Simulation with a specified logger and log file.")
-        .def(py::init<const std::string &, const std::string &,
-                      const ExecutionConfig &>(),
-             py::arg("log_name"), py::arg("log_filepath"),
-             py::arg("execution_config"),
-             "Constructs a Simulation with logger and execution settings.")
         .def(py::init<const RuntimeConfig &>(), py::arg("runtime_config"),
              "Constructs a Simulation with shared runtime settings.")
         .def("__copy__",

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import typing
 
+from .config import LoggingConfig
+
 from .types import StateVector
 
 __all__: list[str] = ['HistoryMode', 'get_default_history_mode', 'History']
@@ -96,25 +98,16 @@ class History:
         ...
 
     @typing.overload
-    def __init__(self, name: str, mode: HistoryMode, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, name: str, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, name: str, log_name: str, log_file: str) -> None:
-        ...
-
-    @typing.overload
     def __init__(
             self,
             name: str,
             mode: HistoryMode,
-            log_name: str,
-            log_file: str
+            logging_config: LoggingConfig
     ) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, logging_config: LoggingConfig) -> None:
         ...
 
     def __copy__(self) -> History:

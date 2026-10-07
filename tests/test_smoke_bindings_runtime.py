@@ -205,7 +205,7 @@ def test_model_accepts_runtime_configuration(tmp_path) -> None:
 def test_simulation_runtime_configuration_accessors_and_constructors(
     tmp_path,
 ) -> None:
-    """Simulation should expose runtime settings and compatibility constructors."""
+    """Simulation should expose runtime settings and supported constructors."""
     runtime = rpy.RuntimeConfig()
     runtime.execution.total_threads = 2
     runtime.execution.run_models_concurrently = True
@@ -238,12 +238,12 @@ def test_simulation_runtime_configuration_accessors_and_constructors(
         == "simulation_runtime_replaced"
     )
 
-    legacy = rpy.Simulation(
-        "simulation_legacy_config",
-        str(tmp_path / "legacy.log"),
-        rpy.ExecutionConfig(),
-    )
-    assert isinstance(legacy, rpy.Simulation)
+    supported = rpy.RuntimeConfig()
+    supported.logging.logger_name = "simulation_config"
+    supported.logging.file_path = str(tmp_path / "simulation.log")
+    supported.execution = rpy.ExecutionConfig()
+    configured = rpy.Simulation(supported)
+    assert isinstance(configured, rpy.Simulation)
 
 
 @pytest.mark.smoke
@@ -271,7 +271,7 @@ def test_runtime_simulation_validation_and_concurrency() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Concurrent model execution requires eigen_threads <= 1",
+        match="Concurrent model execution requires eigen_threads == 1",
     ):
         concurrent.run(1)
 
@@ -386,7 +386,7 @@ def test_simulation_set_model_replaces_model_by_index() -> None:
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
-    replacement = rpy.Model("markov")
+    replacement = rpy.Model("markov", rpy.RuntimeConfig())
     replacement_state = np.array([7.0, 8.0, 9.0])
     replacement.set_state(replacement_state)
 
@@ -405,7 +405,7 @@ def test_simulation_index_setitem_replaces_model_by_index() -> None:
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
-    replacement = rpy.Model("markov")
+    replacement = rpy.Model("markov", rpy.RuntimeConfig())
     replacement_state = np.array([4.0, 5.0, 6.0])
     replacement.set_state(replacement_state)
 
@@ -464,7 +464,7 @@ def test_timestep_index_access_supports_get_and_set() -> None:
     timestep.create_transition("migration")
     timestep.create_transition("behavior")
 
-    replacement = rpy.Transition("overdose", "overdose")
+    replacement = rpy.Transition("overdose", "overdose", rpy.LoggingConfig())
     timestep[1] = replacement
 
     assert timestep[0].get_name() == "migration", (

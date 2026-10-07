@@ -15,14 +15,26 @@ from __future__ import annotations
 import typing
 
 from .history import History
+from .config import LoggingConfig
 from .types import StateVector, TransitionMatrix
 
 __all__: list[str] = ['Transition']
 
 
 class Transition:
+    @typing.overload
+    def __init__(self, type: str) -> None:
+        ...
+
+    @typing.overload
     def __init__(
-            self, type: str, name: str = 'transition', log_name: str = 'respond', log_file: str = 'respond.log'
+            self, type: str, logging_config: LoggingConfig
+    ) -> None:
+        ...
+
+    @typing.overload
+    def __init__(
+            self, type: str, name: str, logging_config: LoggingConfig
     ) -> None:
         ...
 
