@@ -63,6 +63,8 @@ void register_history(py::module &m) {
              "Flush the pending accumulated state into a recorded timestep. "
              "Records a zero vector of state_size if nothing is pending.")
         .def("clear", &History::Clear, "Clear all stored state history.")
+        .def("has_pending_state", &History::HasPendingState,
+             "Check whether an accumulated state is pending.")
         .def("get_state_map", &History::GetStateMap,
              "Get the state map (timestep -> state vector).")
         .def("get_recorded_timesteps", &History::GetRecordedTimesteps,

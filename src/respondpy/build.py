@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 from .data import Input, Parameter, ParameterType, validate_time_list
 from .config import LoggingConfig, RuntimeConfig
@@ -20,6 +21,31 @@ from .simulation import Simulation
 from .model import Model
 from .timestep import Timestep
 from .transition import Transition
+
+
+def _get_simulation_settings(input_data: Input) -> tuple[int, list[int]]:
+    """Read and validate required simulation settings from an Input source."""
+    config: ConfigParser = input_data.config
+    try:
+        duration = config.getint("simulation", "duration")
+    except (NoOptionError, NoSectionError, ValueError) as error:
+        raise ValueError(
+            "The simulation config requires a positive integer "
+            "`simulation.duration`."
+        ) from error
+    if duration <= 0:
+        raise ValueError(
+            "The simulation config requires a positive `duration`.")
+
+    try:
+        raw_change_times = config.get("simulation", "parameter_change_times")
+        change_times = [int(value) for value in raw_change_times.split()]
+    except (NoOptionError, NoSectionError, ValueError) as error:
+        raise ValueError(
+            "The simulation config requires integer "
+            "`simulation.parameter_change_times` values."
+        ) from error
+    return duration, validate_time_list(change_times)
 
 
 def build_simulation(
@@ -72,7 +98,7 @@ def build_simulation(
     if processor_count:
         runtime_config.execution.total_threads = processor_count
     s = Simulation(runtime_config)
-    duration = int(input_data.config.get("simulation", "duration"))
+    duration, _ = _get_simulation_settings(input_data)
     s.set_duration(duration)
     for cohort_id in cohort_ids:
         if processor_count:
@@ -138,18 +164,7 @@ def build_model(
     )
     model.set_state(initial_state)
 
-    change_times = validate_time_list(
-        list(
-            map(
-                int,
-                input_data.config.get(
-                    "simulation", "parameter_change_times"
-                ).split(),
-            )
-        )
-    )
-
-    duration = int(input_data.config.get("simulation", "duration"))
+    duration, change_times = _get_simulation_settings(input_data)
     schedule_times = [1, *change_times]
 
     for model_timestep in range(1, duration + 1):

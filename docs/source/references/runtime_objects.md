@@ -25,6 +25,25 @@ See also:
 :show-inheritance:
 ```
 
+## Model JSON Snapshots
+
+`Model.to_json()` returns a versioned inspection snapshot as a JSON string.
+The current schema uses `format` equal to `respondpy.model.snapshot` and
+`schema_version` equal to `1`.
+
+Snapshots include model metadata, the current state vector, recorded history
+data, pending accumulated history state, and the native diagnostic summary.
+They are explicitly non-resumable: `resumable` is `false`, and the
+`limitations` field describes data that the underlying RESPOND API does not
+expose in a structured form, including runtime configuration and timestep
+configuration.
+
+Model state vectors accept NumPy shapes `(m,)`, `(m, 1)`, and `(1, m)`.
+Returned state vectors are one-dimensional. Model and transition indexed APIs
+accept Python negative indices; `Model.get_timestep_count()` reports the number
+of registered model timesteps. Simulation model accessors return independent
+copies, and inserting or replacing a model clones the supplied model.
+
 ## Runtime Configuration
 
 `ExecutionConfig`, `LoggingConfig`, and `RuntimeConfig` are available from

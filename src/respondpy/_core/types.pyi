@@ -16,5 +16,7 @@ import numpy as np
 import numpy.typing as npt
 import typing
 
-StateVector = typing.Annotated[npt.NDArray[np.float64], "[m, 1]"]
+StateVector = typing.Annotated[
+	npt.NDArray[np.float64], "[m] | [m, 1] | [1, m]"
+]
 TransitionMatrix = typing.Annotated[npt.NDArray[np.float64], "[m, m]"]

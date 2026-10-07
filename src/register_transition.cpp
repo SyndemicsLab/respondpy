@@ -49,7 +49,7 @@ void register_transition(py::module &m) {
              "logging config.")
         .def(
             "execute",
-            [](const Transition &self, const Eigen::VectorXd &state,
+                [](const Transition &self, const py::object &state,
                py::object hist_obj) {
                 std::map<std::string, History> h;
                 if (hist_obj.is_none()) {
@@ -60,7 +60,7 @@ void register_transition(py::module &m) {
                 } else {
                     h = hist_obj.cast<std::map<std::string, History>>();
                 }
-                auto result = self.Execute(state, h);
+                auto result = self.Execute(vector_from_python(state), h);
                 return py::make_tuple(result, h);
             },
             py::arg("state"), py::arg("history") = py::none(),
@@ -68,9 +68,6 @@ void register_transition(py::module &m) {
             "(state_result, history_map). Pass the model's history map for "
             "expected behavior; omitting it will issue a warning and the "
             "returned history map will be empty.")
-        .def("add_matrix", &Transition::AddMatrix, py::arg("matrix"))
-        .def("get_name", &Transition::GetName)
-        .def("clear_matrices", &Transition::ClearMatrices)
         .def("add_matrix", &Transition::AddMatrix, py::arg("matrix"))
         .def("get_name", &Transition::GetName)
         .def("clear_matrices", &Transition::ClearMatrices)

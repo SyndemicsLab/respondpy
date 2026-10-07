@@ -19,11 +19,31 @@
 #include <pybind11/stl.h>
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace py = pybind11;
 
 namespace respond {}
+
+inline Eigen::VectorXd vector_from_python(const py::handle &value) {
+    using Array = py::array_t<double, py::array::c_style | py::array::forcecast>;
+    const auto array = Array::ensure(value);
+    if (!array) {
+        throw py::type_error("Expected a numeric one- or two-dimensional array.");
+    }
+
+    const auto info = array.request();
+    if (info.ndim == 1) {
+        return Eigen::Map<const Eigen::VectorXd>(
+            static_cast<const double *>(info.ptr), info.shape[0]);
+    }
+    if (info.ndim == 2 && (info.shape[0] == 1 || info.shape[1] == 1)) {
+        return Eigen::Map<const Eigen::VectorXd>(
+            static_cast<const double *>(info.ptr), info.shape[0] * info.shape[1]);
+    }
+    throw py::value_error("Expected a vector with shape (N,), (N, 1), or (1, N).");
+}
 
 template <class T> std::string to_string(const T &x) {
     std::ostringstream oss;

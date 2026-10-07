@@ -47,15 +47,14 @@ def test_model_Nx0() -> None:
 
 @pytest.mark.smoke
 def test_model_1xN() -> None:
-    state = np.array([[10.0, 20.0, 30.0]]).squeeze()
+    state = np.array([[10.0, 20.0, 30.0]])
     logging_config = rpy.LoggingConfig()
     logging_config.logger_name = "respond"
     runtime_config = rpy.RuntimeConfig()
     runtime_config.logging = logging_config
     model = rpy.Model("markov", runtime_config)
-    print(state.shape)
     model.set_state(state)
-    np.testing.assert_array_equal(state, model.get_state())
+    np.testing.assert_array_equal(state.ravel(), model.get_state())
 
 
 @pytest.mark.smoke

@@ -17,6 +17,7 @@ from __future__ import annotations
 from copy import copy
 from concurrent.futures import ThreadPoolExecutor
 import math
+import json
 import uuid
 
 import numpy as np
@@ -31,7 +32,7 @@ def test_transition_execute_returns_state_and_history_tuple() -> None:
     """Transition.execute should return both the updated state and history map."""
     transition = rpy.Transition("migration")
     transition.add_matrix(np.zeros((3, 1)))
-    input_state = np.array([1.0, 2.0, 3.0])
+    input_state = np.array([[1.0, 2.0, 3.0]])
 
     result = transition.execute(input_state, {})
 
@@ -47,8 +48,8 @@ def test_transition_execute_returns_state_and_history_tuple() -> None:
     output_state, output_history = result
     np.testing.assert_equal(
         output_state.shape,
-        input_state.shape,
-        err_msg="Expected output state shape to match input state shape.",
+        (3,),
+        err_msg="Expected vector output to be normalized to one dimension.",
     )
     assert isinstance(output_history, dict), (
         "Expected Transition.execute second return value to be a dict-like "
@@ -70,6 +71,17 @@ def test_history_mode_members_and_latest_timestep_method_are_exposed() -> None:
     assert hasattr(history, "get_latest_recorded_timestep"), (
         "Expected History to expose method 'get_latest_recorded_timestep'."
     )
+    assert hasattr(history, "has_pending_state"), (
+        "Expected History to expose method 'has_pending_state'."
+    )
+
+
+@pytest.mark.smoke
+def test_common_data_types_are_root_exports() -> None:
+    """Common data types should be available from the package root."""
+    assert rpy.Input is rpy.data.Input
+    assert rpy.Parameter is rpy.data.Parameter
+    assert rpy.ParameterType is rpy.data.ParameterType
 
 
 @pytest.mark.smoke
@@ -199,6 +211,22 @@ def test_model_accepts_runtime_configuration(tmp_path) -> None:
 
     assert isinstance(model, rpy.Model)
     assert model.get_name() == "markov"
+
+
+@pytest.mark.smoke
+def test_model_to_json_returns_versioned_inspection_snapshot() -> None:
+    """Model JSON snapshots expose stable metadata without restore claims."""
+    model = rpy.Model("markov", rpy.RuntimeConfig())
+    model.set_state(np.array([1.0, 2.0, 3.0]))
+
+    snapshot = json.loads(model.to_json())
+
+    assert snapshot["format"] == "respondpy.model.snapshot"
+    assert snapshot["schema_version"] == 1
+    assert snapshot["resumable"] is False
+    assert snapshot["model"]["name"] == "markov"
+    assert snapshot["model"]["state"] == [1.0, 2.0, 3.0]
+    assert isinstance(snapshot["native_summary"], str)
 
 
 @pytest.mark.smoke
@@ -364,8 +392,8 @@ def test_simulation_create_new_model_returns_model_and_registers_model() -> None
 
 
 @pytest.mark.smoke
-def test_simulation_get_model_returns_live_mutable_model_reference() -> None:
-    """Mutating a model from get_model should update the simulation-owned model."""
+def test_simulation_get_model_returns_independent_model_copy() -> None:
+    """Mutating a model from get_model should not alter owned simulation state."""
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
@@ -373,11 +401,25 @@ def test_simulation_get_model_returns_live_mutable_model_reference() -> None:
     model = simulation.get_model(0)
     model.set_state(expected_state)
 
-    np.testing.assert_array_equal(
-        simulation.get_model(0).get_state(),
-        expected_state,
-        err_msg="Expected get_model to expose a live simulation-owned model.",
+    np.testing.assert_array_equal(model.get_state(), expected_state)
+    assert simulation.get_model(0).get_state().size == 0, (
+        "Expected get_model to return an independent model copy."
     )
+
+
+@pytest.mark.smoke
+def test_simulation_model_access_supports_negative_indices() -> None:
+    """Simulation model access should follow Python negative-index semantics."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("first")
+    simulation.create_new_model("second")
+
+    assert simulation.get_model(-1).get_name() == "second"
+    assert simulation[-2].get_name() == "first"
+    assert simulation.get_model_history_names(-1) == []
+
+    with pytest.raises(IndexError):
+        simulation.get_model(-3)
 
 
 @pytest.mark.smoke
@@ -436,6 +478,24 @@ def test_binding_failure_messages_follow_expected_patterns() -> None:
 
 
 @pytest.mark.smoke
+def test_model_timestep_access_supports_count_and_negative_indices() -> None:
+    """Model timestep access should expose count and Python index semantics."""
+    model = rpy.Model("markov", rpy.RuntimeConfig())
+    first = rpy.Timestep()
+    first.create_transition("migration")
+    second = rpy.Timestep()
+    second.create_transition("behavior")
+    model.add_timestep(first)
+    model.add_timestep(second)
+
+    assert model.get_timestep_count() == 2
+    assert model.get_timestep_at_index(-1).get_transition_names() == ["behavior"]
+
+    with pytest.raises(IndexError):
+        model.get_timestep_at_index(-3)
+
+
+@pytest.mark.smoke
 def test_timestep_add_transition_clones_input_transition() -> None:
     """Timestep.add_transition should clone, not alias, the input transition."""
     timestep = rpy.Timestep()
@@ -473,3 +533,21 @@ def test_timestep_index_access_supports_get_and_set() -> None:
     assert timestep[1].get_name() == replacement.get_name(), (
         "Expected __setitem__ to replace transition slot by index."
     )
+
+
+@pytest.mark.smoke
+def test_timestep_transition_access_supports_negative_indices() -> None:
+    """Timestep transition access should follow Python negative-index semantics."""
+    timestep = rpy.Timestep()
+    timestep.create_transition("migration")
+    timestep.create_transition("behavior")
+
+    assert timestep.get_transition(-1).get_name() == "behavior"
+    assert timestep[-2].get_name() == "migration"
+
+    replacement = rpy.Transition("overdose", "overdose", rpy.LoggingConfig())
+    timestep[-1] = replacement
+    assert timestep.get_transition(-1).get_name() == "overdose"
+
+    with pytest.raises(IndexError):
+        timestep.get_transition(-3)

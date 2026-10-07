@@ -19,6 +19,7 @@ from . import config
 from . import logging
 
 from .config import ExecutionConfig, LoggingConfig, RuntimeConfig
+from .data import Input, Parameter, ParameterType
 from .cost_effectiveness import (
     discount, cwise_product, cwise_min, calculate_life_years
 )
@@ -38,6 +39,9 @@ __all__ = [
     "ExecutionConfig",
     "LoggingConfig",
     "RuntimeConfig",
+    "Input",
+    "Parameter",
+    "ParameterType",
     "discount",
     "cwise_product",
     "cwise_min",

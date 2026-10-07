@@ -18,6 +18,21 @@
 namespace py = pybind11;
 using namespace respond;
 
+namespace {
+
+size_t normalize_transition_index(const Timestep &timestep,
+                                  py::ssize_t index) {
+    const auto count = timestep.GetTransitionNames().size();
+    const auto normalized = index < 0 ? static_cast<py::ssize_t>(count) + index
+                                      : index;
+    if (normalized < 0 || static_cast<size_t>(normalized) >= count) {
+        throw py::index_error("Timestep transition index out of range");
+    }
+    return static_cast<size_t>(normalized);
+}
+
+} // namespace
+
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_timestep(py::module &m) {
     py::class_<Timestep>(m, "Timestep")
@@ -48,14 +63,21 @@ void register_timestep(py::module &m) {
             py::arg("transition"),
             "Add a transition by cloning the provided transition instance "
             "into this timestep.")
-        .def("remove_transition", &Timestep::RemoveTransition, py::arg("idx"),
+        .def("remove_transition",
+             [](Timestep &self, py::ssize_t idx) {
+                 return self.RemoveTransition(
+                     normalize_transition_index(self, idx));
+             },
+             py::arg("idx"),
              "Remove a transition from the timestep by its idx. Throws an "
              "exception if the idx is out of bounds.")
         .def(
             "add_matrix_to_transition",
-            py::overload_cast<const size_t &,
-                              const Eigen::Ref<const Eigen::MatrixXd> &>(
-                &Timestep::AddMatrixToTransition),
+            [](Timestep &self, py::ssize_t idx,
+               const Eigen::Ref<const Eigen::MatrixXd> &matrix) {
+                self.AddMatrixToTransition(
+                    normalize_transition_index(self, idx), matrix);
+            },
             py::arg("idx"), py::arg("matrix"),
             "Add a matrix to a transition in the timestep by its index. Throws "
             "an exception if the index is out of bounds.")
@@ -68,8 +90,10 @@ void register_timestep(py::module &m) {
              "an exception if the transition name is not found.")
         .def(
             "get_transition",
-            [](const Timestep &self, const size_t &idx) -> const Transition * {
-                return self.GetTransition(idx).get();
+            [](const Timestep &self, py::ssize_t idx) -> const Transition * {
+                return self.GetTransition(
+                                     normalize_transition_index(self, idx))
+                    .get();
             },
             py::arg("idx"), py::return_value_policy::reference_internal,
             "Get a transition from the timestep by its index. Throws an "
@@ -90,13 +114,16 @@ void register_timestep(py::module &m) {
              "Get the list of transition names in the timestep.")
         .def(
             "__getitem__",
-            [](Timestep &self, size_t idx) -> Transition & { return self[idx]; },
+            [](Timestep &self, py::ssize_t idx) -> Transition & {
+                return self[normalize_transition_index(self, idx)];
+            },
             py::arg("idx"), py::return_value_policy::reference_internal,
             "Get a transition using index access semantics.")
         .def(
             "__setitem__",
-            [](Timestep &self, size_t idx, const Transition &transition) {
-                self[idx] = transition;
+            [](Timestep &self, py::ssize_t idx,
+               const Transition &transition) {
+                self[normalize_transition_index(self, idx)] = transition;
             },
             py::arg("idx"), py::arg("transition"),
             "Replace a transition slot by index with a clone of the provided "

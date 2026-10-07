@@ -23,7 +23,6 @@ __all__: list[str] = ['Model']
 
 
 class Model:
-    @typing.overload
     def __init__(self, name: str, runtime_config: RuntimeConfig) -> None:
         ...
 
@@ -36,7 +35,7 @@ class Model:
     def add_timestep(self, timestep: Timestep) -> None:
         ...
 
-    def run_timestep(self, idx: typing.SupportsInt = -1) -> None:
+    def run_timestep(self, idx: typing.SupportsInt) -> None:
         ...
 
     def run_timesteps(self) -> None:
@@ -66,6 +65,9 @@ class Model:
     def get_timestep(self) -> int:
         ...
 
+    def get_timestep_count(self) -> int:
+        ...
+
     def get_history_capture_interval(self) -> typing.SupportsInt:
         ...
 
@@ -85,6 +87,9 @@ class Model:
         ...
 
     def set_initial_history_recorded(self, recorded: bool) -> None:
+        ...
+
+    def to_json(self) -> str:
         ...
 
     def __repr__(self) -> str:

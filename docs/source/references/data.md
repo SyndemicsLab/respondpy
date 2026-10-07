@@ -14,6 +14,23 @@ See also:
 :show-inheritance:
 ```
 
+`Input` owns its SQLite connection. Call `Input.close()` when the data source
+is no longer needed, or use it as a context manager with `with Input(...) as
+input_data:`. Closing is idempotent, and database operations after closing
+raise `ConnectionError`.
+
+Simulation construction requires a `[simulation]` section containing a
+positive integer `duration` and whitespace-separated integer
+`parameter_change_times`. Change times may be empty; zero or negative values
+are rejected with `ValueError`.
+
+The database must contain the RESPOND core tables `cohort`, `intervention`,
+`behavior`, `initial_population`, `population_change`,
+`intervention_transition`, `behavior_transition`, `overdose`,
+`overdose_fatality`, `background_mortality`, and `smr`, with the columns used
+by the corresponding parameter families. Incomplete schemas are rejected when
+`Input` is constructed.
+
 ## Public Symbols
 
 ```mermaid
