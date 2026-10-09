@@ -86,5 +86,3 @@ Use this checklist when updating bindings, stubs, or API docs.
 - [ ] Smoke coverage scope:
 	- [ ] Runtime binding smoke lives in `tests/test_smoke_bindings_runtime.py`.
 	- [ ] Stub smoke via `mypy` in pytest lives in `tests/test_typing_stubs_mypy.py`.
-
-

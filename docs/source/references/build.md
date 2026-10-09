@@ -4,8 +4,7 @@ API reference for high-level simulation and model assembly helpers.
 
 ## Upstream RESPOND requirement
 
-This release is built against the RESPOND logging hotfix at commit
-`d5bb07a1d9bfecfc192db8a5610f1ed1672bcb8a`. The commit is pinned in the
+This release is built against RESPOND release v2.6.0. The commit is pinned in the
 repository's CMake configuration because the runtime configuration and
 logging bindings depend on the public headers and behavior introduced there.
 Do not substitute an older RESPOND checkout when reproducing a source build.

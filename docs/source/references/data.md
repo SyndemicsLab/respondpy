@@ -20,7 +20,7 @@ input_data:`. Closing is idempotent, and database operations after closing
 raise `ConnectionError`.
 
 Simulation construction requires a `[simulation]` section containing a
-positive integer `duration` and whitespace-separated integer
+positive integer `duration` and whitespace-separated list of integers
 `parameter_change_times`. Change times may be empty; zero or negative values
 are rejected with `ValueError`.
 
