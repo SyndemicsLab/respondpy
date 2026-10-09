@@ -4,7 +4,7 @@
 # Created Date: 2026-07-22                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-22                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,6 +13,12 @@
 """Smoke tests validating pybind runtime contracts for core bindings."""
 
 from __future__ import annotations
+
+from copy import copy
+from concurrent.futures import ThreadPoolExecutor
+import math
+import json
+import uuid
 
 import numpy as np
 import pytest
@@ -26,7 +32,7 @@ def test_transition_execute_returns_state_and_history_tuple() -> None:
     """Transition.execute should return both the updated state and history map."""
     transition = rpy.Transition("migration")
     transition.add_matrix(np.zeros((3, 1)))
-    input_state = np.array([1.0, 2.0, 3.0])
+    input_state = np.array([[1.0, 2.0, 3.0]])
 
     result = transition.execute(input_state, {})
 
@@ -42,8 +48,8 @@ def test_transition_execute_returns_state_and_history_tuple() -> None:
     output_state, output_history = result
     np.testing.assert_equal(
         output_state.shape,
-        input_state.shape,
-        err_msg="Expected output state shape to match input state shape.",
+        (3,),
+        err_msg="Expected vector output to be normalized to one dimension.",
     )
     assert isinstance(output_history, dict), (
         "Expected Transition.execute second return value to be a dict-like "
@@ -65,6 +71,304 @@ def test_history_mode_members_and_latest_timestep_method_are_exposed() -> None:
     assert hasattr(history, "get_latest_recorded_timestep"), (
         "Expected History to expose method 'get_latest_recorded_timestep'."
     )
+    assert hasattr(history, "has_pending_state"), (
+        "Expected History to expose method 'has_pending_state'."
+    )
+
+
+@pytest.mark.smoke
+def test_common_data_types_are_root_exports() -> None:
+    """Common data types should be available from the package root."""
+    assert rpy.Input is rpy.data.Input
+    assert rpy.Parameter is rpy.data.Parameter
+    assert rpy.ParameterType is rpy.data.ParameterType
+
+
+@pytest.mark.smoke
+def test_runtime_configuration_bindings_are_mutable_and_nested() -> None:
+    """Runtime configuration structs should expose defaults and mutable fields."""
+    execution = rpy.ExecutionConfig()
+    logging = rpy.LoggingConfig()
+    runtime = rpy.RuntimeConfig()
+
+    assert execution.total_threads == 0
+    assert execution.eigen_threads == 1
+    assert execution.run_models_concurrently is False
+    assert logging.logger_name == "respond"
+    assert logging.file_path == "respond.log"
+    assert logging.use_shared_sink is False
+
+    execution.total_threads = 4
+    execution.eigen_threads = 1
+    execution.run_models_concurrently = True
+    logging.logger_name = "test"
+    logging.file_path = "test.log"
+    logging.use_shared_sink = True
+    runtime.execution = execution
+    runtime.logging = logging
+
+    assert rpy.config.ExecutionConfig is rpy.ExecutionConfig
+    assert runtime.execution.total_threads == 4
+    assert runtime.execution.run_models_concurrently is True
+    assert runtime.logging.logger_name == "test"
+    assert runtime.logging.use_shared_sink is True
+
+
+@pytest.mark.smoke
+def test_logging_api_parity(tmp_path) -> None:
+    """Logging bindings should expose the hotfix API and status semantics."""
+    logging = rpy.logging
+    suffix = uuid.uuid4().hex
+    logger_name = f"logging_parity_{suffix}"
+    logfile = tmp_path / "configured.log"
+
+    config = rpy.LoggingConfig()
+    config.logger_name = logger_name
+    config.file_path = str(logfile)
+
+    assert logging.configure_logger(config) == logging.CreationStatus.kSuccess
+    assert logging.check_logger_exists(
+        logger_name) == logging.CreationStatus.kExists
+    assert logger_name in logging.get_logger_info(logger_name)
+
+    assert logging.configure_logger(config) == logging.CreationStatus.kExists
+    conflicting = rpy.LoggingConfig()
+    conflicting.logger_name = logger_name
+    conflicting.file_path = str(tmp_path / "conflicting.log")
+    assert logging.configure_logger(
+        conflicting) == logging.CreationStatus.kError
+
+    logging.set_logger_level(logger_name, 2)
+    logging.log_info(logger_name, "configured message")
+    logging.log_warning(logger_name, "warning message")
+    logging.log_error(logger_name, "error message")
+    logging.log_debug(logger_name, "debug message")
+
+    shared_logfile = tmp_path / "shared.log"
+    shared_name_a = f"shared_a_{suffix}"
+    shared_name_b = f"shared_b_{suffix}"
+    assert (
+        logging.create_shared_file_sink(str(shared_logfile))
+        == logging.CreationStatus.kSuccess
+    )
+    assert (
+        logging.create_shared_file_sink(str(shared_logfile))
+        == logging.CreationStatus.kExists
+    )
+    assert (
+        logging.create_shared_logger(shared_name_a)
+        == logging.CreationStatus.kSuccess
+    )
+    assert (
+        logging.create_shared_logger(shared_name_b)
+        == logging.CreationStatus.kSuccess
+    )
+    logging.log_info(shared_name_a, "shared message A")
+    logging.log_info(shared_name_b, "shared message B")
+
+    concurrent_names = [
+        f"shared_concurrent_{suffix}_{index}" for index in range(4)]
+
+    def create_and_write(name: str) -> logging.CreationStatus:
+        status = logging.create_shared_logger(name)
+        logging.log_info(name, f"concurrent message {name}")
+        return status
+
+    with ThreadPoolExecutor(max_workers=len(concurrent_names)) as executor:
+        statuses = list(executor.map(create_and_write, concurrent_names))
+
+    assert statuses == [logging.CreationStatus.kSuccess] * \
+        len(concurrent_names)
+
+    original_pattern = logging.get_log_pattern()
+    logging.set_log_pattern(logging.LogPattern.kDetailed)
+    assert logging.get_log_pattern() == logging.LogPattern.kDetailed
+    logging.set_log_pattern(original_pattern)
+    logging.set_flush_interval(0)
+    logging.flush_all_loggers()
+    logging.flush_all_loggers()
+
+    assert "configured message" in logfile.read_text(encoding="utf-8")
+    shared_output = shared_logfile.read_text(encoding="utf-8")
+    assert "shared message A" in shared_output
+    assert "shared message B" in shared_output
+    for name in concurrent_names:
+        assert f"concurrent message {name}" in shared_output
+    assert (
+        logging.check_logger_exists(f"missing_{suffix}")
+        == logging.CreationStatus.kNotCreated
+    )
+
+
+@pytest.mark.smoke
+def test_model_accepts_runtime_configuration(tmp_path) -> None:
+    """Model should support construction with shared runtime settings."""
+    runtime = rpy.RuntimeConfig()
+    runtime.logging.logger_name = "model_runtime_config"
+    runtime.logging.file_path = str(tmp_path / "model.log")
+
+    model = rpy.Model("markov", runtime)
+
+    assert isinstance(model, rpy.Model)
+    assert model.get_name() == "markov"
+
+
+@pytest.mark.smoke
+def test_model_to_json_returns_versioned_inspection_snapshot() -> None:
+    """Model JSON snapshots expose stable metadata without restore claims."""
+    model = rpy.Model("markov", rpy.RuntimeConfig())
+    model.set_state(np.array([1.0, 2.0, 3.0]))
+
+    snapshot = json.loads(model.to_json())
+
+    assert snapshot["format"] == "respondpy.model.snapshot"
+    assert snapshot["schema_version"] == 1
+    assert snapshot["resumable"] is False
+    assert snapshot["model"]["name"] == "markov"
+    assert snapshot["model"]["state"] == [1.0, 2.0, 3.0]
+    assert isinstance(snapshot["native_summary"], str)
+
+
+@pytest.mark.smoke
+def test_simulation_runtime_configuration_accessors_and_constructors(
+    tmp_path,
+) -> None:
+    """Simulation should expose runtime settings and supported constructors."""
+    runtime = rpy.RuntimeConfig()
+    runtime.execution.total_threads = 2
+    runtime.execution.run_models_concurrently = True
+    runtime.logging.logger_name = "simulation_runtime_config"
+    runtime.logging.file_path = str(tmp_path / "simulation.log")
+
+    simulation = rpy.Simulation(runtime)
+    execution = simulation.get_execution_config()
+    returned_runtime = simulation.get_runtime_config()
+
+    assert execution.total_threads == 2
+    assert execution.run_models_concurrently is True
+    assert returned_runtime.logging.logger_name == "simulation_runtime_config"
+
+    replacement_execution = rpy.ExecutionConfig()
+    replacement_execution.total_threads = 3
+    simulation.set_execution_config(replacement_execution)
+    assert simulation.get_execution_config().total_threads == 3
+
+    runnable = rpy.Simulation()
+    runnable.create_new_model("markov")
+    runnable.run(1)
+
+    replacement_runtime = rpy.RuntimeConfig()
+    replacement_runtime.logging.logger_name = "simulation_runtime_replaced"
+    replacement_runtime.logging.file_path = str(tmp_path / "replaced.log")
+    runnable.set_runtime_config(replacement_runtime)
+    assert (
+        runnable.get_runtime_config().logging.logger_name
+        == "simulation_runtime_replaced"
+    )
+
+    supported = rpy.RuntimeConfig()
+    supported.logging.logger_name = "simulation_config"
+    supported.logging.file_path = str(tmp_path / "simulation.log")
+    supported.execution = rpy.ExecutionConfig()
+    configured = rpy.Simulation(supported)
+    assert isinstance(configured, rpy.Simulation)
+
+
+@pytest.mark.smoke
+def test_runtime_simulation_validation_and_concurrency() -> None:
+    """Simulation should enforce duration and Eigen concurrency constraints."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("markov")
+
+    for duration in (0, -2):
+        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+            simulation.run(duration)
+
+    for duration in (0, -1):
+        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+            simulation.set_duration(duration)
+
+    concurrent = rpy.Simulation()
+    concurrent.create_new_model("markov")
+    concurrent.create_new_model("markov")
+    runtime = concurrent.get_runtime_config()
+    runtime.execution.run_models_concurrently = True
+    runtime.execution.eigen_threads = 2
+    runtime.execution.total_threads = 2
+    concurrent.set_runtime_config(runtime)
+
+    with pytest.raises(
+        ValueError,
+        match="Concurrent model execution requires eigen_threads == 1",
+    ):
+        concurrent.run(1)
+
+    runtime.execution.eigen_threads = 1
+    concurrent.set_runtime_config(runtime)
+    concurrent.run(1)
+
+    def run_concurrent_simulation() -> int:
+        worker = rpy.Simulation()
+        worker.create_new_model("markov")
+        worker.create_new_model("markov")
+        worker_runtime = worker.get_runtime_config()
+        worker_runtime.execution.run_models_concurrently = True
+        worker_runtime.execution.eigen_threads = 1
+        worker_runtime.execution.total_threads = 2
+        worker.set_runtime_config(worker_runtime)
+        worker.run(1)
+        return len(worker.get_models())
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        assert list(executor.map(lambda _: run_concurrent_simulation(), range(2))) == [
+            2,
+            2,
+        ]
+
+
+@pytest.mark.smoke
+def test_runtime_deferred_validation_and_missing_logger(capfd) -> None:
+    """Deferred transition checks and missing logger handling should be clear."""
+    transition = rpy.Transition("migration")
+    transition.add_matrix(np.zeros((2, 1)))
+
+    with pytest.raises(RuntimeError, match="matrix size mismatch"):
+        transition.execute(np.array([1.0, 2.0, 3.0]), {})
+
+    timestep = rpy.Timestep()
+    timestep.create_transition("migration")
+    timestep.add_matrix_to_transition("migration", np.zeros((2, 1)))
+    with pytest.raises(RuntimeError, match="matrix size mismatch"):
+        timestep.get_transition("migration").execute(
+            np.array([1.0, 2.0, 3.0]), {}
+        )
+
+    missing_name = f"missing_logger_{uuid.uuid4().hex}"
+    assert missing_name in rpy.logging.get_logger_info(missing_name)
+    rpy.logging.log_info(missing_name, "missing logger message")
+    rpy.logging.flush_all_loggers()
+    captured = capfd.readouterr()
+    assert missing_name in captured.err
+    assert "not persisted" in captured.err
+
+
+@pytest.mark.smoke
+def test_history_ordering_copy_and_discount_behavior() -> None:
+    """History copies and cost-effectiveness discounting should be stable."""
+    history = rpy.History("runtime_ordering")
+    history.add_state(np.array([3.0]), 3)
+    history.add_state(np.array([1.0]), 1)
+    history.add_state(np.array([2.0]), 2)
+
+    assert list(history.get_recorded_timesteps()) == [1, 2, 3]
+    cloned = copy(history)
+    cloned.add_state(np.array([9.0]), 1)
+    assert history.get_state_map()[1][0] == 1.0
+    assert cloned.get_state_map()[1][0] == 9.0
+
+    result = rpy.discount(np.array([52.0]), 0.05, 52, True, 52.0)
+    expected = 52.0 / math.pow(1.0 + 0.05 / 52.0, 52)
+    np.testing.assert_allclose(result, np.array([expected]))
 
 
 @pytest.mark.smoke
@@ -88,8 +392,8 @@ def test_simulation_create_new_model_returns_model_and_registers_model() -> None
 
 
 @pytest.mark.smoke
-def test_simulation_get_model_returns_live_mutable_model_reference() -> None:
-    """Mutating a model from get_model should update the simulation-owned model."""
+def test_simulation_get_model_returns_independent_model_copy() -> None:
+    """Mutating a model from get_model should not alter owned simulation state."""
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
@@ -97,11 +401,25 @@ def test_simulation_get_model_returns_live_mutable_model_reference() -> None:
     model = simulation.get_model(0)
     model.set_state(expected_state)
 
-    np.testing.assert_array_equal(
-        simulation.get_model(0).get_state(),
-        expected_state,
-        err_msg="Expected get_model to expose a live simulation-owned model.",
+    np.testing.assert_array_equal(model.get_state(), expected_state)
+    assert simulation.get_model(0).get_state().size == 0, (
+        "Expected get_model to return an independent model copy."
     )
+
+
+@pytest.mark.smoke
+def test_simulation_model_access_supports_negative_indices() -> None:
+    """Simulation model access should follow Python negative-index semantics."""
+    simulation = rpy.Simulation()
+    simulation.create_new_model("first")
+    simulation.create_new_model("second")
+
+    assert simulation.get_model(-1).get_name() == "second"
+    assert simulation[-2].get_name() == "first"
+    assert simulation.get_model_history_names(-1) == []
+
+    with pytest.raises(IndexError):
+        simulation.get_model(-3)
 
 
 @pytest.mark.smoke
@@ -110,7 +428,7 @@ def test_simulation_set_model_replaces_model_by_index() -> None:
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
-    replacement = rpy.Model("markov")
+    replacement = rpy.Model("markov", rpy.RuntimeConfig())
     replacement_state = np.array([7.0, 8.0, 9.0])
     replacement.set_state(replacement_state)
 
@@ -129,7 +447,7 @@ def test_simulation_index_setitem_replaces_model_by_index() -> None:
     simulation = rpy.Simulation()
     simulation.create_new_model("markov")
 
-    replacement = rpy.Model("markov")
+    replacement = rpy.Model("markov", rpy.RuntimeConfig())
     replacement_state = np.array([4.0, 5.0, 6.0])
     replacement.set_state(replacement_state)
 
@@ -157,6 +475,24 @@ def test_binding_failure_messages_follow_expected_patterns() -> None:
 
     with pytest.raises(TypeError, match=r"(?i)incompatible constructor arguments"):
         _ = rpy.Simulation(1)  # type: ignore[arg-type]
+
+
+@pytest.mark.smoke
+def test_model_timestep_access_supports_count_and_negative_indices() -> None:
+    """Model timestep access should expose count and Python index semantics."""
+    model = rpy.Model("markov", rpy.RuntimeConfig())
+    first = rpy.Timestep()
+    first.create_transition("migration")
+    second = rpy.Timestep()
+    second.create_transition("behavior")
+    model.add_timestep(first)
+    model.add_timestep(second)
+
+    assert model.get_timestep_count() == 2
+    assert model.get_timestep_at_index(-1).get_transition_names() == ["behavior"]
+
+    with pytest.raises(IndexError):
+        model.get_timestep_at_index(-3)
 
 
 @pytest.mark.smoke
@@ -188,7 +524,7 @@ def test_timestep_index_access_supports_get_and_set() -> None:
     timestep.create_transition("migration")
     timestep.create_transition("behavior")
 
-    replacement = rpy.Transition("overdose", "overdose")
+    replacement = rpy.Transition("overdose", "overdose", rpy.LoggingConfig())
     timestep[1] = replacement
 
     assert timestep[0].get_name() == "migration", (
@@ -197,3 +533,21 @@ def test_timestep_index_access_supports_get_and_set() -> None:
     assert timestep[1].get_name() == replacement.get_name(), (
         "Expected __setitem__ to replace transition slot by index."
     )
+
+
+@pytest.mark.smoke
+def test_timestep_transition_access_supports_negative_indices() -> None:
+    """Timestep transition access should follow Python negative-index semantics."""
+    timestep = rpy.Timestep()
+    timestep.create_transition("migration")
+    timestep.create_transition("behavior")
+
+    assert timestep.get_transition(-1).get_name() == "behavior"
+    assert timestep[-2].get_name() == "migration"
+
+    replacement = rpy.Transition("overdose", "overdose", rpy.LoggingConfig())
+    timestep[-1] = replacement
+    assert timestep.get_transition(-1).get_name() == "overdose"
+
+    with pytest.raises(IndexError):
+        timestep.get_transition(-3)

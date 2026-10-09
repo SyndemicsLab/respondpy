@@ -94,6 +94,11 @@ def validate_time_list_one_value() -> None:
 
 
 @pytest.mark.unit
+def test_validate_time_list_empty() -> None:
+    assert rpydata.validate_time_list([]) == []
+
+
+@pytest.mark.unit
 def validate_time_list_valid() -> None:
     input_list = [1, 52, 104]
     expected_output = [52, 104]

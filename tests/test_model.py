@@ -112,7 +112,8 @@ def test_build_model_raises_when_change_time_rows_missing(
     setup_db,
     setup_config_missing_change_time,
 ) -> None:
-    inp = rpy.data.Input(db_path=setup_db, conf_path=setup_config_missing_change_time)
+    inp = rpy.data.Input(
+        db_path=setup_db, conf_path=setup_config_missing_change_time)
 
     with pytest.raises(
         ValueError,
@@ -122,8 +123,21 @@ def test_build_model_raises_when_change_time_rows_missing(
 
 
 @pytest.mark.unit
+def test_build_simulation_rejects_missing_duration(setup_db, tmp_path) -> None:
+    config_path = tmp_path / "missing_duration.conf"
+    config = ConfigParser()
+    config["simulation"] = {"parameter_change_times": "1"}
+    with config_path.open("w") as config_file:
+        config.write(config_file)
+
+    inp = rpy.data.Input(db_path=setup_db, conf_path=config_path)
+    with pytest.raises(ValueError, match=r"simulation\.duration"):
+        rpy.build_simulation(inp, cohort_ids=[1])
+
+
+@pytest.mark.unit
 def test_model_default_histories_can_be_created() -> None:
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     model.set_state(np.array([1.0, 2.0, 3.0]))
     model.create_default_histories()
 
@@ -135,7 +149,7 @@ def test_model_default_histories_can_be_created() -> None:
 
 @pytest.mark.unit
 def test_model_set_and_get_state_roundtrip() -> None:
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     expected = np.array([3.0, 2.0, 1.0])
 
     model.set_state(expected)

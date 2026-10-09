@@ -66,7 +66,7 @@ This results in a wheel and `tar.gz` being placed in a `dist/` directory. From h
 
 ## Supported OSes
 
-We are currently working on supporting as many OSes as possible. As these are bindings for a C++ project, we are limited in our capacity. For the moment, we are generating many linux builds for python versions >= 3.10. We do not have a Windows or Mac build at the present.
+We are currently working on supporting as many OSes as possible. As these are bindings for a C++ project, we are limited in our capacity. For the moment, we are generating Linux and Windows builds for Python versions >= 3.11. No Mac builds are available at present.
 
 ## Binding Parity Checklist
 
@@ -85,4 +85,4 @@ Use this checklist when updating bindings, stubs, or API docs.
 	- [ ] Prefer regex pattern assertions in tests over exact full-message equality.
 - [ ] Smoke coverage scope:
 	- [ ] Runtime binding smoke lives in `tests/test_smoke_bindings_runtime.py`.
-	- [ ] Stub smoke via `mypy` in pytest lives in `tests/test_smoke_stubs_mypy.py`.
+	- [ ] Stub smoke via `mypy` in pytest lives in `tests/test_typing_stubs_mypy.py`.

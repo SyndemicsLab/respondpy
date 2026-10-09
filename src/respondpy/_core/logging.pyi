@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-04                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,10 +13,14 @@
 from __future__ import annotations
 import typing
 
+from .config import LoggingConfig
+
 __all__: list[str] = [
-    'CreationStatus', 'LogType', 'create_file_logger', 'kDebug', 'kError',
-    'kExists', 'kInfo', 'kNotCreated', 'kSuccess', 'kWarn', 'log_debug',
-    'log_error', 'log_info', 'log_warning'
+    'CreationStatus', 'LogType', 'LogPattern', 'create_file_logger',
+    'configure_logger', 'create_shared_file_sink', 'create_shared_logger',
+    'set_log_pattern', 'get_log_pattern', 'set_flush_interval',
+    'flush_all_loggers', 'check_logger_exists', 'get_logger_info',
+    'set_logger_level', 'log_info', 'log_warning', 'log_error', 'log_debug'
 ]
 
 
@@ -207,25 +211,31 @@ class LogPattern:
         ...
 
 
-def create_file_logger(arg0: str, arg1: str) -> CreationStatus:
+def create_file_logger(logger_name: str, filepath: str) -> CreationStatus:
     """
     Creates a File Logger for use with RESPOND.
     """
 
 
-def create_shared_file_sink(arg0: str) -> CreationStatus:
+def configure_logger(config: LoggingConfig) -> CreationStatus:
+    """
+    Initializes a logger from a logging configuration.
+    """
+
+
+def create_shared_file_sink(filepath: str) -> CreationStatus:
     """
     Creates a shared file sink for use with RESPOND.
     """
 
 
-def create_shared_logger(arg0: str, arg1: str) -> CreationStatus:
+def create_shared_logger(logger_name: str) -> CreationStatus:
     """
     Creates a shared logger for use with RESPOND.
     """
 
 
-def set_log_pattern(arg0: LogPattern) -> None:
+def set_log_pattern(pattern: LogPattern) -> None:
     """
     Sets the log pattern for all loggers.
     """
@@ -237,7 +247,7 @@ def get_log_pattern() -> LogPattern:
     """
 
 
-def set_flush_interval(arg0: int) -> None:
+def set_flush_interval(seconds: int) -> None:
     """
     Sets the flush interval for all loggers.
     """
@@ -249,52 +259,52 @@ def flush_all_loggers() -> None:
     """
 
 
-def check_logger_exists(arg0: str) -> bool:
+def check_logger_exists(logger_name: str) -> CreationStatus:
     """
     Checks if a logger exists.
     """
 
 
-def get_logger_info(arg0: str) -> tuple[LogType, str]:
+def get_logger_info(logger_name: str) -> str:
     """
     Gets the logger info for a logger.
     """
 
 
-def set_logger_level(arg0: str, arg1: LogType) -> None:
+def set_logger_level(logger_name: str, level: int) -> None:
     """
     Sets the logger level for a logger.
     """
 
 
-def log_info(arg0: str, arg1: str) -> None:
+def log_info(logger_name: str, message: str) -> None:
     """
     Logs an info message to the log.
     """
 
 
-def log_warning(arg0: str, arg1: str) -> None:
+def log_warning(logger_name: str, message: str) -> None:
     """
     Logs a warning message to the log.
     """
 
 
-def log_error(arg0: str, arg1: str) -> None:
+def log_error(logger_name: str, message: str) -> None:
     """
     Logs an error message to the log.
     """
 
 
-def log_debug(arg0: str, arg1: str) -> None:
+def log_debug(logger_name: str, message: str) -> None:
     """
     Logs a debug message to the log.
     """
 
 
-kDebug: LogType  # value = <LogType.kDebug: 3>
-kError: CreationStatus  # value = <CreationStatus.kError: -1>
-kExists: CreationStatus  # value = <CreationStatus.kExists: 1>
-kInfo: LogType  # value = <LogType.kInfo: 0>
-kNotCreated: CreationStatus  # value = <CreationStatus.kNotCreated: 2>
-kSuccess: CreationStatus  # value = <CreationStatus.kSuccess: 0>
-kWarn: LogType  # value = <LogType.kWarn: 1>
+kDebug: LogType
+kError: CreationStatus
+kExists: CreationStatus
+kInfo: LogType
+kNotCreated: CreationStatus
+kSuccess: CreationStatus
+kWarn: LogType

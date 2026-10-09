@@ -15,8 +15,11 @@ from __future__ import annotations
 from ._version import version as __version__  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
 from . import data
+from . import config
 from . import logging
 
+from .config import ExecutionConfig, LoggingConfig, RuntimeConfig
+from .data import Input, Parameter, ParameterType
 from .cost_effectiveness import (
     discount, cwise_product, cwise_min, calculate_life_years
 )
@@ -31,7 +34,14 @@ from .build import build_simulation, build_model, build_timestep, build_default_
 
 __all__ = [
     "data",
+    "config",
     "logging",
+    "ExecutionConfig",
+    "LoggingConfig",
+    "RuntimeConfig",
+    "Input",
+    "Parameter",
+    "ParameterType",
     "discount",
     "cwise_product",
     "cwise_min",

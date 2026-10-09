@@ -4,7 +4,7 @@
 // Created Date: 2026-01-08                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-16                                                  //
+// Last Modified: 2026-09-25                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -40,6 +40,8 @@ void register_logging(py::module &m) {
     m.def("create_file_logger", &respond::CreateFileLogger,
           py::arg("logger_name"), py::arg("filepath"),
           "Creates a File Logger for use with RESPOND.");
+    m.def("configure_logger", &respond::ConfigureLogger, py::arg("config"),
+          "Initializes a logger from a logging configuration.");
     m.def("create_shared_file_sink", &respond::CreateSharedFileSink,
           py::arg("filepath"),
           "Create a shared file sink for thread-safe concurrent logging from "

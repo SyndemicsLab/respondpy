@@ -257,16 +257,12 @@ def test_simulation_run_104_midrun_parameter_increase(
     assert float(np.sum(migration_t52)) > float(np.sum(migration_t1))
 
     sim_flat = rpy.build_simulation(flat_inp)
-    model_flat = sim_flat.get_model(0)
-    model_flat.create_default_histories()
     sim_flat.run()
-    final_state_flat = model_flat.get_state()
+    final_state_flat = sim_flat.get_model(0).get_state()
 
     sim = rpy.build_simulation(inp)
-    model = sim.get_model(0)
-    model.create_default_histories()
     sim.run()
-    final_state_changed = model.get_state()
+    final_state_changed = sim.get_model(0).get_state()
 
     assert float(np.sum(final_state_changed)) > float(np.sum(final_state_flat)), (
         "Expected larger final population when migration inflow increases at "

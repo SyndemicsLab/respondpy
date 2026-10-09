@@ -50,9 +50,7 @@
                 "RESPOND_BUILD_SHARED_LIBS": "ON",
                 "RESPOND_BUILD_WARNINGS": "OFF",
                 "RESPOND_SYSTEM_INCLUDES": "OFF",
-                "RESPOND_INSTALL": "ON",
-                "RESPOND_NO_EXCEPTIONS": "OFF",
-                "RESPOND_RUN_OMP": "ON"
+                "RESPOND_INSTALL": "ON"
             },
             "warnings": {
                 "dev": false

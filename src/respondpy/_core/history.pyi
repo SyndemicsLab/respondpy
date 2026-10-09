@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -13,6 +13,8 @@
 from __future__ import annotations
 
 import typing
+
+from .config import LoggingConfig
 
 from .types import StateVector
 
@@ -96,31 +98,22 @@ class History:
         ...
 
     @typing.overload
-    def __init__(self, name: str, mode: HistoryMode, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, name: str, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, name: str, log_name: str, log_file: str) -> None:
-        ...
-
-    @typing.overload
     def __init__(
             self,
             name: str,
             mode: HistoryMode,
-            log_name: str,
-            log_file: str
+            logging_config: LoggingConfig
     ) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, name: str, logging_config: LoggingConfig) -> None:
         ...
 
     def __copy__(self) -> History:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> History:
+    def __deepcopy__(self, arg0: dict[str, object]) -> History:
         ...
 
     def add_state(

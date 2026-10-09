@@ -4,7 +4,7 @@
 // Created Date: 2026-02-09                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-22                                                  //
+// Last Modified: 2026-09-25                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
@@ -12,10 +12,27 @@
 
 #include <respondpy/pybind11.hpp>
 
+#include <respond/runtime_config.hpp>
 #include <respond/simulation.hpp>
 
 namespace py = pybind11;
 using namespace respond;
+
+namespace {
+
+size_t normalize_model_index(const Simulation &simulation,
+                                    py::ssize_t index) {
+     const auto model_count = simulation.GetModelNames().size();
+     if (index < 0) {
+          index += static_cast<py::ssize_t>(model_count);
+     }
+     if (index < 0 || index >= static_cast<py::ssize_t>(model_count)) {
+          throw py::index_error("Simulation model index out of range");
+     }
+     return static_cast<size_t>(index);
+}
+
+} // namespace
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_simulation(py::module &m) {
@@ -23,11 +40,8 @@ void register_simulation(py::module &m) {
         .def(py::init<>(),
              "Default constructor for a Simulation instance. Initializes the "
              "simulation with the default logger.")
-        .def(py::init<const std::string &>(), py::arg("log_name"),
-             "Constructs a Simulation with a specified logger.")
-        .def(py::init<const std::string &, const std::string &>(),
-             py::arg("log_name"), py::arg("log_filepath"),
-             "Constructs a Simulation with a specified logger and log file.")
+        .def(py::init<const RuntimeConfig &>(), py::arg("runtime_config"),
+             "Constructs a Simulation with shared runtime settings.")
         .def("__copy__",
              [](const Simulation &self) { return Simulation(self); })
         .def(
@@ -54,20 +68,22 @@ void register_simulation(py::module &m) {
              "Run the simulation for a specified duration. Executes all "
              "registered timesteps for each model in sequence.")
         .def("get_models", &Simulation::GetModels,
-             "Get the list of models in the simulation.")
+                "Get independent model copies from the simulation.")
         .def(
             "get_model",
-            [](Simulation &self, size_t model_index) -> Model & {
-                return self[model_index];
+               [](const Simulation &self, py::ssize_t model_index) {
+                    return self.GetModel(static_cast<int>(normalize_model_index(
+                         self, model_index)));
             },
-            py::arg("model_index"), py::return_value_policy::reference_internal,
-            "Get a model instance by its index in the simulation. Throws an "
-            "exception if the index is out of bounds.")
+                   py::arg("model_index"),
+               "Get an independent model copy by index. Negative indices count "
+               "from the end.")
         .def(
             "set_model",
-            [](Simulation &self, size_t model_index,
+               [](Simulation &self, py::ssize_t model_index,
                const Model &replacement_model) {
-                self[model_index] = replacement_model;
+                    self[normalize_model_index(self, model_index)] =
+                         replacement_model;
             },
             py::arg("model_index"), py::arg("model"),
             "Replace a model instance by index with a cloned copy of the "
@@ -75,16 +91,19 @@ void register_simulation(py::module &m) {
             "bounds.")
         .def(
             "__getitem__",
-            [](Simulation &self, size_t model_index) -> Model & {
-                return self[model_index];
+               [](const Simulation &self, py::ssize_t model_index) {
+                    return self.GetModel(static_cast<int>(normalize_model_index(
+                         self, model_index)));
             },
-            py::arg("model_index"), py::return_value_policy::reference_internal,
-            "Get a model using index access semantics.")
+               py::arg("model_index"),
+               "Get an independent model copy using index access semantics. "
+               "Negative indices count from the end.")
         .def(
             "__setitem__",
-            [](Simulation &self, size_t model_index,
+               [](Simulation &self, py::ssize_t model_index,
                const Model &replacement_model) {
-                self[model_index] = replacement_model;
+                    self[normalize_model_index(self, model_index)] =
+                         replacement_model;
             },
             py::arg("model_index"), py::arg("model"),
             "Set a model using index access semantics.")
@@ -94,18 +113,31 @@ void register_simulation(py::module &m) {
              "Get a mapping from model indices to model names.")
         .def(
             "get_model_history",
-            py::overload_cast<size_t>(&Simulation::GetModelHistory, py::const_),
+               [](const Simulation &self, py::ssize_t index) {
+                    return self.GetModelHistory(
+                         normalize_model_index(self, index));
+               },
             py::arg("idx"),
-            "Get the history of a model by its index in the simulation. Throws "
-            "an exception if the index is out of bounds.")
+               "Get copied histories for a model by index. Negative indices "
+               "count from the end.")
         .def("get_model_history_names",
-             py::overload_cast<size_t>(&Simulation::GetModelHistoryNames,
-                                       py::const_),
+                [](const Simulation &self, py::ssize_t index) {
+                     return self.GetModelHistoryNames(
+                          normalize_model_index(self, index));
+                },
              py::arg("idx"),
-             "Get the list of history names for a model by its index in the "
-             "simulation. Throws an exception if the index is out of bounds.")
+                "Get history names for a model by index. Negative indices count "
+                "from the end.")
         .def("set_duration", &Simulation::SetDuration, py::arg("duration"),
              "Set the duration for which the simulation should run.")
+        .def("get_execution_config", &Simulation::GetExecutionConfig,
+             "Get the current execution configuration.")
+        .def("set_execution_config", &Simulation::SetExecutionConfig,
+             py::arg("execution_config"), "Set the execution configuration.")
+        .def("get_runtime_config", &Simulation::GetRuntimeConfig,
+             "Get the current runtime configuration.")
+        .def("set_runtime_config", &Simulation::SetRuntimeConfig,
+             py::arg("runtime_config"), "Set the runtime configuration.")
         .def("__repr__", [](const Simulation &m) {
             return "<respondpy.Simulation with " +
                    std::to_string(m.GetModelNames().size()) + " models>";

@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -17,24 +17,25 @@ import typing
 from .types import StateVector
 from .history import History
 from .timestep import Timestep
+from .config import RuntimeConfig
 
 __all__: list[str] = ['Model']
 
 
 class Model:
-    def __init__(self, name: str, log_name: str = "respond", log_file: str = "respond.log") -> None:
+    def __init__(self, name: str, runtime_config: RuntimeConfig) -> None:
         ...
 
     def __copy__(self) -> Model:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> Model:
+    def __deepcopy__(self, arg0: dict[str, object]) -> Model:
         ...
 
     def add_timestep(self, timestep: Timestep) -> None:
         ...
 
-    def run_timestep(self, idx: typing.SupportsInt = -1) -> None:
+    def run_timestep(self, idx: typing.SupportsInt) -> None:
         ...
 
     def run_timesteps(self) -> None:
@@ -64,6 +65,9 @@ class Model:
     def get_timestep(self) -> int:
         ...
 
+    def get_timestep_count(self) -> int:
+        ...
+
     def get_history_capture_interval(self) -> typing.SupportsInt:
         ...
 
@@ -83,6 +87,9 @@ class Model:
         ...
 
     def set_initial_history_recorded(self, recorded: bool) -> None:
+        ...
+
+    def to_json(self) -> str:
         ...
 
     def __repr__(self) -> str:
