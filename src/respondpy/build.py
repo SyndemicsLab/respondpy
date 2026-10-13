@@ -35,7 +35,8 @@ def _get_simulation_settings(input_data: Input) -> tuple[int, list[int]]:
         ) from error
     if duration <= 0:
         raise ValueError(
-            "The simulation config requires a positive `duration`.")
+            "The simulation config requires a positive `duration`."
+        )
 
     try:
         raw_change_times = config.get("simulation", "parameter_change_times")

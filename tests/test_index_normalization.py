@@ -33,7 +33,9 @@ def test_simulation_model_indexes_support_negative_and_reject_bounds() -> None:
 
 
 @pytest.mark.unit
-def test_timestep_transition_indexes_support_negative_and_reject_bounds() -> None:
+def test_timestep_transition_indexes_support_negative_and_reject_bounds() -> (
+    None
+):
     timestep = rpy.Timestep()
     timestep.create_transition("migration")
     timestep.create_transition("behavior")
@@ -57,10 +59,12 @@ def test_model_timestep_indexes_support_negative_and_reject_bounds() -> None:
     model.add_timestep(first)
     model.add_timestep(second)
 
-    assert model.get_timestep_at_index(
-        0).get_transition_names() == ["migration"]
-    assert model.get_timestep_at_index(
-        -1).get_transition_names() == ["behavior"]
+    assert model.get_timestep_at_index(0).get_transition_names() == [
+        "migration"
+    ]
+    assert model.get_timestep_at_index(-1).get_transition_names() == [
+        "behavior"
+    ]
 
     with pytest.raises(IndexError, match="index out of range"):
         model.get_timestep_at_index(2)

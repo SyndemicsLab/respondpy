@@ -52,19 +52,19 @@ def setup_config(make_tempdir):
     temp_dir = make_tempdir
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '52',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "52",
+        "parameter_change_times": "52",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '52',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "52",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
@@ -141,7 +141,11 @@ def test_repr(input_data):
 def test_get_interventions(input_data):
     interventions = input_data.get_interventions()
     expected_interventions = [
-        'no_treatment', 'early_buprenorphine', 'buprenorphine', 'post_buprenorphine']
+        "no_treatment",
+        "early_buprenorphine",
+        "buprenorphine",
+        "post_buprenorphine",
+    ]
     assert isinstance(interventions, list)
     assert set(interventions) == set(expected_interventions)
 
@@ -149,7 +153,7 @@ def test_get_interventions(input_data):
 @pytest.mark.unit
 def test_get_behaviors(input_data):
     behaviors = input_data.get_behaviors()
-    expected_behaviors = ['active_injection', 'nonactive_injection']
+    expected_behaviors = ["active_injection", "nonactive_injection"]
     assert isinstance(behaviors, list)
     assert set(behaviors) == set(expected_behaviors)
 
@@ -158,7 +162,11 @@ def test_get_behaviors(input_data):
 def test_get_interventions_id_maps(input_data):
     interventions = input_data.get_intervention_id_maps()
     expected_interventions = {
-        1: 'no_treatment', 2: 'early_buprenorphine', 3: 'buprenorphine', 4: 'post_buprenorphine'}
+        1: "no_treatment",
+        2: "early_buprenorphine",
+        3: "buprenorphine",
+        4: "post_buprenorphine",
+    }
     assert isinstance(interventions, dict)
     assert interventions == expected_interventions
 
@@ -166,7 +174,7 @@ def test_get_interventions_id_maps(input_data):
 @pytest.mark.unit
 def test_get_behaviors_id_maps(input_data):
     behaviors = input_data.get_behavior_id_maps()
-    expected_behaviors = {1: 'active_injection', 2: 'nonactive_injection'}
+    expected_behaviors = {1: "active_injection", 2: "nonactive_injection"}
     assert isinstance(behaviors, dict)
     assert behaviors == expected_behaviors
 
@@ -175,8 +183,16 @@ def test_get_behaviors_id_maps(input_data):
 def test_get_cohorts(input_data):
     col_names, results = input_data.get_cohorts()
     expected_col_names = [
-        "id", "description", "background_mortality_sample", "behavior_transition_sample", "initial_population_sample",
-        "intervention_transition_sample", "overdose_sample", "overdose_fatality_sample", "population_change_sample", "smr_sample"
+        "id",
+        "description",
+        "background_mortality_sample",
+        "behavior_transition_sample",
+        "initial_population_sample",
+        "intervention_transition_sample",
+        "overdose_sample",
+        "overdose_fatality_sample",
+        "population_change_sample",
+        "smr_sample",
     ]
     expected_results = [1, "Test Cohort 1", 1, 1, 1, 1, 1, 1, 1, 1]
     assert set(expected_col_names) == set(col_names)
@@ -193,7 +209,8 @@ def test_get_cohort_ids(input_data):
 @pytest.mark.unit
 def test_select_parameter_intervention(input_data):
     param = rpydata.Parameter(
-        rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)
+        rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
+    )
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -202,7 +219,8 @@ def test_select_parameter_intervention(input_data):
 @pytest.mark.unit
 def test_select_parameter_behavior(input_data):
     param = rpydata.Parameter(
-        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY)
+        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+    )
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -210,8 +228,7 @@ def test_select_parameter_behavior(input_data):
 
 @pytest.mark.unit
 def test_select_parameter_initial_cohort(input_data):
-    param = rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT)
+    param = rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -219,8 +236,7 @@ def test_select_parameter_initial_cohort(input_data):
 
 @pytest.mark.unit
 def test_select_parameter_migrating_cohort(input_data):
-    param = rpydata.Parameter(
-        rpydata.ParameterType.MIGRATION_COHORT)
+    param = rpydata.Parameter(rpydata.ParameterType.MIGRATION_COHORT)
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -228,8 +244,7 @@ def test_select_parameter_migrating_cohort(input_data):
 
 @pytest.mark.unit
 def test_select_parameter_overdose(input_data):
-    param = rpydata.Parameter(
-        rpydata.ParameterType.OVERDOSE_PROBABILITY)
+    param = rpydata.Parameter(rpydata.ParameterType.OVERDOSE_PROBABILITY)
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -238,7 +253,8 @@ def test_select_parameter_overdose(input_data):
 @pytest.mark.unit
 def test_select_parameter_fatal_overdose(input_data):
     param = rpydata.Parameter(
-        rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY)
+        rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY
+    )
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -247,7 +263,8 @@ def test_select_parameter_fatal_overdose(input_data):
 @pytest.mark.unit
 def test_select_parameter_background_mortality(input_data):
     param = rpydata.Parameter(
-        rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY)
+        rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY
+    )
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -255,8 +272,7 @@ def test_select_parameter_background_mortality(input_data):
 
 @pytest.mark.unit
 def test_select_parameter_smr(input_data):
-    param = rpydata.Parameter(
-        rpydata.ParameterType.STANDARD_MORTALITY_RATIO)
+    param = rpydata.Parameter(rpydata.ParameterType.STANDARD_MORTALITY_RATIO)
     result = input_data.select_parameter(param, cohort_id=1, time=1)
     assert isinstance(result, np.ndarray)
     print(result)
@@ -272,7 +288,9 @@ def test_input_initialization_requires_complete_paths(setup_db):
 @pytest.mark.unit
 def test_get_connection_raises_when_missing(input_data):
     input_data._connection = None
-    with pytest.raises(ConnectionError, match="No database connection established"):
+    with pytest.raises(
+        ConnectionError, match="No database connection established"
+    ):
         input_data._get_connection()
 
 
@@ -281,7 +299,9 @@ def test_input_close_releases_connection(input_data):
     input_data.close()
     input_data.close()
 
-    with pytest.raises(ConnectionError, match="No database connection established"):
+    with pytest.raises(
+        ConnectionError, match="No database connection established"
+    ):
         input_data.get_cohorts()
 
 
@@ -291,7 +311,9 @@ def test_input_context_manager_closes_connection(setup_data):
     with rpydata.Input(db_path=db_path, conf_path=config_path) as input_data:
         assert input_data.get_cohort_ids() == [1]
 
-    with pytest.raises(ConnectionError, match="No database connection established"):
+    with pytest.raises(
+        ConnectionError, match="No database connection established"
+    ):
         input_data.get_cohorts()
 
 
@@ -304,10 +326,11 @@ def test_check_valid_list_edge_cases(input_data):
 
 @pytest.mark.unit
 def test_connect_and_executemany_rejects_bad_shapes(input_data):
-    with pytest.raises(ValueError, match="Expected list of tuples with 2 items each"):
+    with pytest.raises(
+        ValueError, match="Expected list of tuples with 2 items each"
+    ):
         input_data._connect_and_executemany(
-            [(1,)],
-            "INSERT INTO intervention(id, name) VALUES (?, ?)"
+            [(1,)], "INSERT INTO intervention(id, name) VALUES (?, ?)"
         )
 
 
@@ -360,7 +383,9 @@ def test_extract_values_rejects_invalid_parameter(input_data):
 
 
 @pytest.mark.unit
-def test_zero_invalid_transitions_passthrough_for_non_transition_param(input_data):
+def test_zero_invalid_transitions_passthrough_for_non_transition_param(
+    input_data,
+):
     transition_matrix = pl.DataFrame(
         {
             "initial_intervention": ["A"],
@@ -383,9 +408,7 @@ def test_insert_cohorts_adds_new_row(input_data):
     before_cols, before_rows = input_data.get_cohorts()
     assert "id" in before_cols
 
-    input_data.insert_cohorts([
-        ("Second Cohort", 1, 1, 1, 1, 1, 1, 1, 1)
-    ])
+    input_data.insert_cohorts([("Second Cohort", 1, 1, 1, 1, 1, 1, 1, 1)])
 
     _, after_rows = input_data.get_cohorts()
     assert len(after_rows) == len(before_rows) + 1

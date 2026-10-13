@@ -11,6 +11,8 @@
 ################################################################################
 from __future__ import annotations
 
-from ._core.model import Model  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+from ._core.model import (
+    Model,
+)  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
-__all__: list[str] = ['Model']
+__all__: list[str] = ["Model"]

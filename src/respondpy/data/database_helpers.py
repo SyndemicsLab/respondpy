@@ -14,7 +14,7 @@ import polars as pl
 
 
 def _normalize_state_pairs(
-    values: list[tuple[int, str]] | list[list]
+    values: list[tuple[int, str]] | list[list],
 ) -> list[tuple[int, str]]:
     """Normalize state id/name mappings to ``[(id, name), ...]`` format."""
     if not values:
@@ -34,13 +34,14 @@ def _normalize_state_pairs(
         return list(zip(values[0], values[1], strict=True))
 
     raise ValueError(
-        "Invalid state mapping format. Expected list of (id, name) pairs.")
+        "Invalid state mapping format. Expected list of (id, name) pairs."
+    )
 
 
 def _sort_state_vector(
     lf: pl.LazyFrame,
     behaviors: list[tuple[int, str]],
-    interventions: list[tuple[int, str]]
+    interventions: list[tuple[int, str]],
 ) -> pl.LazyFrame:
     """Sort a state-vector dataframe by intervention and behavior ids.
 
@@ -64,24 +65,28 @@ def _sort_state_vector(
         If required state columns are missing.
     """
     s = lf.collect_schema().names()
-    if 'intervention' not in s or 'behavior' not in s:
+    if "intervention" not in s or "behavior" not in s:
         raise ValueError(
-            f"Invalid columns provided when attempting to sort state vector: {s}")
+            f"Invalid columns provided when attempting to sort state vector: {s}"
+        )
     behavior_pairs = _normalize_state_pairs(behaviors)
     intervention_pairs = _normalize_state_pairs(interventions)
 
     behav = pl.LazyFrame(
-        behavior_pairs, schema=["b_id", "b_name"], orient='row')
+        behavior_pairs, schema=["b_id", "b_name"], orient="row"
+    )
 
     inter = pl.LazyFrame(
-        intervention_pairs, schema=["i_id", "i_name"], orient='row')
+        intervention_pairs, schema=["i_id", "i_name"], orient="row"
+    )
 
     # Sort by intervention id, then behavior id to match Input.get_state_names.
-    sorted_lf = lf.join(
-        behav, left_on="behavior", right_on="b_name", how="inner"
-    ).join(
-        inter, left_on="intervention", right_on="i_name", how="inner"
-    ).sort(["i_id", "b_id"]).drop(["i_id", "b_id"])
+    sorted_lf = (
+        lf.join(behav, left_on="behavior", right_on="b_name", how="inner")
+        .join(inter, left_on="intervention", right_on="i_name", how="inner")
+        .sort(["i_id", "b_id"])
+        .drop(["i_id", "b_id"])
+    )
 
     # Preserve the original column order to avoid accidental schema drift.
     return sorted_lf.select(s)
@@ -90,7 +95,7 @@ def _sort_state_vector(
 def _sort_transition_matrix(
     lf: pl.LazyFrame,
     behaviors: list[tuple[int, str]],
-    interventions: list[tuple[int, str]]
+    interventions: list[tuple[int, str]],
 ) -> pl.LazyFrame:
     """Sort a transition-matrix dataframe into deterministic state order.
 
@@ -126,54 +131,64 @@ def _sort_transition_matrix(
         working = lf
     else:
         raise ValueError(
-            f"Invalid columns provided when attempting to sort transition matrix: {s}")
+            f"Invalid columns provided when attempting to sort transition matrix: {s}"
+        )
 
     behavior_pairs = _normalize_state_pairs(behaviors)
     intervention_pairs = _normalize_state_pairs(interventions)
 
     behav = pl.LazyFrame(
-        behavior_pairs, schema=["b_id", "b_name"], orient='row'
+        behavior_pairs, schema=["b_id", "b_name"], orient="row"
     )
     inter = pl.LazyFrame(
-        intervention_pairs, schema=["i_id", "i_name"], orient='row'
+        intervention_pairs, schema=["i_id", "i_name"], orient="row"
     )
 
     # Destination-major ordering guarantees column-stochastic matrices after
     # reshape for y = Mx when source-state labels define columns.
-    sorted_lf = working.join(
-        inter.rename({"i_id": "new_i_id", "i_name": "new_i_name"}),
-        left_on="new_intervention",
-        right_on="new_i_name",
-        how="inner",
-    ).join(
-        behav.rename({"b_id": "new_b_id", "b_name": "new_b_name"}),
-        left_on="new_behavior",
-        right_on="new_b_name",
-        how="inner",
-    ).join(
-        inter.rename({"i_id": "initial_i_id", "i_name": "initial_i_name"}),
-        left_on="initial_intervention",
-        right_on="initial_i_name",
-        how="inner",
-    ).join(
-        behav.rename({"b_id": "initial_b_id", "b_name": "initial_b_name"}),
-        left_on="initial_behavior",
-        right_on="initial_b_name",
-        how="inner",
-    ).sort(["new_i_id", "new_b_id", "initial_i_id", "initial_b_id"]).drop([
-        "new_i_id",
-        "new_b_id",
-        "initial_i_id",
-        "initial_b_id",
-    ])
+    sorted_lf = (
+        working.join(
+            inter.rename({"i_id": "new_i_id", "i_name": "new_i_name"}),
+            left_on="new_intervention",
+            right_on="new_i_name",
+            how="inner",
+        )
+        .join(
+            behav.rename({"b_id": "new_b_id", "b_name": "new_b_name"}),
+            left_on="new_behavior",
+            right_on="new_b_name",
+            how="inner",
+        )
+        .join(
+            inter.rename({"i_id": "initial_i_id", "i_name": "initial_i_name"}),
+            left_on="initial_intervention",
+            right_on="initial_i_name",
+            how="inner",
+        )
+        .join(
+            behav.rename({"b_id": "initial_b_id", "b_name": "initial_b_name"}),
+            left_on="initial_behavior",
+            right_on="initial_b_name",
+            how="inner",
+        )
+        .sort(["new_i_id", "new_b_id", "initial_i_id", "initial_b_id"])
+        .drop(
+            [
+                "new_i_id",
+                "new_b_id",
+                "initial_i_id",
+                "initial_b_id",
+            ]
+        )
+    )
 
     return sorted_lf.select(s)
 
 
 def sort_dataframes(
-        lf: pl.LazyFrame,
-        behaviors: list[tuple[int, str]],
-        interventions: list[tuple[int, str]]
+    lf: pl.LazyFrame,
+    behaviors: list[tuple[int, str]],
+    interventions: list[tuple[int, str]],
 ) -> pl.LazyFrame:
     """Sort known RESPOND shapes while leaving other schemas unchanged.
 
@@ -227,6 +242,6 @@ def get_column_order(col_name: str, values: list[str]) -> str:
     """
     order_clause = "CASE\n"
     for idx, v in enumerate(values):
-        order_clause += f"WHEN {col_name} = \'{v}\' THEN {idx}\n"
+        order_clause += f"WHEN {col_name} = '{v}' THEN {idx}\n"
     order_clause += f"ELSE {len(values)}\n END"
     return order_clause

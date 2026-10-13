@@ -11,7 +11,7 @@
 ################################################################################
 
 """
-Smoke Tests to ensure RESPOND compiled. 
+Smoke Tests to ensure RESPOND compiled.
 Run with `uv run pytest -m smoke`.
 """
 
@@ -27,12 +27,14 @@ import respondpy as rpy
 def test_import() -> None:
     """Test that we can import the module."""
     import respondpy
+
     assert respondpy.__version__ is not None
 
 
 @pytest.mark.smoke
 def test_data_import() -> None:
     import respondpy.data
+
     assert respondpy.data.__all__ is not None
     assert isinstance(respondpy.__dir__(), list)
 
@@ -102,8 +104,8 @@ def test_simulation_sparse_histories() -> None:
 
     model_histories = sim.get_model_history(0)
     assert isinstance(
-        model_histories, dict), "Expected dict keyed by history name"
+        model_histories, dict
+    ), "Expected dict keyed by history name"
 
     for hist in model_histories.values():
-        assert isinstance(
-            hist, rpy.History), "Expected History values in dict"
+        assert isinstance(hist, rpy.History), "Expected History values in dict"

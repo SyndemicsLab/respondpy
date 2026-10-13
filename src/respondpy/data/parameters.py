@@ -28,13 +28,10 @@ class ParameterType(Enum):
     STANDARD_MORTALITY_RATIO = 8
 
 
-class Parameter():
+class Parameter:
     """Typed wrapper around ParameterType with SQL and schema helpers."""
 
-    def __init__(
-            self,
-            parameter_type: ParameterType
-    ) -> None:
+    def __init__(self, parameter_type: ParameterType) -> None:
         """Create a parameter descriptor.
 
         Parameters
@@ -133,7 +130,10 @@ class Parameter():
         bool
             True if the parameter is a transition-matrix operation, False otherwise.
         """
-        if self.__parameter_type in [ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]:
+        if self.__parameter_type in [
+            ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+            ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
+        ]:
             return True
         return False
 
@@ -163,7 +163,13 @@ class Parameter():
         match self.__parameter_type:
             case ParameterType.STANDARD_MORTALITY_RATIO:
                 return "ratio"
-            case ParameterType.BACKGROUND_DEATH_PROBABILITY | ParameterType.OVERDOSE_PROBABILITY | ParameterType.OVERDOSE_FATALITY_PROBABILITY | ParameterType.INTERVENTION_TRANSITION_PROBABILITY | ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
+            case (
+                ParameterType.BACKGROUND_DEATH_PROBABILITY
+                | ParameterType.OVERDOSE_PROBABILITY
+                | ParameterType.OVERDOSE_FATALITY_PROBABILITY
+                | ParameterType.INTERVENTION_TRANSITION_PROBABILITY
+                | ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+            ):
                 return "probability"
             case ParameterType.INITIAL_COHORT | ParameterType.MIGRATION_COHORT:
                 return "count"
@@ -262,7 +268,9 @@ class Parameter():
             case ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
                 return "INSERT INTO intervention_transition VALUES (?, ?, ?, ?, ?, ?)"
             case ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
-                return "INSERT INTO behavior_transition VALUES (?, ?, ?, ?, ?, ?)"
+                return (
+                    "INSERT INTO behavior_transition VALUES (?, ?, ?, ?, ?, ?)"
+                )
             case ParameterType.OVERDOSE_PROBABILITY:
                 return "INSERT INTO overdose VALUES (?, ?, ?, ?, ?)"
             case ParameterType.OVERDOSE_FATALITY_PROBABILITY:
@@ -277,7 +285,7 @@ class Parameter():
                 )
 
     def get_select_statement(
-            self, interventions: list[str], behaviors: list[str]
+        self, interventions: list[str], behaviors: list[str]
     ) -> str:
         """Return parameter-specific SELECT SQL with deterministic ordering.
 

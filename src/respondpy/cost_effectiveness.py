@@ -12,11 +12,16 @@
 
 from __future__ import annotations
 
-from ._core.cost_effectiveness import calculate_life_years, cwise_min, cwise_product, discount  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+from ._core.cost_effectiveness import (
+    calculate_life_years,
+    cwise_min,
+    cwise_product,
+    discount,
+)  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
 __all__: list[str] = [
     "calculate_life_years",
     "cwise_min",
     "cwise_product",
-    "discount"
+    "discount",
 ]

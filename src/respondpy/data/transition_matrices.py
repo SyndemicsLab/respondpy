@@ -15,7 +15,7 @@ import numpy as np
 
 
 def _require_columns(
-        frame: pl.LazyFrame | pl.DataFrame, columns: list[str]
+    frame: pl.LazyFrame | pl.DataFrame, columns: list[str]
 ) -> None:
     if isinstance(frame, pl.LazyFrame):
         frame_cols = set(frame.collect_schema().names())
@@ -37,8 +37,7 @@ def _validate_probability_column(
 
 
 def _ensure_no_duplicate_keys(
-        frame: pl.LazyFrame | pl.DataFrame,
-        key_columns: list[str] | None = None
+    frame: pl.LazyFrame | pl.DataFrame, key_columns: list[str] | None = None
 ) -> None:
     if not key_columns:
         key_columns = frame.collect_schema().names()
@@ -49,7 +48,8 @@ def _ensure_no_duplicate_keys(
     if isinstance(frame, pl.LazyFrame):
         frame = frame.collect()
     has_duplicates = frame.select(
-        pl.struct(key_columns).is_duplicated().any()).item()
+        pl.struct(key_columns).is_duplicated().any()
+    ).item()
     if has_duplicates:
         raise ValueError(
             f"Duplicate transition rows found for key columns: {key_columns}"
@@ -65,7 +65,7 @@ def _default_transition_shape(
         "initial_intervention",
         "new_intervention",
         "initial_behavior",
-        "new_behavior"
+        "new_behavior",
     }
 
     if isinstance(frame, pl.LazyFrame):
@@ -74,8 +74,8 @@ def _default_transition_shape(
         cols = set(frame.columns)
 
     if default_cols.issubset(cols):
-        from_cols = ['initial_intervention', 'initial_behavior']
-        to_cols = ['new_intervention', 'new_behavior']
+        from_cols = ["initial_intervention", "initial_behavior"]
+        to_cols = ["new_intervention", "new_behavior"]
         sample_cols = ["sample", "time"]
         grouping_cols = sample_cols + from_cols
         unique_conditions = sample_cols + from_cols + to_cols
@@ -90,7 +90,7 @@ def build_constant_transition(
     *,
     sample_id: int = 1,
     time: int = 1,
-    constant: float = 0.0
+    constant: float = 0.0,
 ) -> pl.LazyFrame:
     """Build a complete constant-valued transition matrix table.
 
@@ -122,26 +122,26 @@ def build_constant_transition(
     init_inter = pl.LazyFrame({"initial_intervention": interventions})
     new_inter = pl.LazyFrame({"new_intervention": interventions})
 
-    result = init_behav.join(
-        new_behav, how="cross"
-    ).join(
-        init_inter, how="cross"
-    ).join(
-        new_inter, how="cross"
-    ).with_columns(
-        sample=pl.lit(sample_id),
-        time=pl.lit(time),
-        probability=pl.lit(constant),
-    ).select(
-        [
-            "sample",
-            "time",
-            "initial_behavior",
-            "new_behavior",
-            "initial_intervention",
-            "new_intervention",
-            "probability",
-        ]
+    result = (
+        init_behav.join(new_behav, how="cross")
+        .join(init_inter, how="cross")
+        .join(new_inter, how="cross")
+        .with_columns(
+            sample=pl.lit(sample_id),
+            time=pl.lit(time),
+            probability=pl.lit(constant),
+        )
+        .select(
+            [
+                "sample",
+                "time",
+                "initial_behavior",
+                "new_behavior",
+                "initial_intervention",
+                "new_intervention",
+                "probability",
+            ]
+        )
     )
 
     n_states = len(interventions) * len(behaviors)
@@ -155,10 +155,10 @@ def build_constant_transition(
 
 
 def combine_dataframes(
-        complete_df: pl.LazyFrame,
-        raw_data_df: pl.LazyFrame,
-        *,
-        value_col: str = "probability"
+    complete_df: pl.LazyFrame,
+    raw_data_df: pl.LazyFrame,
+    *,
+    value_col: str = "probability",
 ) -> pl.LazyFrame:
     """Overlay raw sampled values onto a complete template dataframe.
 
@@ -186,23 +186,19 @@ def combine_dataframes(
     """
     join_cols = raw_data_df.collect_schema().names()
     join_cols.remove(value_col)
-    if not set(
-        join_cols
-    ).issubset(set(complete_df.collect_schema().names())):
+    if not set(join_cols).issubset(set(complete_df.collect_schema().names())):
         raise ValueError(
             f"The raw data dataframe must contain a subset of columns of the complete dataframe in order to combine them! Complete dataframe columns: {complete_df.collect_schema().names()}, raw data dataframe columns: {raw_data_df.collect_schema().names()}"
         )
     # We want to join on all columns except the value column, and then collapse the value column so that if there is a value in raw_data_df it takes precedence, but if there isn't then we keep the value from complete_df. This allows us to fill in missing values with the constant dataframes.
     joined_lf = complete_df.join(
-        raw_data_df, on=join_cols, how="left", suffix="_new")
+        raw_data_df, on=join_cols, how="left", suffix="_new"
+    )
     collapsed_df = joined_lf.with_columns(
-        pl.when(
-            pl.col(f"{value_col}_new").is_null()
-        ).then(
-            pl.col(value_col)
-        ).otherwise(
-            pl.col(f"{value_col}_new")
-        ).alias(value_col)
+        pl.when(pl.col(f"{value_col}_new").is_null())
+        .then(pl.col(value_col))
+        .otherwise(pl.col(f"{value_col}_new"))
+        .alias(value_col)
     ).select(pl.all().exclude(f"{value_col}_new"))
     return collapsed_df
 
@@ -254,13 +250,18 @@ def update_retention_probability(
     """
     if group_columns is None or unique_key_columns is None:
         group_cols, from_cols, to_cols, constraints = _default_transition_shape(
-            transition_matrix)
+            transition_matrix
+        )
     else:
         group_cols = group_columns
-        from_cols = transition_columns if isinstance(
-            transition_columns, list) else [transition_columns]
-        to_cols = new_columns if isinstance(
-            new_columns, list) else [new_columns]
+        from_cols = (
+            transition_columns
+            if isinstance(transition_columns, list)
+            else [transition_columns]
+        )
+        to_cols = (
+            new_columns if isinstance(new_columns, list) else [new_columns]
+        )
         constraints = []
 
     _require_columns(transition_matrix, constraints + [probability_column])
@@ -268,7 +269,8 @@ def update_retention_probability(
 
     if len(to_cols) != len(from_cols):
         raise ValueError(
-            "The number of transition from columns does not match the number of transition to columns!")
+            "The number of transition from columns does not match the number of transition to columns!"
+        )
 
     # we have to collect the LazyFrame here because we need to count rows
     if isinstance(transition_matrix, pl.LazyFrame):
@@ -279,21 +281,28 @@ def update_retention_probability(
     )
 
     if transition_matrix.select(pl.len()).item() != n_states:
-        required_cols = ['initial_intervention',
-                         'initial_behavior', 'sample', 'time']
+        required_cols = [
+            "initial_intervention",
+            "initial_behavior",
+            "sample",
+            "time",
+        ]
         if not set(required_cols).issubset(set(transition_matrix.columns)):
             raise ValueError(
                 "Transition matrix is missing required columns for completion. Please provide a complete transition matrix or ensure that 'initial_intervention' and 'initial_behavior' columns are present for automatic completion."
             )
-        inter = transition_matrix['initial_intervention'].unique().to_list()
-        behav = transition_matrix['initial_behavior'].unique().to_list()
-        sample = transition_matrix['sample'].unique().item()
-        time = transition_matrix['time'].unique().item()
+        inter = transition_matrix["initial_intervention"].unique().to_list()
+        behav = transition_matrix["initial_behavior"].unique().to_list()
+        sample = transition_matrix["sample"].unique().item()
+        time = transition_matrix["time"].unique().item()
 
         completed = combine_dataframes(
             build_constant_transition(
                 inter, behav, sample_id=sample, time=time
-            ), transition_matrix.lazy(), value_col=probability_column).collect()
+            ),
+            transition_matrix.lazy(),
+            value_col=probability_column,
+        ).collect()
     else:
         completed = transition_matrix
 
@@ -309,8 +318,7 @@ def update_retention_probability(
             )
 
     non_retention = (
-        completed
-        .filter(~is_retention)
+        completed.filter(~is_retention)
         .group_by(group_cols)  # Add new_behavior (if intervention)
         .agg(pl.col(probability_column).sum().alias("__non_retention_sum"))
     )
@@ -402,7 +410,8 @@ def verify_transition_probability(
     """
     if group_columns is None or unique_key_columns is None:
         group_cols, _, _, constraints = _default_transition_shape(
-            transition_matrix)
+            transition_matrix
+        )
     else:
         group_cols = group_columns
         constraints = transition_matrix.columns

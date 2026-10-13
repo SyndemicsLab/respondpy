@@ -12,6 +12,8 @@
 
 from __future__ import annotations
 
-from ._core.timestep import Timestep  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+from ._core.timestep import (
+    Timestep,
+)  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
-__all__: list[str] = ['Timestep']
+__all__: list[str] = ["Timestep"]

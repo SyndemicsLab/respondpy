@@ -43,19 +43,19 @@ def setup_config(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '52',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "52",
+        "parameter_change_times": "52",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '52',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "52",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
