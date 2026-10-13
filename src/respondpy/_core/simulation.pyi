@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,6 +16,7 @@ import typing
 
 from .model import Model
 from .history import History
+from .config import ExecutionConfig, RuntimeConfig
 
 __all__: list[str] = ['Simulation']
 
@@ -26,17 +27,13 @@ class Simulation:
         ...
 
     @typing.overload
-    def __init__(self, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, log_name: str, log_file: str) -> None:
+    def __init__(self, runtime_config: RuntimeConfig) -> None:
         ...
 
     def __copy__(self) -> Simulation:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> Simulation:
+    def __deepcopy__(self, arg0: dict[str, object]) -> Simulation:
         ...
 
     def create_new_model(self, model_name: str) -> Model:
@@ -79,4 +76,16 @@ class Simulation:
         ...
 
     def set_duration(self, duration: typing.SupportsInt) -> None:
+        ...
+
+    def get_execution_config(self) -> ExecutionConfig:
+        ...
+
+    def set_execution_config(self, execution_config: ExecutionConfig) -> None:
+        ...
+
+    def get_runtime_config(self) -> RuntimeConfig:
+        ...
+
+    def set_runtime_config(self, runtime_config: RuntimeConfig) -> None:
         ...

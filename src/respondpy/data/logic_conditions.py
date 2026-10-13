@@ -99,6 +99,8 @@ def validate_time_list(ct_list: list[int]) -> list[int]:
     ValueError
         If any value is less than or equal to zero.
     """
+    if not ct_list:
+        return []
     if any(num <= 0 for num in ct_list):
         raise ValueError(
             "The config file contains zero or a negative number in the `parameter_change_times` list!")

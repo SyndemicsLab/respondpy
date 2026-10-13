@@ -17,6 +17,7 @@
 
 #include <respond/history.hpp>
 #include <respond/logging.hpp>
+#include <respond/logging_config.hpp>
 #include <respond/transition.hpp>
 
 namespace py = pybind11;
@@ -25,27 +26,30 @@ using namespace respond;
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_transition(py::module &m) {
     py::class_<Transition, py::smart_holder> t(m, "Transition");
-    t.def(py::init([](const std::string &type, const std::string &log_name,
-                      const std::string &log_file) {
+    t.def(py::init([](const std::string &type) {
               return Transition::Create(type, RESPOND_DEFAULT_TRANSITION_NAME,
-                                        log_name, log_file);
+                                        LoggingConfig{});
           }),
-          py::arg("type"), py::arg("log_name") = RESPOND_DEFAULT_LOG,
-          py::arg("log_file") = RESPOND_DEFAULT_LOG_FILE,
-          "Factory method to create a Transition instance of the specified "
-          "type. Uses the default transition name and initializes logging.")
-        .def(py::init([](const std::string &type, const std::string &name,
-                         const std::string &log_name,
-                         const std::string &log_file) {
-                 return Transition::Create(type, name, log_name, log_file);
+          py::arg("type"),
+          "Factory method to create a Transition instance with default "
+          "logging.")
+        .def(py::init([](const std::string &type, const LoggingConfig &config) {
+                 return Transition::Create(
+                     type, RESPOND_DEFAULT_TRANSITION_NAME, config);
              }),
-             py::arg("type"), py::arg("name"),
-             py::arg("log_name") = RESPOND_DEFAULT_LOG,
-             py::arg("log_file") = RESPOND_DEFAULT_LOG_FILE,
-             "Factory method to create a named Transition instance.")
+             py::arg("type"), py::arg("logging_config"),
+             "Factory method to create a Transition instance with a logging "
+             "config.")
+        .def(py::init([](const std::string &type, const std::string &name,
+                         const LoggingConfig &logging_config) {
+                 return Transition::Create(type, name, logging_config);
+             }),
+             py::arg("type"), py::arg("name"), py::arg("logging_config"),
+             "Factory method to create a named Transition instance with a "
+             "logging config.")
         .def(
             "execute",
-            [](const Transition &self, const Eigen::VectorXd &state,
+                [](const Transition &self, const py::object &state,
                py::object hist_obj) {
                 std::map<std::string, History> h;
                 if (hist_obj.is_none()) {
@@ -56,7 +60,7 @@ void register_transition(py::module &m) {
                 } else {
                     h = hist_obj.cast<std::map<std::string, History>>();
                 }
-                auto result = self.Execute(state, h);
+                auto result = self.Execute(vector_from_python(state), h);
                 return py::make_tuple(result, h);
             },
             py::arg("state"), py::arg("history") = py::none(),
@@ -64,9 +68,6 @@ void register_transition(py::module &m) {
             "(state_result, history_map). Pass the model's history map for "
             "expected behavior; omitting it will issue a warning and the "
             "returned history map will be empty.")
-        .def("add_matrix", &Transition::AddMatrix, py::arg("matrix"))
-        .def("get_name", &Transition::GetName)
-        .def("clear_matrices", &Transition::ClearMatrices)
         .def("add_matrix", &Transition::AddMatrix, py::arg("matrix"))
         .def("get_name", &Transition::GetName)
         .def("clear_matrices", &Transition::ClearMatrices)

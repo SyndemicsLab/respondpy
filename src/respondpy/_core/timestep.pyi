@@ -4,7 +4,7 @@
 # Created Date: 2026-07-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import typing
 
+from .config import LoggingConfig
 from .transition import Transition
 from .types import StateVector, TransitionMatrix
 
@@ -26,17 +27,13 @@ class Timestep:
         ...
 
     @typing.overload
-    def __init__(self, log_name: str) -> None:
-        ...
-
-    @typing.overload
-    def __init__(self, log_name: str, log_file: str) -> None:
+    def __init__(self, logging_config: LoggingConfig) -> None:
         ...
 
     def __copy__(self) -> Timestep:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> Timestep:
+    def __deepcopy__(self, arg0: dict[str, object]) -> Timestep:
         ...
 
     def create_transition(self, transition_name: str) -> Transition:

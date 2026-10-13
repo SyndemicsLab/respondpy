@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-04                                                    #
+# Last Modified: 2026-10-07                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -25,6 +25,32 @@ from .database_helpers import sort_dataframes
 from .parameters import Parameter, ParameterType
 from .transition_matrices import build_constant_transition, update_retention_probability, combine_dataframes
 from .state_vectors import build_constant_state_vector
+
+# These are the required tables and the associated columns in the RESPOND SQLite database.
+_REQUIRED_TABLE_COLUMNS: dict[str, frozenset[str]] = {
+    "intervention": frozenset({"id", "name"}),
+    "behavior": frozenset({"id", "name"}),
+    "background_mortality": frozenset({"sample", "time", "probability"}),
+    "behavior_transition": frozenset({
+        "sample", "intervention", "time", "initial_behavior",
+        "new_behavior", "probability",
+    }),
+    "initial_population": frozenset({"sample", "intervention", "behavior", "count"}),
+    "intervention_transition": frozenset({
+        "sample", "behavior", "time", "initial_intervention",
+        "new_intervention", "probability",
+    }),
+    "overdose": frozenset({"sample", "intervention", "behavior", "time", "probability"}),
+    "overdose_fatality": frozenset({"sample", "intervention", "behavior", "time", "probability"}),
+    "population_change": frozenset({"sample", "intervention", "behavior", "time", "count"}),
+    "smr": frozenset({"sample", "intervention", "behavior", "time", "ratio"}),
+    "cohort": frozenset({
+        "id", "background_mortality_sample", "behavior_transition_sample",
+        "initial_population_sample", "intervention_transition_sample",
+        "overdose_sample", "overdose_fatality_sample",
+        "population_change_sample", "smr_sample",
+    }),
+}
 
 
 class Input:
@@ -102,6 +128,12 @@ class Input:
                 f"Config file not found at {self._conf_path}!")
 
         self._connection = sqlite3.connect(str(self._db_path))
+        try:
+            self._validate_schema()
+        except ValueError:
+            self._connection.close()
+            self._connection = None
+            raise
 
         self._config = ConfigParser()
         self._config.read(self._conf_path)
@@ -127,6 +159,51 @@ class Input:
     def config(self) -> ConfigParser:
         """Return parsed simulation configuration."""
         return self._config
+
+    def close(self) -> None:
+        """Close the SQLite connection owned by this input source."""
+        if self._connection is not None:
+            self._connection.close()
+            self._connection = None
+
+    def __enter__(self) -> "Input":
+        self._get_connection()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
+
+    def _validate_schema(self) -> None:
+        """Validate the required RESPOND tables and columns."""
+        connection = self._connection
+        if connection is None:
+            raise ConnectionError("No database connection established.")
+
+        table_rows = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+        available_tables = {row[0] for row in table_rows}
+        missing_tables = sorted(
+            set(_REQUIRED_TABLE_COLUMNS) - available_tables)
+        if missing_tables:
+            raise ValueError(
+                "Input database is missing required tables: "
+                + ", ".join(missing_tables)
+            )
+
+        for table_name, required_columns in _REQUIRED_TABLE_COLUMNS.items():
+            columns = {
+                row[1]
+                for row in connection.execute(
+                    f"PRAGMA table_info({table_name})"
+                ).fetchall()
+            }
+            missing_columns = sorted(required_columns - columns)
+            if missing_columns:
+                raise ValueError(
+                    f"Input database table '{table_name}' is missing required "
+                    f"columns: {', '.join(missing_columns)}"
+                )
 
     # Helper Functions for Database Operations
 

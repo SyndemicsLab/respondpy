@@ -113,6 +113,15 @@ def test_input_initialization_invalid_conf(setup_db):
         rpydata.Input(db_path=db_path, conf_path="invalid.conf")
 
 
+@pytest.mark.unit
+def test_input_initialization_rejects_incomplete_schema(setup_config, tmp_path):
+    db_path = tmp_path / "incomplete.db"
+    sqlite3.connect(db_path).close()
+
+    with pytest.raises(ValueError, match="missing required tables"):
+        rpydata.Input(db_path=db_path, conf_path=setup_config)
+
+
 @pytest.fixture
 def input_data(setup_data):
     db_path, config_path = setup_data
@@ -265,6 +274,25 @@ def test_get_connection_raises_when_missing(input_data):
     input_data._connection = None
     with pytest.raises(ConnectionError, match="No database connection established"):
         input_data._get_connection()
+
+
+@pytest.mark.unit
+def test_input_close_releases_connection(input_data):
+    input_data.close()
+    input_data.close()
+
+    with pytest.raises(ConnectionError, match="No database connection established"):
+        input_data.get_cohorts()
+
+
+@pytest.mark.unit
+def test_input_context_manager_closes_connection(setup_data):
+    db_path, config_path = setup_data
+    with rpydata.Input(db_path=db_path, conf_path=config_path) as input_data:
+        assert input_data.get_cohort_ids() == [1]
+
+    with pytest.raises(ConnectionError, match="No database connection established"):
+        input_data.get_cohorts()
 
 
 @pytest.mark.unit

@@ -40,24 +40,30 @@ def test_data_import() -> None:
 @pytest.mark.smoke
 def test_model_Nx0() -> None:
     state = np.array([10.0, 20.0, 30.0]).squeeze()
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     model.set_state(state)
     np.testing.assert_array_equal(state, model.get_state())
 
 
 @pytest.mark.smoke
 def test_model_1xN() -> None:
-    state = np.array([[10.0, 20.0, 30.0]]).squeeze()
-    model = rpy.Model("markov", "respond")
-    print(state.shape)
+    state = np.array([[10.0, 20.0, 30.0]])
+    logging_config = rpy.LoggingConfig()
+    logging_config.logger_name = "respond"
+    runtime_config = rpy.RuntimeConfig()
+    runtime_config.logging = logging_config
+    model = rpy.Model("markov", runtime_config)
     model.set_state(state)
-    np.testing.assert_array_equal(state, model.get_state())
+    np.testing.assert_array_equal(state.ravel(), model.get_state())
 
 
 @pytest.mark.smoke
 def test_model_Nx1() -> None:
     state = np.array([[10.0], [20.0], [30.0]])
-    model = rpy.Model("markov", "respond", "respond.log")
+    runtime_config = rpy.RuntimeConfig()
+    runtime_config.logging.logger_name = "respond"
+    runtime_config.logging.file_path = "respond.log"
+    model = rpy.Model("markov", runtime_config)
     model.set_state(state)
     np.testing.assert_array_equal(state.squeeze(), model.get_state())
 
@@ -67,10 +73,12 @@ def test_one_step() -> None:
     state = np.array([1.3, 1.1, 1.8])
     migra = np.zeros((3, 1))
 
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     model.set_state(state)
 
-    timestep = rpy.Timestep("console")
+    logging_config = rpy.LoggingConfig()
+    logging_config.logger_name = "console"
+    timestep = rpy.Timestep(logging_config)
     timestep.create_transition("migration")
     timestep.add_matrix_to_transition("migration", migra)
 
@@ -84,7 +92,7 @@ def test_one_step() -> None:
 def test_simulation_sparse_histories() -> None:
     """Verify simulation exposes model histories as name-keyed dict of History objects."""
     state = np.array([10.0, 20.0, 30.0])
-    model = rpy.Model("markov")
+    model = rpy.Model("markov", rpy.RuntimeConfig())
     model.set_state(state)
     model.create_default_histories()
 

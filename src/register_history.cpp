@@ -15,6 +15,7 @@
 #include <string>
 
 #include <respond/history.hpp>
+#include <respond/logging_config.hpp>
 
 namespace py = pybind11;
 using namespace respond;
@@ -40,25 +41,14 @@ void register_history(py::module &m) {
              py::arg("name"), py::arg("mode"),
              "Construct a History with a specified name and "
              "explicit recording mode.")
+        .def(py::init<const std::string &, const LoggingConfig &>(),
+             py::arg("name"), py::arg("logging_config"),
+             "Construct a History with a specified name and logging config.")
         .def(py::init<const std::string &, const HistoryMode &,
-                      const std::string &>(),
-             py::arg("name"), py::arg("mode"), py::arg("log_name"),
-             "Construct a History with a specified name, mode, and logger.")
-        .def(py::init<const std::string &, const std::string &>(),
-             py::arg("name"), py::arg("log_name"),
-             "Construct a History with a specified name "
-             "and logger, using default mode.")
-        .def(py::init<const std::string &, const std::string &,
-                      const std::string &>(),
-             py::arg("name"), py::arg("log_name"), py::arg("log_filepath"),
-             "Construct a History with a specified name, logger, and log file "
-             "path, using default mode.")
-        .def(py::init<const std::string &, const HistoryMode &,
-                      const std::string &, const std::string &>(),
-             py::arg("name"), py::arg("mode"), py::arg("log_name"),
-             py::arg("log_filepath"),
-             "Construct a History with a specified name, mode, logger, and log "
-             "file path.")
+                      const LoggingConfig &>(),
+             py::arg("name"), py::arg("mode"), py::arg("logging_config"),
+             "Construct a History with a specified name, mode, and logging "
+             "config.")
         .def("__copy__", [](const History &self) { return History(self); })
         .def(
             "__deepcopy__",
@@ -73,6 +63,8 @@ void register_history(py::module &m) {
              "Flush the pending accumulated state into a recorded timestep. "
              "Records a zero vector of state_size if nothing is pending.")
         .def("clear", &History::Clear, "Clear all stored state history.")
+        .def("has_pending_state", &History::HasPendingState,
+             "Check whether an accumulated state is pending.")
         .def("get_state_map", &History::GetStateMap,
              "Get the state map (timestep -> state vector).")
         .def("get_recorded_timesteps", &History::GetRecordedTimesteps,

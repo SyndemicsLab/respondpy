@@ -46,7 +46,7 @@ FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
     GIT_TAG d03662f0984f652b60e7ddce53d3868002275197 # v3.0.4
-    FIND_PACKAGE_ARGS NAMES pybind11)
+)
 
 FetchContent_Declare(
     spdlog
@@ -62,7 +62,7 @@ set(SPDLOG_INSTALL ON)
 FetchContent_Declare(
     respond
     GIT_REPOSITORY https://github.com/SyndemicsLab/respond.git
-    GIT_TAG 738f5b5534b0c87a9b02d2c62c03f4b86ff9bd5f # v2.5.2
+    GIT_TAG 1ef0521e34d25cacb6a2b3833197896080cd6ef1 # v2.6.0
     OVERRIDE_FIND_PACKAGE
 )
 set(RESPOND_BUILD_DOCS OFF)

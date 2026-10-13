@@ -4,7 +4,7 @@
 # Created Date: 2026-02-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-20                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -15,14 +15,26 @@ from __future__ import annotations
 import typing
 
 from .history import History
+from .config import LoggingConfig
 from .types import StateVector, TransitionMatrix
 
 __all__: list[str] = ['Transition']
 
 
 class Transition:
+    @typing.overload
+    def __init__(self, type: str) -> None:
+        ...
+
+    @typing.overload
     def __init__(
-            self, type: str, name: str = 'transition', log_name: str = 'respond', log_file: str = 'respond.log'
+            self, type: str, logging_config: LoggingConfig
+    ) -> None:
+        ...
+
+    @typing.overload
+    def __init__(
+            self, type: str, name: str, logging_config: LoggingConfig
     ) -> None:
         ...
 
@@ -48,7 +60,7 @@ class Transition:
     def __copy__(self) -> Transition:
         ...
 
-    def __deepcopy__(self, arg0: dict) -> Transition:
+    def __deepcopy__(self, arg0: dict[str, object]) -> Transition:
         ...
 
     def __repr__(self) -> str:

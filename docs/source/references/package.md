@@ -2,6 +2,11 @@
 
 API reference for top-level symbols exported by `respondpy`.
 
+The runtime configuration classes `ExecutionConfig`, `LoggingConfig`, and
+`RuntimeConfig` are exported here as well as from `respondpy.config`. The
+logging facade is available as `respondpy.logging`, and its functions share
+the native RESPOND logging backend with C++ runtime objects.
+
 See also:
 - [Explanations](../explanations/architecture.md)
 - [How-To Guides](../how_to/data_loading.md)
@@ -24,5 +29,7 @@ flowchart LR
 	respondpy --> simulation[Simulation]
 	respondpy --> timestep[Timestep]
 	respondpy --> transition[Transition]
+	 respondpy --> config[Runtime configuration]
+	 respondpy --> logging[logging facade]
 	respondpy --> build[build helpers]
 ```

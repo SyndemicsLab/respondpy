@@ -4,7 +4,7 @@
 # Created Date: 2026-08-04                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-04                                                    #
+# Last Modified: 2026-09-25                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -17,6 +17,7 @@ from ._core.logging import (  # pylint: disable=E0611,E0401 # type: ignore[repor
     CreationStatus,
     LogPattern,
     create_file_logger,
+    configure_logger,
     create_shared_file_sink,
     create_shared_logger,
     set_log_pattern,
@@ -37,6 +38,7 @@ __all__: list[str] = [
     "CreationStatus",
     "LogPattern",
     "create_file_logger",
+    "configure_logger",
     "create_shared_file_sink",
     "create_shared_logger",
     "set_log_pattern",
