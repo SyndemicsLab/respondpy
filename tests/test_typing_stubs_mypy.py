@@ -121,12 +121,13 @@ _ = rpy.History("state").get_latest_recorded_timestep("oops")
         f"stdout:\n{result.stdout}\n"
         f"stderr:\n{result.stderr}"
     )
-    assert "Incompatible types in assignment" in combined, (
-        "Expected mypy to report assignment type mismatch for create_new_model."
-    )
-    assert "execute" in combined and "incompatible type" in combined.lower(), (
-        "Expected mypy to report incompatible type for Transition.execute history argument."
-    )
-    assert "Too many arguments" in combined and "get_latest_recorded_timestep" in combined, (
-        "Expected mypy to report incorrect argument count for latest timestep accessor."
-    )
+    assert (
+        "Incompatible types in assignment" in combined
+    ), "Expected mypy to report assignment type mismatch for create_new_model."
+    assert (
+        "execute" in combined and "incompatible type" in combined.lower()
+    ), "Expected mypy to report incompatible type for Transition.execute history argument."
+    assert (
+        "Too many arguments" in combined
+        and "get_latest_recorded_timestep" in combined
+    ), "Expected mypy to report incorrect argument count for latest timestep accessor."

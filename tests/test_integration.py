@@ -41,19 +41,19 @@ def setup_config(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '1',
-        'parameter_change_times': '1',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "1",
+        "parameter_change_times": "1",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '1',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "1",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
@@ -74,7 +74,9 @@ def setup_data(setup_db, setup_config):
 
 
 @pytest.fixture
-def setup_db_with_midrun_change(tmp_path_factory, db_schema, insert_complete_sample):
+def setup_db_with_midrun_change(
+    tmp_path_factory, db_schema, insert_complete_sample
+):
     """Build a DB with additional time-52 rows and higher migration inflow."""
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "input_104.db"
@@ -128,7 +130,9 @@ WHERE time = 1;
 
 
 @pytest.fixture
-def setup_db_with_flat_midrun_change(tmp_path_factory, db_schema, insert_complete_sample):
+def setup_db_with_flat_midrun_change(
+    tmp_path_factory, db_schema, insert_complete_sample
+):
     """Build a DB with time-52 rows that match time-1 values exactly."""
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "input_104_flat.db"
@@ -185,19 +189,19 @@ def setup_config_104_change_52(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "sim_104.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '104',
-        'parameter_change_times': '52',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "104",
+        "parameter_change_times": "52",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '104',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "104",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
@@ -212,7 +216,7 @@ def test_simulation_run(setup_data):
     histories = sim.get_model_history(0)
     # state, admissions, ODs, FODs, background death
     assert len(histories) == 5
-    assert len(histories['state'].get_state_map()) >= 1
+    assert len(histories["state"].get_state_map()) >= 1
 
 
 @pytest.mark.integration
@@ -241,8 +245,7 @@ def test_simulation_run_104_midrun_parameter_increase(
         cohort_id=1,
         time=1,
     )
-    assert float(np.sum(flat_migration_t52)) == float(
-        np.sum(flat_migration_t1))
+    assert float(np.sum(flat_migration_t52)) == float(np.sum(flat_migration_t1))
 
     migration_t1 = inp.select_parameter(
         rpy.data.Parameter(rpy.data.ParameterType.MIGRATION_COHORT),
@@ -264,7 +267,9 @@ def test_simulation_run_104_midrun_parameter_increase(
     sim.run()
     final_state_changed = sim.get_model(0).get_state()
 
-    assert float(np.sum(final_state_changed)) > float(np.sum(final_state_flat)), (
+    assert float(np.sum(final_state_changed)) > float(
+        np.sum(final_state_flat)
+    ), (
         "Expected larger final population when migration inflow increases at "
         "timestep 52."
     )
@@ -365,18 +370,18 @@ def setup_config_one_executed_timestep(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     config_path = temp_dir / "sim_one_step.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '1',
-        'parameter_change_times': '1',
-        'stratify_entering_cohort': 'false',
+    cfg["simulation"] = {
+        "duration": "1",
+        "parameter_change_times": "1",
+        "stratify_entering_cohort": "false",
     }
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '1',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "1",
     }
 
-    with config_path.open('w') as configfile:
+    with config_path.open("w") as configfile:
         cfg.write(configfile)
 
     yield config_path
@@ -392,18 +397,18 @@ def setup_config_fifty_two_executed_timesteps(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     config_path = temp_dir / "sim_52_steps.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '1',
-        'stratify_entering_cohort': 'false',
+    cfg["simulation"] = {
+        "duration": "52",
+        "parameter_change_times": "1",
+        "stratify_entering_cohort": "false",
     }
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '52',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "52",
     }
 
-    with config_path.open('w') as configfile:
+    with config_path.open("w") as configfile:
         cfg.write(configfile)
 
     yield config_path
@@ -428,7 +433,8 @@ def test_single_timestep_numerical_state_matches_expected(
     )
 
     np.testing.assert_allclose(
-        final_state, expected_state, rtol=1e-10, atol=1e-10)
+        final_state, expected_state, rtol=1e-10, atol=1e-10
+    )
 
 
 @pytest.mark.integration
@@ -446,12 +452,17 @@ def test_fifty_two_timestep_numerical_state_matches_expected(
 
     final_state = sim.get_model(0).get_state()
     expected_state = np.array(
-        [63.99771165143241, 28.195217933852412,
-            39.53089805842006, 19.00629313025105]
+        [
+            63.99771165143241,
+            28.195217933852412,
+            39.53089805842006,
+            19.00629313025105,
+        ]
     )
 
     np.testing.assert_allclose(
-        final_state, expected_state, rtol=1e-9, atol=1e-9)
+        final_state, expected_state, rtol=1e-9, atol=1e-9
+    )
 
 
 @pytest.mark.integration
@@ -533,7 +544,8 @@ def test_transition_matrix_indices_match_state_name_order(setup_data):
 
         sample_id = inp._get_sample_id_for_parameter(param, cohort_id=1)
         long_df = inp._get_parameter_filled(
-            param, sample_id=sample_id, time=1).collect()
+            param, sample_id=sample_id, time=1
+        ).collect()
 
         for row in long_df.iter_rows(named=True):
             src = (row["initial_intervention"], row["initial_behavior"])

@@ -20,7 +20,7 @@ def build_constant_state_vector(
     sample_id: int = 1,
     time: int = 1,
     value_column: str = "count",
-    constant: float = 0.0
+    constant: float = 0.0,
 ) -> pl.DataFrame:
     """Build a fully populated constant-valued state vector table.
 
@@ -48,12 +48,14 @@ def build_constant_state_vector(
 
     behav = pl.DataFrame({"behavior": behaviors})
 
-    df = inter.join(
-        behav, how="cross"
-    ).with_columns(
-        pl.lit(sample_id).alias("sample"),
-        pl.lit(time).alias("time"),
-        pl.lit(constant).alias(value_column)
-    ).select(["sample", "intervention", "behavior", "time", value_column])
+    df = (
+        inter.join(behav, how="cross")
+        .with_columns(
+            pl.lit(sample_id).alias("sample"),
+            pl.lit(time).alias("time"),
+            pl.lit(constant).alias(value_column),
+        )
+        .select(["sample", "intervention", "behavior", "time", value_column])
+    )
 
     return df

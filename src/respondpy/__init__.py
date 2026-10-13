@@ -12,7 +12,9 @@
 
 from __future__ import annotations
 
-from ._version import version as __version__  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
+from ._version import (
+    version as __version__,
+)  # pylint: disable=E0611,E0401 # type: ignore[reportMissingModuleSource]
 
 from . import data
 from . import config
@@ -21,7 +23,10 @@ from . import logging
 from .config import ExecutionConfig, LoggingConfig, RuntimeConfig
 from .data import Input, Parameter, ParameterType
 from .cost_effectiveness import (
-    discount, cwise_product, cwise_min, calculate_life_years
+    discount,
+    cwise_product,
+    cwise_min,
+    calculate_life_years,
 )
 from .history import History
 from .model import Model
@@ -29,8 +34,14 @@ from .simulation import Simulation
 from .timestep import Timestep
 from .transition import Transition
 
-from .build import build_simulation, build_model, build_timestep, build_default_transitions, build_transition, add_matrix_to_transition
-
+from .build import (
+    build_simulation,
+    build_model,
+    build_timestep,
+    build_default_transitions,
+    build_transition,
+    add_matrix_to_transition,
+)
 
 __all__ = [
     "data",
@@ -56,7 +67,7 @@ __all__ = [
     "build_timestep",
     "build_default_transitions",
     "build_transition",
-    "add_matrix_to_transition"
+    "add_matrix_to_transition",
 ]
 
 

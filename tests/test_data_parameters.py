@@ -20,9 +20,7 @@ def test_parameter_constructor_and_equality() -> None:
     """Test the Parameter constructor."""
     assert rpydata.Parameter(
         rpydata.ParameterType.INITIAL_COHORT
-    ) == rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    )
+    ) == rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
 
 
 @pytest.mark.unit
@@ -38,49 +36,63 @@ def test_parameter_inequality() -> None:
 @pytest.mark.unit
 def test_parameter_equality_with_enum() -> None:
     """Test the Parameter constructor."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ) == rpydata.ParameterType.INITIAL_COHORT
+    assert (
+        rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+        == rpydata.ParameterType.INITIAL_COHORT
+    )
 
 
 @pytest.mark.unit
 def test_parameter_inequality_with_enum() -> None:
     """Test the Parameter constructor."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ) != rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+    assert (
+        rpydata.Parameter(rpydata.ParameterType.INITIAL_COHORT)
+        != rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+    )
 
 
 @pytest.mark.unit
 def test_parameter_is_state_vector_operation() -> None:
     """Test the Parameter is_state_vector_operation method."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ).is_state_vector_operation() is True
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INITIAL_COHORT
+        ).is_state_vector_operation()
+        is True
+    )
 
 
 @pytest.mark.unit
 def test_parameter_is_not_state_vector_operation() -> None:
     """Test the Parameter is_state_vector_operation method."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
-    ).is_state_vector_operation() is False
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+        ).is_state_vector_operation()
+        is False
+    )
 
 
 @pytest.mark.unit
 def test_parameter_is_transition_matrix_operation() -> None:
     """Test the Parameter is_transition_matrix_operation method."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
-    ).is_transition_matrix_operation() is True
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+        ).is_transition_matrix_operation()
+        is True
+    )
 
 
 @pytest.mark.unit
 def test_parameter_is_not_transition_matrix_operation() -> None:
     """Test the Parameter is_transition_matrix_operation method."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ).is_transition_matrix_operation() is False
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INITIAL_COHORT
+        ).is_transition_matrix_operation()
+        is False
+    )
 
 
 @pytest.mark.unit
@@ -89,7 +101,10 @@ def test_parameter_is_not_transition_matrix_operation() -> None:
     [
         (rpydata.ParameterType.INITIAL_COHORT, "count"),
         (rpydata.ParameterType.MIGRATION_COHORT, "count"),
-        (rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY, "probability"),
+        (
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+            "probability",
+        ),
         (rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY, "probability"),
         (rpydata.ParameterType.OVERDOSE_PROBABILITY, "probability"),
         (rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY, "probability"),
@@ -98,61 +113,76 @@ def test_parameter_is_not_transition_matrix_operation() -> None:
     ],
 )
 def test_value_column_name(
-        parameter_type: rpydata.ParameterType,
-        expected: str
+    parameter_type: rpydata.ParameterType, expected: str
 ) -> None:
     """Test that the value column names are correct."""
-    assert rpydata.Parameter(
-        parameter_type
-    ).get_value_column_name() == expected
+    assert rpydata.Parameter(parameter_type).get_value_column_name() == expected
 
 
 @pytest.mark.unit
 def test_get_initial_state_column_name() -> None:
     """Test that the initial state column name in the cohort table are correct."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
-    ).get_initial_state_column_name() == "initial_behavior"
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+        ).get_initial_state_column_name()
+        == "initial_behavior"
+    )
 
 
 @pytest.mark.unit
 def test_get_initial_state_column_name_for_intervention() -> None:
     """Test transition initial-state name for intervention transitions."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
-    ).get_initial_state_column_name() == "initial_intervention"
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
+        ).get_initial_state_column_name()
+        == "initial_intervention"
+    )
 
 
 @pytest.mark.unit
 def test_get_initial_state_column_name_is_none() -> None:
     """Test that the initial state column name in the cohort table are correct."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ).get_initial_state_column_name() is None
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INITIAL_COHORT
+        ).get_initial_state_column_name()
+        is None
+    )
 
 
 @pytest.mark.unit
 def test_get_next_state_column_name() -> None:
     """Test that the new state column name in the cohort table are correct."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
-    ).get_next_state_column_name() == "new_intervention"
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
+        ).get_next_state_column_name()
+        == "new_intervention"
+    )
 
 
 @pytest.mark.unit
 def test_get_next_state_column_name_for_behavior() -> None:
     """Test transition next-state name for behavior transitions."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
-    ).get_next_state_column_name() == "new_behavior"
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY
+        ).get_next_state_column_name()
+        == "new_behavior"
+    )
 
 
 @pytest.mark.unit
 def test_get_next_state_column_name_is_none() -> None:
     """Test that the new state column name in the cohort table are correct."""
-    assert rpydata.Parameter(
-        rpydata.ParameterType.INITIAL_COHORT
-    ).get_next_state_column_name() is None
+    assert (
+        rpydata.Parameter(
+            rpydata.ParameterType.INITIAL_COHORT
+        ).get_next_state_column_name()
+        is None
+    )
 
 
 @pytest.mark.unit
@@ -190,7 +220,9 @@ def test_parameter_equality_with_non_parameter_type() -> None:
         (rpydata.ParameterType.STANDARD_MORTALITY_RATIO, True),
     ],
 )
-def test_is_time_varying(parameter_type: rpydata.ParameterType, expected: bool) -> None:
+def test_is_time_varying(
+    parameter_type: rpydata.ParameterType, expected: bool
+) -> None:
     """Test time-varying behavior for all parameter types."""
     assert rpydata.Parameter(parameter_type).is_time_varying() is expected
 
@@ -201,47 +233,76 @@ def test_is_time_varying(parameter_type: rpydata.ParameterType, expected: bool) 
     [
         (rpydata.ParameterType.INITIAL_COHORT, "initial_population_sample"),
         (rpydata.ParameterType.MIGRATION_COHORT, "population_change_sample"),
-        (rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
-         "intervention_transition_sample"),
-        (rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
-         "behavior_transition_sample"),
+        (
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+            "intervention_transition_sample",
+        ),
+        (
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
+            "behavior_transition_sample",
+        ),
         (rpydata.ParameterType.OVERDOSE_PROBABILITY, "overdose_sample"),
-        (rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY,
-         "overdose_fatality_sample"),
+        (
+            rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY,
+            "overdose_fatality_sample",
+        ),
         (rpydata.ParameterType.STANDARD_MORTALITY_RATIO, "smr_sample"),
-        (rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY,
-         "background_mortality_sample"),
+        (
+            rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY,
+            "background_mortality_sample",
+        ),
     ],
 )
-def test_get_cohort_column_name(parameter_type: rpydata.ParameterType, expected: str) -> None:
+def test_get_cohort_column_name(
+    parameter_type: rpydata.ParameterType, expected: str
+) -> None:
     """Test cohort sample column mapping for each parameter type."""
-    assert rpydata.Parameter(
-        parameter_type).get_cohort_column_name() == expected
+    assert (
+        rpydata.Parameter(parameter_type).get_cohort_column_name() == expected
+    )
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("parameter_type", "expected"),
     [
-        (rpydata.ParameterType.INITIAL_COHORT,
-         "INSERT INTO initial_population VALUES (?, ?, ?, ?)"),
-        (rpydata.ParameterType.MIGRATION_COHORT,
-         "INSERT INTO population_change VALUES (?, ?, ?, ?, ?)"),
-        (rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
-         "INSERT INTO intervention_transition VALUES (?, ?, ?, ?, ?, ?)"),
-        (rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
-         "INSERT INTO behavior_transition VALUES (?, ?, ?, ?, ?, ?)"),
-        (rpydata.ParameterType.OVERDOSE_PROBABILITY,
-         "INSERT INTO overdose VALUES (?, ?, ?, ?, ?)"),
-        (rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY,
-         "INSERT INTO overdose_fatality VALUES (?, ?, ?, ?, ?)"),
-        (rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY,
-         "INSERT INTO background_mortality VALUES (?, ?, ?)"),
-        (rpydata.ParameterType.STANDARD_MORTALITY_RATIO,
-         "INSERT INTO smr VALUES (?, ?, ?, ?, ?)"),
+        (
+            rpydata.ParameterType.INITIAL_COHORT,
+            "INSERT INTO initial_population VALUES (?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.MIGRATION_COHORT,
+            "INSERT INTO population_change VALUES (?, ?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+            "INSERT INTO intervention_transition VALUES (?, ?, ?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
+            "INSERT INTO behavior_transition VALUES (?, ?, ?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.OVERDOSE_PROBABILITY,
+            "INSERT INTO overdose VALUES (?, ?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.OVERDOSE_FATALITY_PROBABILITY,
+            "INSERT INTO overdose_fatality VALUES (?, ?, ?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.BACKGROUND_DEATH_PROBABILITY,
+            "INSERT INTO background_mortality VALUES (?, ?, ?)",
+        ),
+        (
+            rpydata.ParameterType.STANDARD_MORTALITY_RATIO,
+            "INSERT INTO smr VALUES (?, ?, ?, ?, ?)",
+        ),
     ],
 )
-def test_get_insert_statement(parameter_type: rpydata.ParameterType, expected: str) -> None:
+def test_get_insert_statement(
+    parameter_type: rpydata.ParameterType, expected: str
+) -> None:
     """Test insert statement mapping for each parameter type."""
     assert rpydata.Parameter(parameter_type).get_insert_statement() == expected
 

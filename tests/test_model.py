@@ -43,19 +43,19 @@ def setup_config(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "sim.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '1',
-        'parameter_change_times': '1',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "1",
+        "parameter_change_times": "1",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '1',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "1",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
@@ -80,19 +80,19 @@ def setup_config_missing_change_time(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("test-data")
     mem_str = temp_dir / "sim_missing_change_time.conf"
     cfg = ConfigParser()
-    cfg['simulation'] = {
-        'duration': '52',
-        'parameter_change_times': '52',
-        'stratify_entering_cohort': 'false'
+    cfg["simulation"] = {
+        "duration": "52",
+        "parameter_change_times": "52",
+        "stratify_entering_cohort": "false",
     }
 
-    cfg['output'] = {
-        'build_summary_stats': 'true',
-        'save_state_history': 'true',
-        'timesteps_to_report': '52',
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "52",
     }
 
-    with mem_str.open('w') as configfile:
+    with mem_str.open("w") as configfile:
         cfg.write(configfile)
 
     yield mem_str
@@ -113,7 +113,8 @@ def test_build_model_raises_when_change_time_rows_missing(
     setup_config_missing_change_time,
 ) -> None:
     inp = rpy.data.Input(
-        db_path=setup_db, conf_path=setup_config_missing_change_time)
+        db_path=setup_db, conf_path=setup_config_missing_change_time
+    )
 
     with pytest.raises(
         ValueError,

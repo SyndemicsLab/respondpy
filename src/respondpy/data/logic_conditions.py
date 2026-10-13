@@ -16,11 +16,11 @@ from respondpy.data.parameters import ParameterType
 
 
 def verify_no_nulls(
-        df: pl.DataFrame,
-        sample_id: int,
-        p: ParameterType,
-        *,
-        col_to_check: str = "probability"
+    df: pl.DataFrame,
+    sample_id: int,
+    p: ParameterType,
+    *,
+    col_to_check: str = "probability",
 ) -> None:
     """Validate that a required value column contains no null values.
 
@@ -47,10 +47,7 @@ def verify_no_nulls(
 
 
 def verify_no_duplicates(
-        df: pl.DataFrame,
-        key_columns: list[str],
-        sample_id: int,
-        p: ParameterType
+    df: pl.DataFrame, key_columns: list[str], sample_id: int, p: ParameterType
 ) -> None:
     """Validate that key columns uniquely identify transition rows.
 
@@ -70,9 +67,7 @@ def verify_no_duplicates(
     ValueError
         If duplicated keys are found.
     """
-    if df.select(
-        pl.struct(key_columns).is_duplicated().any()
-    ).item():
+    if df.select(pl.struct(key_columns).is_duplicated().any()).item():
         raise ValueError(
             f"Duplicate transition rows found for sample {sample_id} and parameter {p}"
         )
@@ -103,7 +98,8 @@ def validate_time_list(ct_list: list[int]) -> list[int]:
         return []
     if any(num <= 0 for num in ct_list):
         raise ValueError(
-            "The config file contains zero or a negative number in the `parameter_change_times` list!")
+            "The config file contains zero or a negative number in the `parameter_change_times` list!"
+        )
     ct_list.sort(reverse=True)
     if ct_list[-1] == 1:
         ct_list.pop()

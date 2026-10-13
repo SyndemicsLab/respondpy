@@ -60,20 +60,20 @@ def test_transition_execute_returns_state_and_history_tuple() -> None:
 @pytest.mark.smoke
 def test_history_mode_members_and_latest_timestep_method_are_exposed() -> None:
     """History bindings should expose enum members and latest timestep accessor."""
-    assert hasattr(HistoryMode, "kSnapshot"), (
-        "Expected HistoryMode to expose enum member 'kSnapshot'."
-    )
-    assert hasattr(HistoryMode, "kAccumulated"), (
-        "Expected HistoryMode to expose enum member 'kAccumulated'."
-    )
+    assert hasattr(
+        HistoryMode, "kSnapshot"
+    ), "Expected HistoryMode to expose enum member 'kSnapshot'."
+    assert hasattr(
+        HistoryMode, "kAccumulated"
+    ), "Expected HistoryMode to expose enum member 'kAccumulated'."
 
     history = rpy.History("state")
-    assert hasattr(history, "get_latest_recorded_timestep"), (
-        "Expected History to expose method 'get_latest_recorded_timestep'."
-    )
-    assert hasattr(history, "has_pending_state"), (
-        "Expected History to expose method 'has_pending_state'."
-    )
+    assert hasattr(
+        history, "get_latest_recorded_timestep"
+    ), "Expected History to expose method 'get_latest_recorded_timestep'."
+    assert hasattr(
+        history, "has_pending_state"
+    ), "Expected History to expose method 'has_pending_state'."
 
 
 @pytest.mark.smoke
@@ -127,16 +127,19 @@ def test_logging_api_parity(tmp_path) -> None:
     config.file_path = str(logfile)
 
     assert logging.configure_logger(config) == logging.CreationStatus.kSuccess
-    assert logging.check_logger_exists(
-        logger_name) == logging.CreationStatus.kExists
+    assert (
+        logging.check_logger_exists(logger_name)
+        == logging.CreationStatus.kExists
+    )
     assert logger_name in logging.get_logger_info(logger_name)
 
     assert logging.configure_logger(config) == logging.CreationStatus.kExists
     conflicting = rpy.LoggingConfig()
     conflicting.logger_name = logger_name
     conflicting.file_path = str(tmp_path / "conflicting.log")
-    assert logging.configure_logger(
-        conflicting) == logging.CreationStatus.kError
+    assert (
+        logging.configure_logger(conflicting) == logging.CreationStatus.kError
+    )
 
     logging.set_logger_level(logger_name, 2)
     logging.log_info(logger_name, "configured message")
@@ -167,7 +170,8 @@ def test_logging_api_parity(tmp_path) -> None:
     logging.log_info(shared_name_b, "shared message B")
 
     concurrent_names = [
-        f"shared_concurrent_{suffix}_{index}" for index in range(4)]
+        f"shared_concurrent_{suffix}_{index}" for index in range(4)
+    ]
 
     def create_and_write(name: str) -> logging.CreationStatus:
         status = logging.create_shared_logger(name)
@@ -177,8 +181,7 @@ def test_logging_api_parity(tmp_path) -> None:
     with ThreadPoolExecutor(max_workers=len(concurrent_names)) as executor:
         statuses = list(executor.map(create_and_write, concurrent_names))
 
-    assert statuses == [logging.CreationStatus.kSuccess] * \
-        len(concurrent_names)
+    assert statuses == [logging.CreationStatus.kSuccess] * len(concurrent_names)
 
     original_pattern = logging.get_log_pattern()
     logging.set_log_pattern(logging.LogPattern.kDetailed)
@@ -281,11 +284,15 @@ def test_runtime_simulation_validation_and_concurrency() -> None:
     simulation.create_new_model("markov")
 
     for duration in (0, -2):
-        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+        with pytest.raises(
+            ValueError, match="Simulation duration must be positive"
+        ):
             simulation.run(duration)
 
     for duration in (0, -1):
-        with pytest.raises(ValueError, match="Simulation duration must be positive"):
+        with pytest.raises(
+            ValueError, match="Simulation duration must be positive"
+        ):
             simulation.set_duration(duration)
 
     concurrent = rpy.Simulation()
@@ -320,7 +327,9 @@ def test_runtime_simulation_validation_and_concurrency() -> None:
         return len(worker.get_models())
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        assert list(executor.map(lambda _: run_concurrent_simulation(), range(2))) == [
+        assert list(
+            executor.map(lambda _: run_concurrent_simulation(), range(2))
+        ) == [
             2,
             2,
         ]
@@ -372,23 +381,25 @@ def test_history_ordering_copy_and_discount_behavior() -> None:
 
 
 @pytest.mark.smoke
-def test_simulation_create_new_model_returns_model_and_registers_model() -> None:
+def test_simulation_create_new_model_returns_model_and_registers_model() -> (
+    None
+):
     """Simulation.create_new_model should return a cloned Model instance."""
     simulation = rpy.Simulation()
     created_model = simulation.create_new_model("markov")
 
-    assert isinstance(created_model, rpy.Model), (
-        "Expected Simulation.create_new_model to return a Model instance."
-    )
-    assert created_model.get_name() == "markov", (
-        "Expected returned model to use the requested model type name."
-    )
-    assert simulation.get_model_names() == ["markov"], (
-        "Expected simulation to register one canonical model name: 'markov'."
-    )
-    assert isinstance(simulation.get_model(0), rpy.Model), (
-        "Expected get_model(0) to return a Model instance after creation."
-    )
+    assert isinstance(
+        created_model, rpy.Model
+    ), "Expected Simulation.create_new_model to return a Model instance."
+    assert (
+        created_model.get_name() == "markov"
+    ), "Expected returned model to use the requested model type name."
+    assert simulation.get_model_names() == [
+        "markov"
+    ], "Expected simulation to register one canonical model name: 'markov'."
+    assert isinstance(
+        simulation.get_model(0), rpy.Model
+    ), "Expected get_model(0) to return a Model instance after creation."
 
 
 @pytest.mark.smoke
@@ -402,9 +413,9 @@ def test_simulation_get_model_returns_independent_model_copy() -> None:
     model.set_state(expected_state)
 
     np.testing.assert_array_equal(model.get_state(), expected_state)
-    assert simulation.get_model(0).get_state().size == 0, (
-        "Expected get_model to return an independent model copy."
-    )
+    assert (
+        simulation.get_model(0).get_state().size == 0
+    ), "Expected get_model to return an independent model copy."
 
 
 @pytest.mark.smoke
@@ -473,7 +484,9 @@ def test_binding_failure_messages_follow_expected_patterns() -> None:
     with pytest.raises(Exception, match=r"(?i)(not found|transition)"):
         timestep.get_transition("missing")
 
-    with pytest.raises(TypeError, match=r"(?i)incompatible constructor arguments"):
+    with pytest.raises(
+        TypeError, match=r"(?i)incompatible constructor arguments"
+    ):
         _ = rpy.Simulation(1)  # type: ignore[arg-type]
 
 
@@ -489,7 +502,9 @@ def test_model_timestep_access_supports_count_and_negative_indices() -> None:
     model.add_timestep(second)
 
     assert model.get_timestep_count() == 2
-    assert model.get_timestep_at_index(-1).get_transition_names() == ["behavior"]
+    assert model.get_timestep_at_index(-1).get_transition_names() == [
+        "behavior"
+    ]
 
     with pytest.raises(IndexError):
         model.get_timestep_at_index(-3)
@@ -527,12 +542,12 @@ def test_timestep_index_access_supports_get_and_set() -> None:
     replacement = rpy.Transition("overdose", "overdose", rpy.LoggingConfig())
     timestep[1] = replacement
 
-    assert timestep[0].get_name() == "migration", (
-        "Expected __getitem__ to return transition by index."
-    )
-    assert timestep[1].get_name() == replacement.get_name(), (
-        "Expected __setitem__ to replace transition slot by index."
-    )
+    assert (
+        timestep[0].get_name() == "migration"
+    ), "Expected __getitem__ to return transition by index."
+    assert (
+        timestep[1].get_name() == replacement.get_name()
+    ), "Expected __setitem__ to replace transition slot by index."
 
 
 @pytest.mark.smoke

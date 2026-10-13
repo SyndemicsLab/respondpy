@@ -23,7 +23,11 @@ import polars as pl
 from .. import logging as rpy_logging
 from .database_helpers import sort_dataframes
 from .parameters import Parameter, ParameterType
-from .transition_matrices import build_constant_transition, update_retention_probability, combine_dataframes
+from .transition_matrices import (
+    build_constant_transition,
+    update_retention_probability,
+    combine_dataframes,
+)
 from .state_vectors import build_constant_state_vector
 
 # These are the required tables and the associated columns in the RESPOND SQLite database.
@@ -31,25 +35,52 @@ _REQUIRED_TABLE_COLUMNS: dict[str, frozenset[str]] = {
     "intervention": frozenset({"id", "name"}),
     "behavior": frozenset({"id", "name"}),
     "background_mortality": frozenset({"sample", "time", "probability"}),
-    "behavior_transition": frozenset({
-        "sample", "intervention", "time", "initial_behavior",
-        "new_behavior", "probability",
-    }),
-    "initial_population": frozenset({"sample", "intervention", "behavior", "count"}),
-    "intervention_transition": frozenset({
-        "sample", "behavior", "time", "initial_intervention",
-        "new_intervention", "probability",
-    }),
-    "overdose": frozenset({"sample", "intervention", "behavior", "time", "probability"}),
-    "overdose_fatality": frozenset({"sample", "intervention", "behavior", "time", "probability"}),
-    "population_change": frozenset({"sample", "intervention", "behavior", "time", "count"}),
+    "behavior_transition": frozenset(
+        {
+            "sample",
+            "intervention",
+            "time",
+            "initial_behavior",
+            "new_behavior",
+            "probability",
+        }
+    ),
+    "initial_population": frozenset(
+        {"sample", "intervention", "behavior", "count"}
+    ),
+    "intervention_transition": frozenset(
+        {
+            "sample",
+            "behavior",
+            "time",
+            "initial_intervention",
+            "new_intervention",
+            "probability",
+        }
+    ),
+    "overdose": frozenset(
+        {"sample", "intervention", "behavior", "time", "probability"}
+    ),
+    "overdose_fatality": frozenset(
+        {"sample", "intervention", "behavior", "time", "probability"}
+    ),
+    "population_change": frozenset(
+        {"sample", "intervention", "behavior", "time", "count"}
+    ),
     "smr": frozenset({"sample", "intervention", "behavior", "time", "ratio"}),
-    "cohort": frozenset({
-        "id", "background_mortality_sample", "behavior_transition_sample",
-        "initial_population_sample", "intervention_transition_sample",
-        "overdose_sample", "overdose_fatality_sample",
-        "population_change_sample", "smr_sample",
-    }),
+    "cohort": frozenset(
+        {
+            "id",
+            "background_mortality_sample",
+            "behavior_transition_sample",
+            "initial_population_sample",
+            "intervention_transition_sample",
+            "overdose_sample",
+            "overdose_fatality_sample",
+            "population_change_sample",
+            "smr_sample",
+        }
+    ),
 }
 
 
@@ -73,7 +104,7 @@ class Input:
         db_path: str | Path | None = None,
         conf_path: str | Path | None = None,
         log_name: str = "respond",
-        log_file: str | Path | None = None
+        log_file: str | Path | None = None,
     ) -> None:
         """Create an Input data source from a base path or explicit files.
 
@@ -122,10 +153,12 @@ class Input:
 
         if not self._db_path.exists():
             raise FileNotFoundError(
-                f"Database file not found at {self._db_path}!")
+                f"Database file not found at {self._db_path}!"
+            )
         if not self._conf_path.exists():
             raise FileNotFoundError(
-                f"Config file not found at {self._conf_path}!")
+                f"Config file not found at {self._conf_path}!"
+            )
 
         self._connection = sqlite3.connect(str(self._db_path))
         try:
@@ -183,8 +216,7 @@ class Input:
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
         available_tables = {row[0] for row in table_rows}
-        missing_tables = sorted(
-            set(_REQUIRED_TABLE_COLUMNS) - available_tables)
+        missing_tables = sorted(set(_REQUIRED_TABLE_COLUMNS) - available_tables)
         if missing_tables:
             raise ValueError(
                 "Input database is missing required tables: "
@@ -231,9 +263,7 @@ class Input:
         con.commit()
 
     def _connect_and_fetchall(
-        self,
-        stmt: str,
-        params: tuple = ()
+        self, stmt: str, params: tuple = ()
     ) -> tuple[list, list[tuple]]:
         con = self._get_connection()
         cur = con.cursor()
@@ -244,8 +274,7 @@ class Input:
     # Helper Functions for Retrieving Data from Database
 
     def _get_single_state_table(
-            self,
-            state: Literal["intervention", "behavior"]
+        self, state: Literal["intervention", "behavior"]
     ) -> list[tuple[int, str]]:
         if state in self.states:
             return self.states[state]
@@ -255,10 +284,7 @@ class Input:
         self.states[state] = [(row[0], row[1]) for row in results]
         return self.states[state]
 
-    def _get_sample_ids_by_table(
-            self,
-            table_name: str
-    ) -> list[int]:
+    def _get_sample_ids_by_table(self, table_name: str) -> list[int]:
 
         con = self._get_connection()
         cur = con.cursor()
@@ -267,12 +293,16 @@ class Input:
         #   1. Does the table exist
         #   2. Is the table_name a valid SQL string (i.e. prevent SQL injection
         #       later)
-        cur.execute("""
+        cur.execute(
+            """
             SELECT count(name) FROM sqlite_master WHERE type='table' AND name=?
-        """, (table_name,))
+        """,
+            (table_name,),
+        )
         if cur.fetchone()[0] != 1:
             raise ValueError(
-                f"The specified table does not exist: {table_name}")
+                f"The specified table does not exist: {table_name}"
+            )
 
         # Be very careful here, this works and isn't gonna get SQL Injection attacked because we verify the table_name in the check above.
         stmt = f"SELECT DISTINCT sample FROM {table_name}"
@@ -281,9 +311,7 @@ class Input:
         return result
 
     def _get_sample_id_for_parameter(
-            self,
-            param: Parameter,
-            cohort_id: int = 1
+        self, param: Parameter, cohort_id: int = 1
     ) -> int:
         col_name = param.get_cohort_column_name()
         stmt = f"SELECT {col_name} FROM cohort WHERE id = ?"
@@ -295,43 +323,32 @@ class Input:
         return result[0][0]
 
     def _select_parameter_raw(
-        self,
-        param: Parameter,
-        sample_id: int = 1,
-        time: int = 1
+        self, param: Parameter, sample_id: int = 1, time: int = 1
     ) -> pl.LazyFrame:
         stmt = param.get_select_statement(
-            self.get_interventions(),
-            self.get_behaviors()
+            self.get_interventions(), self.get_behaviors()
         )
         if not param.is_time_varying():
-            cols, vals = self._connect_and_fetchall(
-                stmt, (str(sample_id),))
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(sample=sample_id)
+            cols, vals = self._connect_and_fetchall(stmt, (str(sample_id),))
+            lzdf = pl.LazyFrame(vals, schema=cols, orient="row").with_columns(
+                sample=sample_id
+            )
         else:
             cols, vals = self._connect_and_fetchall(
-                stmt, (str(sample_id), str(time)))
+                stmt, (str(sample_id), str(time))
+            )
             if len(vals) == 0:
                 msg = f"Missing time-varying parameter rows in database: parameter={param.get_parameter_name()}, sample_id={sample_id}, time={time}. Expected rows for this configured timestep but found none."
                 rpy_logging.log_error(self.log_name, msg)
                 raise ValueError(msg)
-            lzdf = pl.LazyFrame(
-                vals, schema=cols, orient='row'
-            ).with_columns(
-                sample=sample_id,
-                time=time
+            lzdf = pl.LazyFrame(vals, schema=cols, orient="row").with_columns(
+                sample=sample_id, time=time
             )
 
         return lzdf
 
     def _extract_values(
-        self,
-        param: Parameter,
-        lf: pl.LazyFrame,
-        *,
-        n: int = 64
+        self, param: Parameter, lf: pl.LazyFrame, *, n: int = 64
     ) -> Annotated[npt.NDArray[np.float64], "[m, 1] | [m, m]"]:
         """Convert extracted rows to a model-ready state vector or matrix.
 
@@ -359,17 +376,18 @@ class Input:
             vec = lf.select(pl.col(val_col_name)).collect().to_numpy()
             return vec.reshape(n, 1)
         if param.is_transition_matrix_operation():
-            return lf.select(
-                pl.col(val_col_name)
-            ).collect().to_numpy().reshape(n, n)
+            return (
+                lf.select(pl.col(val_col_name))
+                .collect()
+                .to_numpy()
+                .reshape(n, n)
+            )
         msg = f"Invalid parameter applied when attempting to extract parameters! Parameter: {param}"
         rpy_logging.log_error(self.log_name, msg)
         raise ValueError(msg)
 
     def _zero_invalid_transitions(
-        self,
-        param: Parameter,
-        transition_matrix: pl.DataFrame
+        self, param: Parameter, transition_matrix: pl.DataFrame
     ) -> pl.DataFrame:
         """Set structurally invalid transition probabilities to zero.
 
@@ -390,34 +408,26 @@ class Input:
         """
         if param == ParameterType.INTERVENTION_TRANSITION_PROBABILITY:
             m = transition_matrix.with_columns(
-                pl.when(
-                    pl.col("new_behavior") != pl.col("initial_behavior")
-                ).then(
-                    pl.lit(0.0)
-                ).otherwise(
-                    pl.col("probability")
-                ).alias("probability")
+                pl.when(pl.col("new_behavior") != pl.col("initial_behavior"))
+                .then(pl.lit(0.0))
+                .otherwise(pl.col("probability"))
+                .alias("probability")
             )
         elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
             m = transition_matrix.with_columns(
                 pl.when(
-                    pl.col("new_intervention") != pl.col(
-                        "initial_intervention")
-                ).then(
-                    pl.lit(0.0)
-                ).otherwise(
-                    pl.col("probability")
-                ).alias("probability")
+                    pl.col("new_intervention") != pl.col("initial_intervention")
+                )
+                .then(pl.lit(0.0))
+                .otherwise(pl.col("probability"))
+                .alias("probability")
             )
         else:
             m = transition_matrix
         return m
 
     def _get_parameter_filled(
-        self,
-        param: Parameter,
-        sample_id: int = 1,
-        time: int = 1
+        self, param: Parameter, sample_id: int = 1, time: int = 1
     ) -> pl.LazyFrame:
         """Return a complete parameter table with missing rows backfilled.
 
@@ -459,39 +469,43 @@ class Input:
         complete_state_vector = (
             param.is_state_vector_operation() and n_rows == n_states
         )
-        complete_transition = (
-            n_rows == n_states * n_states and param in [
-                ParameterType.INTERVENTION_TRANSITION_PROBABILITY, ParameterType.BEHAVIOR_TRANSITION_PROBABILITY]
-        )
+        complete_transition = n_rows == n_states * n_states and param in [
+            ParameterType.INTERVENTION_TRANSITION_PROBABILITY,
+            ParameterType.BEHAVIOR_TRANSITION_PROBABILITY,
+        ]
 
         if complete_state_vector:
             return sort_dataframes(
                 lf,
                 self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
+                self._get_single_state_table("intervention"),
             )
 
         if complete_transition:
             return sort_dataframes(
                 lf,
                 self._get_single_state_table("behavior"),
-                self._get_single_state_table("intervention")
+                self._get_single_state_table("intervention"),
             )
 
         if param.is_state_vector_operation():
             value_col = param.get_value_column_name()
             return combine_dataframes(
                 build_constant_state_vector(
-                    self.get_interventions(), self.get_behaviors(), sample_id=sample_id, time=time, value_column=value_col
+                    self.get_interventions(),
+                    self.get_behaviors(),
+                    sample_id=sample_id,
+                    time=time,
+                    value_column=value_col,
                 ).lazy(),
                 lf,
-                value_col=value_col
+                value_col=value_col,
             )
         temp = build_constant_transition(
             self.get_interventions(),
             self.get_behaviors(),
             sample_id=sample_id,
-            time=time
+            time=time,
         )
 
         res = combine_dataframes(
@@ -511,13 +525,13 @@ class Input:
             res,
             init_col,
             next_col,
-            probability_column=param.get_value_column_name()
+            probability_column=param.get_value_column_name(),
         )
 
         return sort_dataframes(
             res.lazy(),
             self._get_single_state_table("behavior"),
-            self._get_single_state_table("intervention")
+            self._get_single_state_table("intervention"),
         )
 
     # External Functions
@@ -529,10 +543,12 @@ class Input:
     def get_interventions(self) -> list[str]:
         """Return ordered intervention names from the database."""
         if self.interventions is None:
-            self.interventions = list(map(
-                itemgetter(1),
-                self._get_single_state_table(state="intervention")
-            ))
+            self.interventions = list(
+                map(
+                    itemgetter(1),
+                    self._get_single_state_table(state="intervention"),
+                )
+            )
         return self.interventions
 
     def get_behavior_id_maps(self) -> dict[int, str]:
@@ -542,10 +558,12 @@ class Input:
     def get_behaviors(self) -> list[str]:
         """Return ordered behavior names from the database."""
         if self.behaviors is None:
-            self.behaviors = list(map(
-                itemgetter(1),
-                self._get_single_state_table(state="behavior")
-            ))
+            self.behaviors = list(
+                map(
+                    itemgetter(1),
+                    self._get_single_state_table(state="behavior"),
+                )
+            )
         return self.behaviors
 
     def get_state_names(self) -> list[tuple[str, str]]:
@@ -606,7 +624,7 @@ class Input:
         param: Parameter,
         cohort_id: int = 1,
         time: int = 1,
-        raw: bool = False
+        raw: bool = False,
     ) -> np.ndarray:
         """Select parameter data for a cohort and optional timestep.
 
@@ -628,13 +646,16 @@ class Input:
         """
         sample_id = self._get_sample_id_for_parameter(param, cohort_id)
         if raw:
-            return self._select_parameter_raw(
-                param, sample_id, time).collect().to_numpy()
+            return (
+                self._select_parameter_raw(param, sample_id, time)
+                .collect()
+                .to_numpy()
+            )
 
         return self._extract_values(
             param,
             self._get_parameter_filled(param, sample_id, time),
-            n=len(self.get_state_names())
+            n=len(self.get_state_names()),
         )
 
     def insert_parameter(

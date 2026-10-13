@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 
-def str_to_int_list(config_string: str, *, delimiter: str = ',') -> list[int]:
+def str_to_int_list(config_string: str, *, delimiter: str = ",") -> list[int]:
     """Parse a delimited integer string into a list of integers.
 
     Whitespace around each token is stripped before conversion.

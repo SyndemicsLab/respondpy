@@ -100,7 +100,9 @@ def test_sort_state_vector_happy_path() -> None:
 
 
 @pytest.mark.unit
-def test_sort_dataframes_calls_state_vector_sort(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sort_dataframes_calls_state_vector_sort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     lf = pl.LazyFrame(
         {
             "intervention": ["i1"],
@@ -110,9 +112,9 @@ def test_sort_dataframes_calls_state_vector_sort(monkeypatch: pytest.MonkeyPatch
     )
 
     def fake_sort_state_vector(
-            _lf: pl.LazyFrame,
-            _behaviors: list[tuple[int, str]],
-            _interventions: list[tuple[int, str]],
+        _lf: pl.LazyFrame,
+        _behaviors: list[tuple[int, str]],
+        _interventions: list[tuple[int, str]],
     ) -> pl.LazyFrame:
         return pl.LazyFrame({"sentinel": [1]})
 
