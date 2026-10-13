@@ -4,12 +4,13 @@
 // Created Date: 2026-07-16                                                   //
 // Author: Matthew Carroll                                                    //
 // -----                                                                      //
-// Last Modified: 2026-07-16                                                  //
+// Last Modified: 2026-10-13                                                  //
 // Modified By: Matthew Carroll                                               //
 // -----                                                                      //
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "internal/helpers.hpp"
 #include <respondpy/pybind11.hpp>
 
 #include <respond/logging_config.hpp>
@@ -18,27 +19,12 @@
 namespace py = pybind11;
 using namespace respond;
 
-namespace {
-
-size_t normalize_transition_index(const Timestep &timestep,
-                                  py::ssize_t index) {
-    const auto count = timestep.GetTransitionNames().size();
-    const auto normalized = index < 0 ? static_cast<py::ssize_t>(count) + index
-                                      : index;
-    if (normalized < 0 || static_cast<size_t>(normalized) >= count) {
-        throw py::index_error("Timestep transition index out of range");
-    }
-    return static_cast<size_t>(normalized);
-}
-
-} // namespace
-
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_timestep(py::module &m) {
     py::class_<Timestep>(m, "Timestep")
         .def(py::init<>(), "Default constructor for a Timestep instance.")
-           .def(py::init<const LoggingConfig &>(), py::arg("logging_config"),
-               "Constructs a Timestep with a logging config.")
+        .def(py::init<const LoggingConfig &>(), py::arg("logging_config"),
+             "Constructs a Timestep with a logging config.")
         .def("__copy__", [](const Timestep &self) { return Timestep(self); })
         .def(
             "__deepcopy__",
@@ -63,20 +49,24 @@ void register_timestep(py::module &m) {
             py::arg("transition"),
             "Add a transition by cloning the provided transition instance "
             "into this timestep.")
-        .def("remove_transition",
-             [](Timestep &self, py::ssize_t idx) {
-                 return self.RemoveTransition(
-                     normalize_transition_index(self, idx));
-             },
-             py::arg("idx"),
-             "Remove a transition from the timestep by its idx. Throws an "
-             "exception if the idx is out of bounds.")
+        .def(
+            "remove_transition",
+            [](Timestep &self, py::ssize_t idx) {
+                return self.RemoveTransition(
+                    respondpy::helpers::normalize_index(
+                        self.GetTransitionNames().size(), idx));
+            },
+            py::arg("idx"),
+            "Remove a transition from the timestep by its idx. Throws an "
+            "exception if the idx is out of bounds.")
         .def(
             "add_matrix_to_transition",
             [](Timestep &self, py::ssize_t idx,
                const Eigen::Ref<const Eigen::MatrixXd> &matrix) {
                 self.AddMatrixToTransition(
-                    normalize_transition_index(self, idx), matrix);
+                    respondpy::helpers::normalize_index(
+                        self.GetTransitionNames().size(), idx),
+                    matrix);
             },
             py::arg("idx"), py::arg("matrix"),
             "Add a matrix to a transition in the timestep by its index. Throws "
@@ -91,8 +81,9 @@ void register_timestep(py::module &m) {
         .def(
             "get_transition",
             [](const Timestep &self, py::ssize_t idx) -> const Transition * {
-                return self.GetTransition(
-                                     normalize_transition_index(self, idx))
+                return self
+                    .GetTransition(respondpy::helpers::normalize_index(
+                        self.GetTransitionNames().size(), idx))
                     .get();
             },
             py::arg("idx"), py::return_value_policy::reference_internal,
@@ -115,15 +106,16 @@ void register_timestep(py::module &m) {
         .def(
             "__getitem__",
             [](Timestep &self, py::ssize_t idx) -> Transition & {
-                return self[normalize_transition_index(self, idx)];
+                return self[respondpy::helpers::normalize_index(
+                    self.GetTransitionNames().size(), idx)];
             },
             py::arg("idx"), py::return_value_policy::reference_internal,
             "Get a transition using index access semantics.")
         .def(
             "__setitem__",
-            [](Timestep &self, py::ssize_t idx,
-               const Transition &transition) {
-                self[normalize_transition_index(self, idx)] = transition;
+            [](Timestep &self, py::ssize_t idx, const Transition &transition) {
+                self[respondpy::helpers::normalize_index(
+                    self.GetTransitionNames().size(), idx)] = transition;
             },
             py::arg("idx"), py::arg("transition"),
             "Replace a transition slot by index with a clone of the provided "

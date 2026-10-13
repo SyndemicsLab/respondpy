@@ -10,6 +10,7 @@
 // Copyright (c) 2026 Syndemics Lab at Boston Medical Center                  //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "internal/helpers.hpp"
 #include <respondpy/pybind11.hpp>
 
 #include <respond/runtime_config.hpp>
@@ -17,22 +18,6 @@
 
 namespace py = pybind11;
 using namespace respond;
-
-namespace {
-
-size_t normalize_model_index(const Simulation &simulation,
-                                    py::ssize_t index) {
-     const auto model_count = simulation.GetModelNames().size();
-     if (index < 0) {
-          index += static_cast<py::ssize_t>(model_count);
-     }
-     if (index < 0 || index >= static_cast<py::ssize_t>(model_count)) {
-          throw py::index_error("Simulation model index out of range");
-     }
-     return static_cast<size_t>(index);
-}
-
-} // namespace
 
 // NOLINTNEXTLINE(misc-use-internal-linkage)
 void register_simulation(py::module &m) {
@@ -68,22 +53,24 @@ void register_simulation(py::module &m) {
              "Run the simulation for a specified duration. Executes all "
              "registered timesteps for each model in sequence.")
         .def("get_models", &Simulation::GetModels,
-                "Get independent model copies from the simulation.")
+             "Get independent model copies from the simulation.")
         .def(
             "get_model",
-               [](const Simulation &self, py::ssize_t model_index) {
-                    return self.GetModel(static_cast<int>(normalize_model_index(
-                         self, model_index)));
+            [](const Simulation &self, py::ssize_t model_index) {
+                return self.GetModel(
+                    static_cast<int>(respondpy::helpers::normalize_index(
+                        self.GetModelNames().size(), model_index)));
             },
-                   py::arg("model_index"),
-               "Get an independent model copy by index. Negative indices count "
-               "from the end.")
+            py::arg("model_index"),
+            "Get an independent model copy by index. Negative indices count "
+            "from the end.")
         .def(
             "set_model",
-               [](Simulation &self, py::ssize_t model_index,
+            [](Simulation &self, py::ssize_t model_index,
                const Model &replacement_model) {
-                    self[normalize_model_index(self, model_index)] =
-                         replacement_model;
+                self[respondpy::helpers::normalize_index(
+                    self.GetModelNames().size(), model_index)] =
+                    replacement_model;
             },
             py::arg("model_index"), py::arg("model"),
             "Replace a model instance by index with a cloned copy of the "
@@ -91,19 +78,21 @@ void register_simulation(py::module &m) {
             "bounds.")
         .def(
             "__getitem__",
-               [](const Simulation &self, py::ssize_t model_index) {
-                    return self.GetModel(static_cast<int>(normalize_model_index(
-                         self, model_index)));
+            [](const Simulation &self, py::ssize_t model_index) {
+                return self.GetModel(
+                    static_cast<int>(respondpy::helpers::normalize_index(
+                        self.GetModelNames().size(), model_index)));
             },
-               py::arg("model_index"),
-               "Get an independent model copy using index access semantics. "
-               "Negative indices count from the end.")
+            py::arg("model_index"),
+            "Get an independent model copy using index access semantics. "
+            "Negative indices count from the end.")
         .def(
             "__setitem__",
-               [](Simulation &self, py::ssize_t model_index,
+            [](Simulation &self, py::ssize_t model_index,
                const Model &replacement_model) {
-                    self[normalize_model_index(self, model_index)] =
-                         replacement_model;
+                self[respondpy::helpers::normalize_index(
+                    self.GetModelNames().size(), model_index)] =
+                    replacement_model;
             },
             py::arg("model_index"), py::arg("model"),
             "Set a model using index access semantics.")
@@ -113,21 +102,23 @@ void register_simulation(py::module &m) {
              "Get a mapping from model indices to model names.")
         .def(
             "get_model_history",
-               [](const Simulation &self, py::ssize_t index) {
-                    return self.GetModelHistory(
-                         normalize_model_index(self, index));
-               },
+            [](const Simulation &self, py::ssize_t index) {
+                return self.GetModelHistory(respondpy::helpers::normalize_index(
+                    self.GetModelNames().size(), index));
+            },
             py::arg("idx"),
-               "Get copied histories for a model by index. Negative indices "
-               "count from the end.")
-        .def("get_model_history_names",
-                [](const Simulation &self, py::ssize_t index) {
-                     return self.GetModelHistoryNames(
-                          normalize_model_index(self, index));
-                },
-             py::arg("idx"),
-                "Get history names for a model by index. Negative indices count "
-                "from the end.")
+            "Get copied histories for a model by index. Negative indices "
+            "count from the end.")
+        .def(
+            "get_model_history_names",
+            [](const Simulation &self, py::ssize_t index) {
+                return self.GetModelHistoryNames(
+                    respondpy::helpers::normalize_index(
+                        self.GetModelNames().size(), index));
+            },
+            py::arg("idx"),
+            "Get history names for a model by index. Negative indices count "
+            "from the end.")
         .def("set_duration", &Simulation::SetDuration, py::arg("duration"),
              "Set the duration for which the simulation should run.")
         .def("get_execution_config", &Simulation::GetExecutionConfig,
