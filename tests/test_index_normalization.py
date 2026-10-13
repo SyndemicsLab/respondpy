@@ -17,6 +17,7 @@ import pytest
 import respondpy as rpy
 
 
+@pytest.mark.unit
 def test_simulation_model_indexes_support_negative_and_reject_bounds() -> None:
     simulation = rpy.Simulation()
     simulation.create_new_model("first")
@@ -31,6 +32,7 @@ def test_simulation_model_indexes_support_negative_and_reject_bounds() -> None:
         simulation.get_model(-3)
 
 
+@pytest.mark.unit
 def test_timestep_transition_indexes_support_negative_and_reject_bounds() -> None:
     timestep = rpy.Timestep()
     timestep.create_transition("migration")
@@ -45,6 +47,7 @@ def test_timestep_transition_indexes_support_negative_and_reject_bounds() -> Non
         timestep.get_transition(-3)
 
 
+@pytest.mark.unit
 def test_model_timestep_indexes_support_negative_and_reject_bounds() -> None:
     model = rpy.Model("markov", rpy.RuntimeConfig())
     first = rpy.Timestep()
