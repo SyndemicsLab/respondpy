@@ -207,6 +207,127 @@ def test_get_cohort_ids(input_data):
 
 
 @pytest.mark.unit
+def test_get_parameter_sample_ids(input_data, setup_db):
+    """Sample-ID discovery includes IDs from every parameter family."""
+    with sqlite3.connect(setup_db) as connection:
+        connection.execute(
+            """
+            INSERT INTO overdose
+                (intervention, sample, behavior, time, probability)
+            VALUES (1, 7, 1, 1, 0.99)
+            """
+        )
+        connection.commit()
+
+    assert input_data.get_parameter_sample_ids() == {1, 7}
+    assert input_data.get_parameter_sample_ids(
+        [rpydata.Parameter(rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)]
+    ) == {1}
+
+
+@pytest.mark.unit
+def test_copy_parameter_samples_copies_all_families(input_data, setup_db):
+    """Bulk copying preserves every parameter family for each target."""
+    input_data.copy_parameter_samples(source_sample=1, target_samples=[2, 3])
+
+    parameter_tables = [
+        "background_mortality",
+        "behavior_transition",
+        "initial_population",
+        "intervention_transition",
+        "overdose",
+        "overdose_fatality",
+        "population_change",
+        "smr",
+    ]
+    with sqlite3.connect(setup_db) as connection:
+        for table in parameter_tables:
+            columns = [
+                row[1]
+                for row in connection.execute(f"PRAGMA table_info({table})")
+            ]
+            non_sample_columns = [
+                column for column in columns if column != "sample"]
+            selected_columns = ", ".join(non_sample_columns)
+            source_rows = sorted(connection.execute(
+                f"SELECT {selected_columns} FROM {table} WHERE sample = 1 "
+                "ORDER BY rowid"
+            ).fetchall())
+            for target_sample in (2, 3):
+                target_rows = sorted(connection.execute(
+                    f"SELECT {selected_columns} FROM {table} "
+                    "WHERE sample = ? ORDER BY rowid",
+                    (target_sample,),
+                ).fetchall())
+                assert target_rows == source_rows
+
+
+@pytest.mark.unit
+def test_copy_parameter_samples_rejects_collisions_atomically(
+    input_data, setup_db
+):
+    """An existing target ID prevents all parameter families from copying."""
+    with sqlite3.connect(setup_db) as connection:
+        connection.execute(
+            """
+            INSERT INTO overdose
+                (intervention, sample, behavior, time, probability)
+            VALUES (1, 2, 1, 1, 0.99)
+            """
+        )
+        connection.commit()
+
+    with pytest.raises(ValueError, match="target sample ID already exists"):
+        input_data.copy_parameter_samples(
+            source_sample=1, target_samples=[2, 3])
+
+    with sqlite3.connect(setup_db) as connection:
+        for table in (
+            "background_mortality",
+            "behavior_transition",
+            "initial_population",
+            "intervention_transition",
+            "overdose_fatality",
+            "population_change",
+            "smr",
+        ):
+            assert connection.execute(
+                f"SELECT COUNT(*) FROM {table} WHERE sample = 3"
+            ).fetchone()[0] == 0
+        assert connection.execute(
+            "SELECT probability FROM overdose WHERE intervention = 1 "
+            "AND sample = 2 AND behavior = 1 AND time = 1"
+        ).fetchone()[0] == 0.99
+        assert connection.execute(
+            "SELECT name FROM sqlite_temp_master "
+            "WHERE type = 'table' AND name = '_respondpy_copy_targets'"
+        ).fetchone() is None
+
+
+@pytest.mark.unit
+def test_replace_parameter_overlays_existing_row(input_data, setup_db):
+    """Replacing a parameter updates the value at the same primary key."""
+    parameter = rpydata.Parameter(
+        rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY
+    )
+    input_data.replace_parameter(
+        parameter,
+        [(1, 1, 1, 1, 2, 0.91)],
+    )
+
+    with sqlite3.connect(setup_db) as connection:
+        probability = connection.execute(
+            """
+            SELECT probability
+            FROM intervention_transition
+            WHERE sample = 1 AND behavior = 1 AND time = 1
+              AND initial_intervention = 1 AND new_intervention = 2
+            """
+        ).fetchone()[0]
+    assert probability == 0.91
+
+
+@pytest.mark.unit
 def test_select_parameter_intervention(input_data):
     param = rpydata.Parameter(
         rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY

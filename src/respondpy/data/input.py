@@ -83,6 +83,55 @@ _REQUIRED_TABLE_COLUMNS: dict[str, frozenset[str]] = {
     ),
 }
 
+_PARAMETER_TABLES: dict[ParameterType, tuple[str, tuple[str, ...]]] = {
+    ParameterType.INITIAL_COHORT: (
+        "initial_population",
+        ("sample", "intervention", "behavior", "count"),
+    ),
+    ParameterType.MIGRATION_COHORT: (
+        "population_change",
+        ("sample", "intervention", "behavior", "time", "count"),
+    ),
+    ParameterType.INTERVENTION_TRANSITION_PROBABILITY: (
+        "intervention_transition",
+        (
+            "sample",
+            "behavior",
+            "time",
+            "initial_intervention",
+            "new_intervention",
+            "probability",
+        ),
+    ),
+    ParameterType.BEHAVIOR_TRANSITION_PROBABILITY: (
+        "behavior_transition",
+        (
+            "sample",
+            "intervention",
+            "time",
+            "initial_behavior",
+            "new_behavior",
+            "probability",
+        ),
+    ),
+    ParameterType.OVERDOSE_PROBABILITY: (
+        "overdose",
+        ("intervention", "sample", "behavior", "time", "probability"),
+    ),
+    ParameterType.OVERDOSE_FATALITY_PROBABILITY: (
+        "overdose_fatality",
+        ("sample", "intervention", "behavior", "time", "probability"),
+    ),
+    ParameterType.BACKGROUND_DEATH_PROBABILITY: (
+        "background_mortality",
+        ("sample", "time", "probability"),
+    ),
+    ParameterType.STANDARD_MORTALITY_RATIO: (
+        "smr",
+        ("sample", "intervention", "behavior", "time", "ratio"),
+    ),
+}
+
 
 class Input:
     """Data access object for RESPOND SQLite and simulation configuration.
@@ -606,6 +655,49 @@ class Input:
         id_index = col_names.index("id")
         return [row[id_index] for row in results]
 
+    def get_parameter_sample_ids(
+        self,
+        parameters: list[Parameter] | None = None,
+    ) -> set[int]:
+        """Return sample IDs present in the selected parameter families.
+
+        Parameters
+        ----------
+        parameters : list of Parameter, optional
+            Parameter families to inspect. If omitted, all supported families
+            are inspected.
+
+        Returns
+        -------
+        set of int
+            Distinct database sample IDs found in the selected tables.
+
+        Raises
+        ------
+        ValueError
+            If no parameter families are selected, a family is unsupported, or
+            a family is repeated.
+        """
+        selected_parameters = (
+            list(_PARAMETER_TABLES)
+            if parameters is None
+            else [param.get_parameter_type() for param in parameters]
+        )
+        if not selected_parameters:
+            raise ValueError("At least one parameter family is required.")
+        if any(parameter not in _PARAMETER_TABLES for parameter in selected_parameters):
+            raise ValueError("Unsupported parameter family.")
+        if len(set(selected_parameters)) != len(selected_parameters):
+            raise ValueError("Parameter families must be unique.")
+
+        statements = [
+            f"SELECT sample FROM {_PARAMETER_TABLES[parameter][0]}"
+            for parameter in selected_parameters
+        ]
+        query = " UNION ".join(statements)
+        _, rows = self._connect_and_fetchall(query)
+        return {row[0] for row in rows}
+
     def insert_cohorts(self, data: list) -> None:
         """Insert cohort rows into the cohort table.
 
@@ -673,3 +765,121 @@ class Input:
             Row tuples matching ``param`` insert statement order.
         """
         return self._connect_and_executemany(data, param.get_insert_statement())
+
+    def replace_parameter(
+        self,
+        param: Parameter,
+        data: list,
+    ) -> None:
+        """Insert parameter rows, replacing rows with matching primary keys.
+
+        Parameters
+        ----------
+        param : Parameter
+            Parameter descriptor choosing the target table and schema.
+        data : list
+            Row tuples matching ``param``'s insert statement order.
+        """
+        insert_statement = param.get_insert_statement()
+        replace_statement = insert_statement.replace(
+            "INSERT INTO", "INSERT OR REPLACE INTO", 1
+        )
+        return self._connect_and_executemany(data, replace_statement)
+
+    def copy_parameter_samples(
+        self,
+        source_sample: int,
+        target_samples: list[int],
+        parameters: list[Parameter] | None = None,
+    ) -> None:
+        """Copy complete parameter samples in one database transaction.
+
+        Parameters
+        ----------
+        source_sample : int
+            Existing sample ID whose parameter rows will be copied.
+        target_samples : list of int
+            New sample IDs to create. Every target ID must be unused across all
+            parameter tables.
+        parameters : list of Parameter, optional
+            Parameter families to copy. If omitted, all supported families are
+            copied.
+
+        Raises
+        ------
+        ValueError
+            If sample IDs are invalid, parameter families are duplicated or
+            unsupported, or any target sample ID already exists.
+        """
+        if not isinstance(source_sample, int) or isinstance(source_sample, bool):
+            raise ValueError("The source sample ID must be an integer.")
+        if source_sample <= 0:
+            raise ValueError("The source sample ID must be positive.")
+        if not target_samples:
+            raise ValueError("At least one target sample ID is required.")
+        if any(
+            not isinstance(sample, int) or isinstance(sample, bool) or sample <= 0
+            for sample in target_samples
+        ):
+            raise ValueError("Target sample IDs must be positive integers.")
+        if len(set(target_samples)) != len(target_samples):
+            raise ValueError("Target sample IDs must be unique.")
+
+        selected_parameters = (
+            list(_PARAMETER_TABLES)
+            if parameters is None
+            else [param.get_parameter_type() for param in parameters]
+        )
+        if not selected_parameters:
+            raise ValueError("At least one parameter family is required.")
+        if any(param not in _PARAMETER_TABLES for param in selected_parameters):
+            raise ValueError("Unsupported parameter family.")
+        if len(set(selected_parameters)) != len(selected_parameters):
+            raise ValueError("Parameter families must be unique.")
+
+        connection = self._get_connection()
+        target_table = "_respondpy_copy_targets"
+        try:
+            with connection:
+                connection.execute(
+                    f"CREATE TEMP TABLE {target_table} (sample INTEGER PRIMARY KEY)"
+                )
+                connection.executemany(
+                    f"INSERT INTO {target_table} (sample) VALUES (?)",
+                    ((sample,) for sample in target_samples),
+                )
+
+                for table, columns in _PARAMETER_TABLES.values():
+                    collision = connection.execute(
+                        f"""
+                        SELECT 1
+                        FROM {table} AS existing
+                        INNER JOIN {target_table} AS targets
+                            ON existing.sample = targets.sample
+                        LIMIT 1
+                        """
+                    ).fetchone()
+                    if collision is not None:
+                        raise ValueError(
+                            "A target sample ID already exists in the database."
+                        )
+
+                for parameter_type in selected_parameters:
+                    table, columns = _PARAMETER_TABLES[parameter_type]
+                    column_list = ", ".join(columns)
+                    select_list = ", ".join(
+                        "targets.sample" if column == "sample" else f"source.{column}"
+                        for column in columns
+                    )
+                    connection.execute(
+                        f"""
+                        INSERT INTO {table} ({column_list})
+                        SELECT {select_list}
+                        FROM {table} AS source
+                        CROSS JOIN {target_table} AS targets
+                        WHERE source.sample = ?
+                        """,
+                        (source_sample,),
+                    )
+        finally:
+            connection.execute(f"DROP TABLE IF EXISTS {target_table}")

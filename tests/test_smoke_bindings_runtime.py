@@ -511,6 +511,30 @@ def test_model_timestep_access_supports_count_and_negative_indices() -> None:
 
 
 @pytest.mark.smoke
+def test_model_add_timestep_copies_reused_timestep() -> None:
+    """Repeated timestep insertion should create independent model copies."""
+    model = rpy.Model("markov", rpy.RuntimeConfig())
+    source_timestep = rpy.Timestep()
+    source_transition = source_timestep.create_transition("migration")
+    original_matrix = np.array([[0.5], [0.5], [0.0]])
+    source_transition.add_matrix(original_matrix)
+
+    model.add_timestep(source_timestep)
+    model.add_timestep(source_timestep)
+    source_timestep.add_matrix_to_transition(
+        0, np.array([[0.2], [0.3], [0.5]])
+    )
+
+    assert model.get_timestep_count() == 2
+    for index in (0, 1):
+        timestep = model.get_timestep_at_index(index)
+        assert timestep.get_transition_names() == ["migration"]
+        matrices = timestep.get_transition(0).get_matrices()
+        assert len(matrices) == 1
+        np.testing.assert_array_equal(matrices[0], original_matrix)
+
+
+@pytest.mark.smoke
 def test_timestep_add_transition_clones_input_transition() -> None:
     """Timestep.add_transition should clone, not alias, the input transition."""
     timestep = rpy.Timestep()

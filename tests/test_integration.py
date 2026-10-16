@@ -18,6 +18,75 @@ import pytest
 import respondpy as rpy
 
 
+def _build_uncached_simulation(input_data, model_count=1):
+    """Build a reference simulation with a fresh timestep at every step."""
+    duration = input_data.config.getint("simulation", "duration")
+    change_times = [
+        int(value)
+        for value in input_data.config.get(
+            "simulation", "parameter_change_times"
+        ).split()
+    ]
+    runtime = rpy.RuntimeConfig()
+    simulation = rpy.Simulation(runtime)
+    simulation.set_duration(duration)
+
+    for _ in range(model_count):
+        model = rpy.Model("markov", runtime)
+        model.set_state(
+            input_data.select_parameter(
+                rpy.data.Parameter(rpy.data.ParameterType.INITIAL_COHORT),
+                cohort_id=1,
+            )
+        )
+        for model_timestep in range(1, duration + 1):
+            parameter_time = max(
+                time
+                for time in [1, *change_times]
+                if time <= model_timestep
+            )
+            model.add_timestep(
+                rpy.build_timestep(
+                    input_data,
+                    cohort_id=1,
+                    tstep=parameter_time,
+                )
+            )
+        simulation.add_model(model)
+
+    return simulation
+
+
+def _set_concurrent_execution(simulation, concurrent):
+    """Configure a simulation for sequential or concurrent model execution."""
+    runtime = simulation.get_runtime_config()
+    runtime.execution.run_models_concurrently = concurrent
+    runtime.execution.eigen_threads = 1
+    runtime.execution.total_threads = 2 if concurrent else 1
+    simulation.set_runtime_config(runtime)
+
+
+def _assert_state_histories_equal(expected, actual):
+    """Compare state histories and final states for matching model indexes."""
+    assert len(expected.get_models()) == len(actual.get_models())
+    for model_index in range(len(expected.get_models())):
+        expected_history = expected.get_model_history(model_index)["state"]
+        actual_history = actual.get_model_history(model_index)["state"]
+        expected_states = expected_history.get_state_map()
+        actual_states = actual_history.get_state_map()
+        assert expected_states.keys() == actual_states.keys()
+        for time in expected_states:
+            np.testing.assert_allclose(
+                actual_states[time], expected_states[time], rtol=0.0, atol=0.0
+            )
+        np.testing.assert_allclose(
+            actual.get_model(model_index).get_state(),
+            expected.get_model(model_index).get_state(),
+            rtol=0.0,
+            atol=0.0,
+        )
+
+
 @pytest.fixture
 def setup_db(tmp_path_factory, db_schema, insert_complete_sample):
     """Fixture to execute before all tests to setup_db the dummy database
@@ -207,6 +276,30 @@ def setup_config_104_change_52(tmp_path_factory):
     yield mem_str
 
 
+@pytest.fixture
+def setup_config_4_single_time(tmp_path_factory):
+    """Config for a multi-step run with one parameter time."""
+    temp_dir = tmp_path_factory.mktemp("test-data")
+    mem_str = temp_dir / "sim_4.conf"
+    cfg = ConfigParser()
+    cfg["simulation"] = {
+        "duration": "4",
+        "parameter_change_times": "1",
+        "stratify_entering_cohort": "false",
+    }
+
+    cfg["output"] = {
+        "build_summary_stats": "true",
+        "save_state_history": "true",
+        "timesteps_to_report": "4",
+    }
+
+    with mem_str.open("w") as configfile:
+        cfg.write(configfile)
+
+    yield mem_str
+
+
 @pytest.mark.integration
 def test_simulation_run(setup_data):
     db_path, config_path = setup_data
@@ -217,6 +310,59 @@ def test_simulation_run(setup_data):
     # state, admissions, ODs, FODs, background death
     assert len(histories) == 5
     assert len(histories["state"].get_state_map()) >= 1
+
+
+@pytest.mark.integration
+def test_cached_timestep_reuse_for_single_parameter_time(
+    setup_db,
+    setup_config_4_single_time,
+):
+    """A single cached timestep still supports a multi-step simulation."""
+    input_data = rpy.data.Input(
+        db_path=setup_db,
+        conf_path=setup_config_4_single_time,
+    )
+    cached = rpy.build_simulation(input_data, cohort_ids=[1])
+    reference = _build_uncached_simulation(input_data)
+
+    assert cached.get_model(0).get_timestep_count() == 4
+    assert reference.get_model(0).get_timestep_count() == 4
+
+    cached.run()
+    reference.run()
+
+    _assert_state_histories_equal(reference, cached)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("concurrent", [False, True])
+def test_cached_timesteps_match_uncached_histories(
+    setup_db_with_midrun_change,
+    setup_config_104_change_52,
+    concurrent,
+):
+    """Cached timesteps preserve trajectories in both execution modes."""
+    input_data = rpy.data.Input(
+        db_path=setup_db_with_midrun_change,
+        conf_path=setup_config_104_change_52,
+    )
+    cached = rpy.build_simulation(
+        input_data,
+        cohort_ids=[1, 1],
+    )
+    reference = _build_uncached_simulation(input_data, model_count=2)
+    _set_concurrent_execution(cached, concurrent)
+    _set_concurrent_execution(reference, concurrent)
+
+    for model in cached.get_models():
+        assert model.get_timestep_count() == 104
+    for model in reference.get_models():
+        assert model.get_timestep_count() == 104
+
+    cached.run()
+    reference.run()
+
+    _assert_state_histories_equal(reference, cached)
 
 
 @pytest.mark.integration
