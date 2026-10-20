@@ -105,11 +105,22 @@ def build_simulation(
         if processor_count:
             s.add_model(
                 build_model(
-                    input_data, cohort_id, processor_count=processor_count
+                    input_data,
+                    cohort_id,
+                    processor_count=processor_count,
+                    log_name=log_name,
+                    log_file=log_file,
                 )
             )
         else:
-            s.add_model(build_model(input_data, cohort_id))
+            s.add_model(
+                build_model(
+                    input_data,
+                    cohort_id,
+                    log_name=log_name,
+                    log_file=log_file,
+                )
+            )
 
     return s
 
@@ -167,18 +178,19 @@ def build_model(
 
     duration, change_times = _get_simulation_settings(input_data)
     schedule_times = [1, *change_times]
+    timestep_cache: dict[int, Timestep] = {}
 
     for model_timestep in range(1, duration + 1):
         parameter_time = max(t for t in schedule_times if t <= model_timestep)
-        model.add_timestep(
-            build_timestep(
+        if parameter_time not in timestep_cache:
+            timestep_cache[parameter_time] = build_timestep(
                 input_data,
                 cohort_id,
                 parameter_time,
                 log_name=log_name,
                 log_file=log_file,
             )
-        )
+        model.add_timestep(timestep_cache[parameter_time])
     return model
 
 
