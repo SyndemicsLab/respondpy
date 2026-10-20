@@ -86,6 +86,14 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Install Eigen for Windows builds
+              if: startsWith(matrix.os, 'windows')
+              shell: pwsh
+              run: |
+                  $triplet = if ("${{ matrix.os }}" -eq "windows-11-arm") { "arm64-windows" } else { "x64-windows" }
+                  vcpkg install "eigen3:$triplet"
+                  "CMAKE_PREFIX_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\$triplet" >> $env:GITHUB_ENV
+
             - name: Build wheels
               uses: pypa/cibuildwheel@v3.4.0
               env:
