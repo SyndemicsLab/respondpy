@@ -36,6 +36,22 @@ jobs:
               with:
                   python-version: "3.12"
 
+            - name: Install Eigen on Ubuntu
+              if: matrix.os == 'ubuntu-latest'
+              run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
+
+            - name: Install Eigen on macOS
+              if: matrix.os == 'macos-latest'
+              run: |
+                  brew install eigen
+                  echo "CMAKE_PREFIX_PATH=$(brew --prefix eigen)" >> "$GITHUB_ENV"
+
+            - name: Install Eigen on Windows
+              if: matrix.os == 'windows-latest'
+              run: |
+                  vcpkg install eigen3:x64-windows
+                  "CMAKE_PREFIX_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
+
             - name: Install dependencies
               run: uv sync --group github
 
@@ -59,6 +75,9 @@ jobs:
               with:
                   python-version: "3.12"
 
+            - name: Install Eigen
+              run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
+
             - name: Install dependencies
               run: uv sync --group github
 
@@ -81,6 +100,9 @@ jobs:
               uses: actions/setup-python@v6
               with:
                   python-version: "3.12"
+
+            - name: Install Eigen
+              run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
 
             - name: Install dependencies
               run: uv sync --group github
