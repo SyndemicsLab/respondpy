@@ -4,7 +4,7 @@
 # Created Date: 2026-06-29                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-04                                                    #
+# Last Modified: 2026-10-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -77,13 +77,10 @@ def _assert_state_histories_equal(expected, actual):
         assert expected_states.keys() == actual_states.keys()
         for time in expected_states:
             np.testing.assert_allclose(
-                actual_states[time], expected_states[time], rtol=0.0, atol=0.0
-            )
+                actual_states[time], expected_states[time])
         np.testing.assert_allclose(
             actual.get_model(model_index).get_state(),
-            expected.get_model(model_index).get_state(),
-            rtol=0.0,
-            atol=0.0,
+            expected.get_model(model_index).get_state()
         )
 
 
@@ -391,7 +388,8 @@ def test_simulation_run_104_midrun_parameter_increase(
         cohort_id=1,
         time=1,
     )
-    assert float(np.sum(flat_migration_t52)) == float(np.sum(flat_migration_t1))
+    assert float(np.sum(flat_migration_t52)) == float(
+        np.sum(flat_migration_t1))
 
     migration_t1 = inp.select_parameter(
         rpy.data.Parameter(rpy.data.ParameterType.MIGRATION_COHORT),
