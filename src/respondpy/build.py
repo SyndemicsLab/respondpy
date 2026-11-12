@@ -4,8 +4,8 @@
 # Created Date: 2026-07-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-16                                                    #
-# Modified By: Dimitri Baptiste                                                #
+# Last Modified: 2026-11-12                                                    #
+# Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
@@ -13,7 +13,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser, NoOptionError, NoSectionError
+from os import cpu_count
 
 from .data import Input, Parameter, ParameterType, validate_time_list
 from .config import LoggingConfig, RuntimeConfig
@@ -49,6 +51,48 @@ def _get_simulation_settings(input_data: Input) -> tuple[int, list[int]]:
     return duration, validate_time_list(change_times)
 
 
+def _build_model_chunk(
+    input_data: Input,
+    cohort_ids: Sequence[int],
+    processor_count: int | None,
+    log_name: str,
+    log_file: str,
+) -> list[Model]:
+    """Build a Model Chunk to give to a worker.
+
+    This is a helper function for parallel building. A worker is assigned a chunk of models to build. This construncts that chunk.
+
+    Parameters
+    ----------
+    input_data : Input
+        The Input data that is used with the models.
+    cohort_ids : Sequence[int]
+        The list of cohorts that correspond to each model.
+    processor_count : int | None
+        The number of processors to give to each model during simulation.
+    log_name : str
+        The name of the logger
+    log_file : str
+        The log file path
+
+    Returns
+    -------
+    list[Model]
+        A list of built models for a worker.
+    """
+    with input_data._new_worker_input() as worker_input:
+        return [
+            build_model(
+                worker_input,
+                cohort_id,
+                processor_count=processor_count,
+                log_name=log_name,
+                log_file=log_file,
+            )
+            for cohort_id in cohort_ids
+        ]
+
+
 def build_simulation(
     input_data: Input,
     *,
@@ -56,6 +100,10 @@ def build_simulation(
     cohort_ids: Sequence[int] | None = None,
     log_name: str = "respond",
     log_file: str = "respond.log",
+    build_workers: int = 1,
+    build_min_parallel_cohorts: int = 8,
+    build_chunk_size: int = 2,
+    build_waves_per_worker: int = 2
 ) -> Simulation:
     """Build a simulation populated with one model per cohort.
 
@@ -101,22 +149,56 @@ def build_simulation(
     s = Simulation(runtime_config)
     duration, _ = _get_simulation_settings(input_data)
     s.set_duration(duration)
-    for cohort_id in cohort_ids:
-        if processor_count:
+
+    cohort_ids = tuple(cohort_ids)
+    worker_count = min(build_workers, cpu_count() or 1)
+
+    # Note: We turn off Pylint below because `isinstance(input_data, Input)`
+    # allows for parallelism for Input subclasses. While we don't have
+    # subclasses to Input, we don't want to allow any future subclasses to be
+    # parallel by default and thus force check Input as a parallel-path guard
+    if (
+        worker_count > 1
+        and type(input_data) is Input  # pylint: disable=unidiomatic-typecheck
+        and len(cohort_ids) >= build_min_parallel_cohorts
+    ):
+        wave_size = (worker_count * build_chunk_size * build_waves_per_worker)
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            for start in range(0, len(cohort_ids), wave_size):
+                wave_ids = cohort_ids[start: start + wave_size]
+                chunks = [
+                    wave_ids[index: index + build_chunk_size]
+                    for index in range(0, len(wave_ids), build_chunk_size)
+                ]
+                futures = [
+                    executor.submit(
+                        _build_model_chunk,
+                        input_data,
+                        chunk,
+                        processor_count,
+                        log_name,
+                        log_file,
+                    )
+                    for chunk in chunks
+                ]
+                try:
+                    model_chunks = [future.result() for future in futures]
+                except BaseException:
+                    for future in futures:
+                        future.cancel()
+                    raise
+
+                for model_chunk in model_chunks:
+                    for model in model_chunk:
+                        s.add_model(model)
+                del model_chunks, futures
+    else:
+        for cohort_id in cohort_ids:
             s.add_model(
                 build_model(
                     input_data,
                     cohort_id,
                     processor_count=processor_count,
-                    log_name=log_name,
-                    log_file=log_file,
-                )
-            )
-        else:
-            s.add_model(
-                build_model(
-                    input_data,
-                    cohort_id,
                     log_name=log_name,
                     log_file=log_file,
                 )

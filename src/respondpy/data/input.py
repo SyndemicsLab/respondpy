@@ -248,6 +248,14 @@ class Input:
             self._connection.close()
             self._connection = None
 
+    def _new_worker_input(self) -> "Input":
+        """Open an independent database connection for a build worker."""
+        return Input(
+            db_path=self._db_path,
+            conf_path=self._conf_path,
+            log_name=self._log_name,
+        )
+
     def __enter__(self) -> "Input":
         self._get_connection()
         return self
