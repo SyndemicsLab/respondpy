@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 from operator import itemgetter
 from configparser import ConfigParser
+from copy import deepcopy
 
 import numpy as np
 import numpy.typing as npt
@@ -250,11 +251,13 @@ class Input:
 
     def _new_worker_input(self) -> "Input":
         """Open an independent database connection for a build worker."""
-        return Input(
+        wip = Input(
             db_path=self._db_path,
             conf_path=self._conf_path,
             log_name=self._log_name,
         )
+        wip._config = deepcopy(self._config)
+        return wip
 
     def __enter__(self) -> "Input":
         self._get_connection()

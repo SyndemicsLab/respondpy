@@ -174,6 +174,7 @@ def test_parallel_build_preserves_order_and_processor_count(
 
     simulation = build_module.build_simulation(
         input_data,
+        build_workers=2,
         processor_count=3,
         cohort_ids=requested,
         log_name="parallel-order-test",
@@ -230,6 +231,7 @@ def test_parallel_build_closes_worker_inputs_on_failure(
     with pytest.raises(RuntimeError, match="injected worker failure"):
         build_module.build_simulation(
             input_data,
+            build_workers=2,
             cohort_ids=cohort_ids,
             log_name="parallel-failure-test",
             log_file=str(tmp_path / "parallel-failure.log"),
@@ -252,7 +254,7 @@ def test_input_subclass_uses_serial_build_fallback(setup_data, monkeypatch):
     monkeypatch.setattr(build_module, "cpu_count", lambda: 2)
 
     simulation = build_module.build_simulation(
-        input_data, cohort_ids=cohort_ids
+        input_data, cohort_ids=cohort_ids, build_workers=2
     )
 
     assert len(simulation.get_model_names()) == len(cohort_ids)

@@ -162,7 +162,13 @@ def build_simulation(
         and type(input_data) is Input  # pylint: disable=unidiomatic-typecheck
         and len(cohort_ids) >= build_min_parallel_cohorts
     ):
-        wave_size = (worker_count * build_chunk_size * build_waves_per_worker)
+        for n, v in (
+            ("build_chunk_size", build_chunk_size),
+            ("build_waves_per_worker", build_waves_per_worker),
+        ):
+            if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
+                raise ValueError(f"{n} must be a positive integer")
+        wave_size = worker_count * build_chunk_size * build_waves_per_worker
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             for start in range(0, len(cohort_ids), wave_size):
                 wave_ids = cohort_ids[start: start + wave_size]
