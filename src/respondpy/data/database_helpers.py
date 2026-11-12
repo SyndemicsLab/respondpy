@@ -127,9 +127,7 @@ def _sort_transition_matrix(
         "new_behavior",
     }
 
-    if canonical_required.issubset(cols):
-        working = lf
-    else:
+    if not canonical_required.issubset(cols):
         raise ValueError(
             f"Invalid columns provided when attempting to sort transition matrix: {s}"
         )
