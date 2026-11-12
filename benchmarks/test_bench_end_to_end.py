@@ -14,14 +14,15 @@
 End-to-end benchmarks for the respondpy simulation pipeline.
 
 Three phases are benchmarked individually and as a combined pipeline:
-    1. load   — read data from SQLite and construct the Simulation
+    1. build  — construct the Simulation from an initialized Input
     2. run    — execute all model transitions for the full duration
     3. write  — export all model histories to CSV files
 
 Run with:
-    uv run pytest benchmarks/ -v --benchmark-only
+    uv run pytest benchmarks/ -v --benchmark-only \
+        --benchmark-data-root /path/to/local/data
 Or via the nox session:
-    uv run nox -s benchmark
+    uv run nox -s benchmark -- --benchmark-data-root /path/to/local/data
 """
 
 from __future__ import annotations
@@ -47,10 +48,11 @@ def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
 
     Files are named ``<model_name>_histories.csv`` and written to *out_dir*.
     """
-    all_model_histories = sim.get_model_histories()
-    for model_name, model_history in all_model_histories.items():
+    for model_index, model_name in enumerate(sim.get_model_names()):
+        model_history = sim.get_model_history(model_index)
         rows: list[dict] = []
-        for hist_name, state_vectors in model_history.items():
+        for hist_name, history in model_history.items():
+            state_vectors = history.get_state_as_vector()
             for t, vec in enumerate(state_vectors):
                 row = {"history_name": hist_name, "timestep": t}
                 row.update({f"state_{i}": float(v) for i, v in enumerate(vec)})
@@ -61,22 +63,25 @@ def _write_histories_to_csv(sim: Simulation, out_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Phase 1 — load
+# Phase 1 — build
 # ---------------------------------------------------------------------------
 
 @pytest.mark.benchmark
-def test_bench_load_data(benchmark, benchmark_db, benchmark_config):
-    """Benchmark SQLite data loading and Simulation construction.
+def test_bench_build_simulation(benchmark, local_inputs, benchmark_rounds):
+    """Benchmark Simulation construction from local input data.
 
-    Measures the time to call build_simulation() from scratch on each round,
-    including all database reads and model/transition setup.
+    Input initialization is outside the timed interval. Each round measures
+    build_simulation() and its database reads, model, and transition setup.
     """
-    input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
+    input_data = Input(
+        db_path=local_inputs.input_db,
+        conf_path=local_inputs.sim_config,
+    )
 
     benchmark.pedantic(
         build_simulation,
-        kwargs={'input_data': input_data, 'cohort_ids': [1]},
-        rounds=10,
+        kwargs={"input_data": input_data},
+        rounds=benchmark_rounds,
         iterations=1,
     )
 
@@ -86,21 +91,24 @@ def test_bench_load_data(benchmark, benchmark_db, benchmark_config):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.benchmark
-def test_bench_run_model(benchmark, benchmark_db, benchmark_config):
+def test_bench_run_model(benchmark, local_inputs, benchmark_rounds):
     """Benchmark sim.run() in isolation.
 
     The Simulation is rebuilt fresh before each round so that history state
     from a prior run does not carry over and inflate subsequent measurements.
     """
     def _setup():
-        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
-        sim = build_simulation(input_data, cohort_ids=[1])
+        input_data = Input(
+            db_path=local_inputs.input_db,
+            conf_path=local_inputs.sim_config,
+        )
+        sim = build_simulation(input_data)
         return (sim,), {}
 
     benchmark.pedantic(
         lambda sim: sim.run(),
         setup=_setup,
-        rounds=10,
+        rounds=benchmark_rounds,
         iterations=1,
     )
 
@@ -110,21 +118,26 @@ def test_bench_run_model(benchmark, benchmark_db, benchmark_config):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.benchmark
-def test_bench_write_histories(benchmark, benchmark_db, benchmark_config, tmp_path):
+def test_bench_write_histories(
+    benchmark, local_inputs, benchmark_rounds, tmp_path
+):
     """Benchmark CSV history export in isolation.
 
     The Simulation is built and run once in setup; only the CSV write is timed.
     """
     def _setup():
-        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
-        sim = build_simulation(input_data, cohort_ids=[1])
+        input_data = Input(
+            db_path=local_inputs.input_db,
+            conf_path=local_inputs.sim_config,
+        )
+        sim = build_simulation(input_data)
         sim.run()
         return (sim, tmp_path), {}
 
     benchmark.pedantic(
         _write_histories_to_csv,
         setup=_setup,
-        rounds=10,
+        rounds=benchmark_rounds,
         iterations=1,
     )
 
@@ -134,19 +147,24 @@ def test_bench_write_histories(benchmark, benchmark_db, benchmark_config, tmp_pa
 # ---------------------------------------------------------------------------
 
 @pytest.mark.benchmark
-def test_bench_end_to_end(benchmark, benchmark_db, benchmark_config, tmp_path):
+def test_bench_end_to_end(
+    benchmark, local_inputs, benchmark_rounds, tmp_path
+):
     """Benchmark the full pipeline: load → run → write CSV.
 
     Use this figure for direct comparison with RESPONDv1 wall-clock timings.
     """
     def _pipeline():
-        input_data = Input(db_path=benchmark_db, conf_path=benchmark_config)
-        sim = build_simulation(input_data, cohort_ids=[1])
+        input_data = Input(
+            db_path=local_inputs.input_db,
+            conf_path=local_inputs.sim_config,
+        )
+        sim = build_simulation(input_data)
         sim.run()
         _write_histories_to_csv(sim, tmp_path)
 
     benchmark.pedantic(
         _pipeline,
-        rounds=10,
+        rounds=benchmark_rounds,
         iterations=1,
     )

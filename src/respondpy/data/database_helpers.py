@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-03                                                    #
+# Last Modified: 2026-11-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -136,48 +136,41 @@ def _sort_transition_matrix(
 
     behavior_pairs = _normalize_state_pairs(behaviors)
     intervention_pairs = _normalize_state_pairs(interventions)
+    behavior_ids = {name: identifier for identifier, name in behavior_pairs}
+    intervention_ids = {
+        name: identifier for identifier, name in intervention_pairs
+    }
 
-    behav = pl.LazyFrame(
-        behavior_pairs, schema=["b_id", "b_name"], orient="row"
-    )
-    inter = pl.LazyFrame(
-        intervention_pairs, schema=["i_id", "i_name"], orient="row"
+    known_states = (
+        pl.col("new_intervention").is_in(list(intervention_ids))
+        & pl.col("new_behavior").is_in(list(behavior_ids))
+        & pl.col("initial_intervention").is_in(list(intervention_ids))
+        & pl.col("initial_behavior").is_in(list(behavior_ids))
     )
 
-    # Destination-major ordering guarantees column-stochastic matrices after
-    # reshape for y = Mx when source-state labels define columns.
     sorted_lf = (
-        working.join(
-            inter.rename({"i_id": "new_i_id", "i_name": "new_i_name"}),
-            left_on="new_intervention",
-            right_on="new_i_name",
-            how="inner",
+        lf.filter(known_states)
+        .with_columns(
+            pl.col("new_intervention")
+            .replace_strict(intervention_ids, return_dtype=pl.Int64)
+            .alias("_new_i_id"),
+            pl.col("new_behavior")
+            .replace_strict(behavior_ids, return_dtype=pl.Int64)
+            .alias("_new_b_id"),
+            pl.col("initial_intervention")
+            .replace_strict(intervention_ids, return_dtype=pl.Int64)
+            .alias("_initial_i_id"),
+            pl.col("initial_behavior")
+            .replace_strict(behavior_ids, return_dtype=pl.Int64)
+            .alias("_initial_b_id"),
         )
-        .join(
-            behav.rename({"b_id": "new_b_id", "b_name": "new_b_name"}),
-            left_on="new_behavior",
-            right_on="new_b_name",
-            how="inner",
-        )
-        .join(
-            inter.rename({"i_id": "initial_i_id", "i_name": "initial_i_name"}),
-            left_on="initial_intervention",
-            right_on="initial_i_name",
-            how="inner",
-        )
-        .join(
-            behav.rename({"b_id": "initial_b_id", "b_name": "initial_b_name"}),
-            left_on="initial_behavior",
-            right_on="initial_b_name",
-            how="inner",
-        )
-        .sort(["new_i_id", "new_b_id", "initial_i_id", "initial_b_id"])
+        .sort(["_new_i_id", "_new_b_id", "_initial_i_id", "_initial_b_id"])
         .drop(
             [
-                "new_i_id",
-                "new_b_id",
-                "initial_i_id",
-                "initial_b_id",
+                "_new_i_id",
+                "_new_b_id",
+                "_initial_i_id",
+                "_initial_b_id",
             ]
         )
     )

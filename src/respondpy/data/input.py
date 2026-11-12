@@ -4,7 +4,7 @@
 # Created Date: 2026-06-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-07                                                    #
+# Last Modified: 2026-11-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -265,7 +265,8 @@ class Input:
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
         available_tables = {row[0] for row in table_rows}
-        missing_tables = sorted(set(_REQUIRED_TABLE_COLUMNS) - available_tables)
+        missing_tables = sorted(
+            set(_REQUIRED_TABLE_COLUMNS) - available_tables)
         if missing_tables:
             raise ValueError(
                 "Input database is missing required tables: "
@@ -465,7 +466,8 @@ class Input:
         elif param == ParameterType.BEHAVIOR_TRANSITION_PROBABILITY:
             m = transition_matrix.with_columns(
                 pl.when(
-                    pl.col("new_intervention") != pl.col("initial_intervention")
+                    pl.col("new_intervention") != pl.col(
+                        "initial_intervention")
                 )
                 .then(pl.lit(0.0))
                 .otherwise(pl.col("probability"))
@@ -818,7 +820,8 @@ class Input:
         if not target_samples:
             raise ValueError("At least one target sample ID is required.")
         if any(
-            not isinstance(sample, int) or isinstance(sample, bool) or sample <= 0
+            not isinstance(sample, int) or isinstance(
+                sample, bool) or sample <= 0
             for sample in target_samples
         ):
             raise ValueError("Target sample IDs must be positive integers.")

@@ -4,7 +4,7 @@
 # Created Date: 2026-06-10                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-25                                                    #
+# Last Modified: 2026-11-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -221,7 +221,8 @@ def test_get_parameter_sample_ids(input_data, setup_db):
 
     assert input_data.get_parameter_sample_ids() == {1, 7}
     assert input_data.get_parameter_sample_ids(
-        [rpydata.Parameter(rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)]
+        [rpydata.Parameter(
+            rpydata.ParameterType.INTERVENTION_TRANSITION_PROBABILITY)]
     ) == {1}
 
 

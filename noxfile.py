@@ -27,13 +27,13 @@ def pylint(session: nox.Session) -> None:
 def benchmark(session: nox.Session) -> None:
     """Run end-to-end benchmarks (not included in normal test runs).
 
-    Results are printed to stdout. Optionally pass --benchmark-save=<name>
-    to persist results for later comparison:
+    The local input directory is mandatory. Results are printed to stdout.
+    Optionally pass --benchmark-save=<name> to persist results for comparison:
 
-        uv run nox -s benchmark -- --benchmark-save=baseline
+        uv run nox -s benchmark -- --benchmark-data-root=/path/to/local/data \
+            --benchmark-save=baseline
     """
-    session.env["PYTHONPATH"] = "build/respondpy"
-    session.install("--group=benchmark", ".")
+    session.install("--group=test", ".")
     session.run(
         "pytest",
         "benchmarks/",
