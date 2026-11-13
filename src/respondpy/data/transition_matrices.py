@@ -4,7 +4,7 @@
 # Created Date: 2026-06-02                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-10                                                    #
+# Last Modified: 2026-11-12                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -317,49 +317,43 @@ def update_retention_probability(
                 pl.col(destination_col) == pl.col(origin_col)
             )
 
-    non_retention = (
-        completed.filter(~is_retention)
-        .group_by(group_cols)  # Add new_behavior (if intervention)
-        .agg(pl.col(probability_column).sum().alias("__non_retention_sum"))
+    non_retention_sum = (
+        pl.when(~is_retention)
+        .then(pl.col(probability_column))
+        .otherwise(0.0)
+        .sum()
+        .over(group_cols)
     )
 
-    retention_targets = (
-        completed.select(group_cols)
-        .unique()
-        .join(non_retention, on=group_cols, how="left")
-        .with_columns(
-            pl.col("__non_retention_sum").fill_null(0.0),
-            (1.0 - pl.col("__non_retention_sum")).alias("__retention_target"),
-        )
-        .drop("__non_retention_sum")
+    target_column = "_respondpy_retention_target"
+    while target_column in completed.columns:
+        target_column += "_"
+
+    completed = completed.with_columns(
+        (1.0 - non_retention_sum).alias(target_column)
     )
 
     if forbid_negative_retention:
-        has_negative = retention_targets.select(
-            pl.col("__retention_target").lt(-tolerance).any()
+        has_negative = completed.select(
+            pl.col(target_column).lt(-tolerance).any()
         ).item()
         if has_negative:
             raise ValueError(
                 "Cannot update retention probabilities: non-retention probabilities exceed 1 in at least one transition group."
             )
 
-    retention_targets = retention_targets.with_columns(
-        pl.when(pl.col("__retention_target").abs().le(tolerance))
+    retention_target = (
+        pl.when(pl.col(target_column).abs().le(tolerance))
         .then(0.0)
-        .otherwise(pl.col("__retention_target"))
-        .alias("__retention_target")
+        .otherwise(pl.col(target_column))
     )
 
-    result = (
-        completed.join(retention_targets, on=group_cols, how="left")
-        .with_columns(
-            pl.when(is_retention)
-            .then(pl.col("__retention_target"))
-            .otherwise(pl.col(probability_column))
-            .alias(probability_column)
-        )
-        .drop("__retention_target")
-    )
+    result = completed.with_columns(
+        pl.when(is_retention)
+        .then(retention_target)
+        .otherwise(pl.col(probability_column))
+        .alias(probability_column)
+    ).drop(target_column)
 
     # final invariant check; this keeps the function idempotent and defensive
     if not verify_transition_probability(
