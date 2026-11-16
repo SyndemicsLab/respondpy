@@ -1,0 +1,31 @@
+name: Check Bumped Module Version for PyPI
+
+on:
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    check-version:
+        name: Check Bumped respondpy Version for PyPI
+        runs-on: ubuntu-latest
+        steps:
+            - name: Ensure pip
+              run: |
+                # ensure that pip is installed
+                sudo apt update
+                sudo apt install python3-pip
+              shell: bash
+
+            - name: Clone respondpy
+              # checkout v7.0.1
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+              with:
+                  sparse-checkout: pyproject.toml
+                  sparse-checkout-cone-mode: false
+
+            - name: Compare PyPI version and repository version
+              run: |
+                PYPI_VERSION=$(pip index versions --pre respondpy | awk '/Available versions/{print $3}')
+                REPO_VERSION=$(awk '/^version/{print $3}' respondpy/pyproject.toml)
+                if [[ "${PYPI_VERSION%,}" == "${REPO_VERSION}" ]]; then exit 0; else exit 1; fi
+              shell: bash
