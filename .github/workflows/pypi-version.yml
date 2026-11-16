@@ -25,7 +25,7 @@ jobs:
 
             - name: Compare PyPI version and repository version
               run: |
-                PYPI_VERSION=$(pip index versions --pre respondpy | awk '/Available versions/{print $3}')
-                REPO_VERSION=$(awk '/^version/{print $3}' respondpy/pyproject.toml)
-                if [[ "${PYPI_VERSION%,}" == "${REPO_VERSION}" ]]; then exit 0; else exit 1; fi
+                  PYPI_VERSION=$(pip index versions --pre respondpy | awk '/Available versions/{print $3}')
+                  REPO_VERSION=$(awk '/^version/{print $3}' respondpy/pyproject.toml)
+                  if [[ "${PYPI_VERSION%,}" == "${REPO_VERSION}" ]]; then exit 0; else exit 1; fi
               shell: bash
