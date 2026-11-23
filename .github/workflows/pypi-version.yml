@@ -14,13 +14,13 @@ jobs:
             - name: Ensure pip
               run: |
                   # ensure that pip is installed
-                  sudo apt update
-                  sudo apt install python3-pip
+                  command -v pip || sudo apt update && sudo apt install python3-pip
               shell: bash
 
             - name: Clone respondpy
               # checkout v7.0.1
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+              # only downloads `pyproject.toml`, not the entire repository
               with:
                   sparse-checkout: pyproject.toml
                   sparse-checkout-cone-mode: false
