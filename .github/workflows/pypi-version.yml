@@ -1,4 +1,6 @@
 name: Check Bumped Module Version for PyPI
+env:
+    NO_BUMP: ${{ contains(github.event.pull_request.title, '[No Bump]') }}
 
 on:
     pull_request:
@@ -25,6 +27,7 @@ jobs:
 
             - name: Compare PyPI version and repository version
               run: |
+                  if ${NO_BUMP} == true; then exit 0; fi
                   PYPI_VERSION=$(pip index versions --pre respondpy | awk '/Available versions/{print $3}')
                   REPO_VERSION=$(awk '/^version/{print $3}' /home/runner/work/respondpy/respondpy/pyproject.toml)
                   if [[ "${PYPI_VERSION%,}" == "${REPO_VERSION}" ]]; then exit 0; else exit 1; fi
