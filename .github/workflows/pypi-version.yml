@@ -1,6 +1,6 @@
 name: Check Bumped Module Version for PyPI
 env:
-    NO_BUMP: ${{ contains(github.event.pull_request.title, '[No Bump]') }}
+    NO_BUMP: ${{ contains(github.event.pull_request.body, '[No Bump]') }}
 
 on:
     pull_request:
