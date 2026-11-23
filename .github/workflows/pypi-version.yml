@@ -14,7 +14,7 @@ jobs:
             - name: Ensure pip
               run: |
                   # ensure that pip is installed
-                  [ ! command -v pip ] && (sudo apt update && sudo apt install python3-pip)
+                  ! command -v pip && (sudo apt update && sudo apt install python3-pip)
               shell: bash
 
             - name: Clone respondpy
